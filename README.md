@@ -167,6 +167,23 @@ To add a room: drop a YAML file in `src/azurath/content/rooms/`, put its files u
 `src/azurath/checks/`, and link it with `exits`. `tests/test_content.py` will tell you what you
 forgot.
 
+### Working on Azurath with Claude Code
+
+The repo ships project [skills](.claude/skills) and [subagents](.claude/agents) for
+maintaining the game:
+
+| | Name | Use it to |
+|---|---|---|
+| skill | `add-room` | add or rework a room: YAML schema, scaffold/solution files, writing the check, wiring exits |
+| skill | `verify-room` | check one room end to end (fails empty, fails after scaffold, passes with the solution) in seconds, or set up a workspace already standing in a given room (`--setup-only`) |
+| skill | `playtest` | drive the real CLI with scripted input and see exactly what a player sees |
+| agent | `lesson-reviewer` | audit a room's lesson for technical accuracy and .NET comparisons, verifying claims by running code |
+| agent | `playtester` | play a room as a C# developer new to Python, without spoilers, and report friction |
+| agent | `quest-breaker` | red-team a check: wrong code that passes, and valid code that fails |
+
+A typical content change: `add-room`, then `verify-room`, then the `lesson-reviewer`,
+`quest-breaker` and `playtester` agents, then `uv run pytest -m slow`.
+
 ## License
 
 MIT

@@ -32,7 +32,7 @@ class AzurathSettings(BaseSettings):
     )
 
     workspace: Path = Field(
-        default=Path("questboard"),
+        default=Path.home() / Path(".azurath/questboard"),
         description="Folder where you build the questboard repo, relative to the current dir.",
     )
     editor: str | None = Field(

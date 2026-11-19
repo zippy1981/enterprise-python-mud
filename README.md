@@ -10,7 +10,7 @@ environment to grade it. Pass, and it commits your work. By the end, questboard 
 tested, linted, CI-gated **Azure Functions app with a Durable orchestration**, and its git
 history is your journey.
 
-```
+```text
 ╭─ The Durable Sanctum  ·  Durable Functions orchestrations ──────────────────╮
 │ A vast circular hall where an orchestra plays without pause, even though    │
 │ half the musicians are asleep. Whenever the conductor turns a page, the     │
@@ -70,7 +70,7 @@ cd enterprise-python-mud
 uv run azurath
 ```
 
-The first run creates your questboard repo in `./questboard` (it's ignored by this repo's
+The first run creates your questboard repo in `~/.azurauth/questboard` (it's ignored by this repo's
 git). Choose another location with `uv run azurath --workspace ~/code/questboard` or
 `AZURATH_WORKSPACE`.
 
@@ -89,7 +89,7 @@ Optional extras, for later rooms:
 3. `edit hello.py` opens the file in the editor next to the terminal (the game detects VS Code's
    terminal and uses `code -r`). Save, switch back, `check`.
 
-Your `questboard/` folder shows up in the Explorer. When you reach the venv rooms, select
+Your `~/.azurath/questboard/` folder shows up in the Explorer. When you reach the venv rooms, select
 `questboard/.venv` as the interpreter (**Python: Select Interpreter**) for IntelliSense on your
 dependencies. You can also run **Azurath: check current quest** from a second terminal
 without leaving your editor.azureath
@@ -126,7 +126,7 @@ Observatory (see [`src/azurath/settings.py`](src/azurath/settings.py)). Priority
 
 ## How it works
 
-```
+```text
 src/azurath/
   cli.py            argparse entry point (azurath = "azurath.cli:main")
   game.py           the game loop and every command (registered with a decorator)

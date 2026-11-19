@@ -1,0 +1,185 @@
+id: venv_crypt
+name: The Venv Crypt
+order: 2
+zone: Virtual Environments & pip
+description: |
+  A cool vault of a thousand sealed alcoves. Each alcove holds a single
+  project's belongings, its own interpreter and its own packages, sealed off
+  from the others. A faint draft carries the screams of developers who once
+  ran `sudo pip install` on a production server.
+exits:
+  south: hall_of_basics
+  east: module_library
+npc:
+  name: Sister Venvia
+  aliases: [sister, venvia]
+  greeting: |
+    "Welcome to the Crypt, child of NuGet. In your world every project lists its
+    `PackageReference`s and the SDK resolves them per project. Python is
+    older and stranger: an interpreter has **one** `site-packages` folder, and
+    anything you `pip install` lands there for *every* project using that
+    interpreter.
+
+    So we seal each project in its own **virtual environment**: a lightweight
+    copy of the interpreter with a private `site-packages`. One per project,
+    always, and never committed to git."
+  topics:
+    activation: |
+      "Activation just edits `PATH` (and your prompt) so `python` and `pip`
+      mean the venv's copies. Nothing magical.
+
+      * PowerShell: `.venv\Scripts\Activate.ps1` (if blocked: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`)
+      * cmd: `.venv\Scripts\activate.bat`
+      * bash/zsh: `source .venv/bin/activate`
+      * leave: `deactivate`
+
+      You can skip activation entirely and call `.venv/bin/python` (or
+      `.venv\Scripts\python.exe`) directly. That's what CI and the MUD's checks do."
+    pep 668: |
+      "On modern Debian/Ubuntu/Homebrew, `pip install` into the system Python
+      fails with *externally-managed-environment*. That's PEP 668 protecting the
+      OS's own Python from you. The answer is always a venv (or `uv`), never
+      `--break-system-packages`."
+    azure artifacts: |
+      "Private feeds work like NuGet sources. Azure Artifacts gives you a PyPI
+      endpoint: `pip install --index-url https://pkgs.dev.azure.com/<org>/_packaging/<feed>/pypi/simple/ ...`
+      Put it in `pip.conf` / `pip.ini`, or `[[tool.uv.index]]` once you use uv.
+      `artifacts-keyring` handles auth the way the NuGet credential provider does."
+    wheels: |
+      "A **wheel** (`.whl`) is a pre-built zip, like a `.nupkg` with compiled
+      bits for your OS/Python. An **sdist** (`.tar.gz`) is source that may need a
+      compiler to build. pip prefers wheels. If you see a C compiler error during
+      install, there was no wheel for your platform."
+pages:
+  - title: Why environments exist
+    body: |
+      | .NET | Python |
+      |---|---|
+      | Packages resolved per project from `~/.nuget/packages` | Packages installed **into an interpreter** |
+      | `dotnet restore` | `pip install -r requirements.txt` |
+      | `bin/` `obj/` | `.venv/` |
+      | Multiple SDKs side by side | Multiple interpreters (`py -0` lists them on Windows) |
+
+      Without a venv, project A's `pydantic 1.x` and project B's `pydantic 2.x`
+      fight over one folder. With a venv each project gets:
+
+      ```
+      .venv/
+        pyvenv.cfg          # which base interpreter this came from
+        bin/ (Scripts\ on Windows)
+          python            # the venv's interpreter (a link/copy of the base one)
+          pip
+          activate, Activate.ps1
+        lib/python3.x/site-packages/   # this project's packages only
+      ```
+
+      Venvs are cheap and disposable. Broken? Delete `.venv` and recreate it.
+      They're **not relocatable**: don't copy them between machines or folders.
+  - title: Creating and activating
+    body: |
+      ```powershell
+      # Windows PowerShell
+      py -m venv .venv
+      .venv\Scripts\Activate.ps1
+      ```
+
+      ```bash
+      # macOS / Linux
+      python3 -m venv .venv
+      source .venv/bin/activate
+      ```
+
+      `python -m venv` means "run the stdlib module `venv` as a program". You'll
+      see `python -m <tool>` everywhere; it guarantees the tool runs with *that*
+      interpreter.
+
+      Inside the MUD, `!` commands automatically activate your workspace's
+      `.venv` once it exists, the same way VS Code's terminal does after you
+      pick an interpreter. Check with `!python -c "import sys; print(sys.prefix)"`.
+  - title: "pip: the package installer"
+    body: |
+      ```bash
+      python -m pip install pyyaml            # latest version
+      python -m pip install "pydantic>=2,<3"  # a version range
+      python -m pip list                      # what's installed
+      python -m pip show pyyaml               # details + dependencies
+      python -m pip freeze > requirements.txt # pin exactly what's installed
+      python -m pip install -r requirements.txt
+      python -m pip uninstall pyyaml
+      ```
+
+      **Version specifiers** (PEP 440): `==6.0.2` exact, `>=2.7` minimum,
+      `~=2.7` "compatible release" (≥2.7, <3.0), `!=` exclude. Roughly NuGet's
+      `[2.7,3.0)`.
+
+      **The distribution name isn't the import name.** You install `PyYAML`
+      but `import yaml`. You install `azure-functions` but `import
+      azure.functions`. (Imagine a NuGet package whose ID differs from its
+      namespace. Oh wait, you don't have to imagine.)
+
+      `requirements.txt` is the old-school lock file: a flat list of pins with
+      no metadata. We'll graduate to `pyproject.toml` + `uv.lock` soon, but
+      Azure Functions deployments still want a `requirements.txt`, so it's
+      worth knowing.
+  - title: Keep it out of git
+    body: |
+      A venv is a build artifact, like `bin/` and `obj/`. Add it to
+      `.gitignore`:
+
+      ```gitignore
+      .venv/
+      ```
+
+      Python 3.13 drops a `*` `.gitignore` *inside* new venvs as a safety net,
+      but don't rely on it: older interpreters don't, and your teammates
+      will run older interpreters.
+
+      Check what git thinks: `!git check-ignore -v .venv` prints the rule that
+      ignores it. `!git status` should never list `.venv`.
+quest:
+  title: Seal the Crypt
+  brief: |
+    In your workspace:
+
+    1. Create a virtual environment in **`.venv`**: `!python -m venv .venv`
+       (or `!python3 -m venv .venv`, or `!py -m venv .venv` on Windows)
+    2. Install **PyYAML** into it with pip: `!python -m pip install pyyaml`
+       (from now on `!python` *is* the venv's Python)
+    3. Pin it: `!python -m pip freeze > requirements.txt`
+    4. Add `.venv/` to **`.gitignore`** (`edit .gitignore`)
+
+    The runes check that `.venv` works, that it can `import yaml`, that
+    `requirements.txt` pins `PyYAML==…`, and that git ignores the venv.
+  check: venv_crypt
+  hints:
+    - "Typed `!python -m venv .venv` and got 'command not found'? Try `!python3 -m venv .venv` (macOS/Linux) or `!py -m venv .venv` (Windows)."
+    - "After the venv exists, `!python -m pip install pyyaml` installs into it, because the MUD activates `.venv` for `!` commands. Verify with `!python -m pip list`."
+    - "`.gitignore` already exists. `edit .gitignore` and add a line `.venv/`. Then `!git status` should not show `.venv`."
+  solution:
+    files: [.gitignore]
+    commands:
+      - python -m venv .venv
+      - python -m pip install pyyaml
+      - python -m pip freeze > requirements.txt
+  commit_message: "Add requirements.txt and ignore .venv"
+  reward:
+    xp: 150
+    item:
+      name: Amulet of Isolation
+      aliases: [amulet]
+      text: |
+        ```
+        python -m venv .venv              # create  (py -m venv .venv on Windows)
+        .venv\Scripts\Activate.ps1        # activate: PowerShell
+        source .venv/bin/activate         # activate: bash/zsh
+        deactivate                        # leave
+
+        python -m pip install pkg         # always `python -m pip`
+        python -m pip install "pkg>=2,<3"
+        python -m pip freeze > requirements.txt
+        python -m pip install -r requirements.txt
+        ```
+
+        * One venv per project. Never commit it. Never `sudo pip`.
+        * Distribution name ≠ import name (`PyYAML` → `import yaml`).
+        * `~=2.7` means `>=2.7,<3`.

@@ -1,0 +1,20 @@
+# Starting quests for the guild board.
+defaults: &defaults
+  rank: C
+  guilds: [rogues]
+
+quests:
+  - <<: *defaults
+    title: Clear the cellar of rats
+    reward: 5
+
+  - <<: *defaults
+    title: Escort the merchant caravan
+    reward: 80
+    rank: B
+    guilds: [rogues, bards]
+
+  - title: Slay the dragon of Mount Azure
+    reward: 1500
+    rank: S
+    guilds: [mages, rogues, bards]

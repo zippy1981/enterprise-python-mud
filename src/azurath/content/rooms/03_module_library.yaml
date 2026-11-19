@@ -1,0 +1,188 @@
+id: module_library
+name: The Module Library
+order: 3
+zone: Modules & Packages
+description: |
+  Shelves spiral up into darkness, each book a single `.py` file, each shelf a
+  folder marked with a small brass plate reading `__init__.py`. A librarian
+  with two underscores tattooed on each cheek glides between the stacks on a
+  rolling ladder labelled `sys.path`.
+exits:
+  west: venv_crypt
+  north: toml_forge
+npc:
+  name: Librarian Dunder
+  aliases: [librarian, dunder]
+  greeting: |
+    "Shh. Welcome. In your world, a *namespace* is a logical grouping and an
+    *assembly* is the file that ships. Here the two are fused: **a module is a
+    file**, **a package is a folder**, and the import path *is* the folder
+    structure. No `namespace` keyword required.
+
+    Your `basics.py` is a module already. Today it becomes part of a proper
+    package, `questboard`, with a front door (`__init__.py`) and a way to run
+    it (`__main__.py`)."
+  topics:
+    sys.modules: |
+      "The first `import x` finds `x`, **executes it top to bottom**, and caches
+      the module object in `sys.modules`. Every later import gets the cached
+      object. So module-level code runs once per process, and a module is
+      effectively a singleton. That's why module-level globals are the
+      Pythonic 'static class'."
+    circular imports: |
+      "If `a` imports `b` and `b` imports `a`, one of them sees a half-initialised
+      module and you get `ImportError: cannot import name ... (most likely due to
+      a circular import)`. Fix it by moving shared code into a third module, or
+      by importing inside the function that needs it."
+    relative imports: |
+      "Inside a package, `from .text import slugify` means 'the `text` module
+      next to me'. `from ..models import Quest` goes up one level. Relative
+      imports only work inside packages, not in scripts you run directly."
+    src layout: |
+      "Many libraries use a **src layout** (`src/questboard/...`) so tests can't
+      accidentally import the un-installed folder. Azure Functions, though, loads
+      `function_app.py` from the app root and imports packages sitting next to
+      it, so for a Functions app a **flat layout** (`questboard/` at the root)
+      is the path of least resistance. That's what we use. The MUD itself
+      uses src layout, so peek at both."
+    private: |
+      "There's no `private` or `internal`. A leading underscore (`_helper`) means
+      'internal, don't touch', and everyone respects it. `__all__` lists what
+      `from pkg import *` exports, and documents your public API."
+pages:
+  - title: A module is just a file
+    body: |
+      ```python
+      # questboard/text.py is the module `questboard.text`
+      import questboard.text                  # bind the module
+      from questboard.text import slugify     # bind one name
+      from questboard import text as t        # alias  (≈ using T = ...;)
+      ```
+
+      | C# | Python |
+      |---|---|
+      | `namespace Questboard.Text` | the file `questboard/text.py` |
+      | `using Questboard.Text;` | `from questboard.text import ...` |
+      | `internal` | `_leading_underscore` (convention) |
+      | assembly / NuGet package | *distribution* (a wheel), e.g. `questboard-0.1.0-py3-none-any.whl` |
+      | static constructor | module-level code (runs once, on first import) |
+
+      Everything at module level is executed on import. Keep it to
+      definitions and constants. Do real work in functions, or behind a
+      `__main__` guard.
+  - title: "Packages: folders of modules"
+    body: |
+      ```
+      questboard/              # the repo root (your workspace)
+        hello.py
+        questboard/            # the package
+          __init__.py          # runs on `import questboard`, the package's front door
+          __main__.py          # runs on `python -m questboard`
+          text.py              # questboard.text
+      ```
+
+      `__init__.py` usually re-exports the public API so callers can write
+      `from questboard import slugify` without knowing which file it lives in:
+
+      ```python
+      """questboard: the Guild's quest board service."""
+
+      from questboard.text import format_bounty, parse_rank, slugify, top_quests
+
+      __version__ = "0.1.0"
+      __all__ = ["format_bounty", "parse_rank", "slugify", "top_quests"]
+      ```
+
+      (A folder *without* `__init__.py` is a "namespace package". It works,
+      but it's meant for splitting one namespace across distributions, like
+      `azure.*`. Always add `__init__.py` to your own packages.)
+  - title: "How import finds things: sys.path"
+    body: |
+      `import x` searches the directories in `sys.path`, in order:
+
+      1. the directory of the script you ran, or the **current directory** for
+         `python -m ...` and `python -c ...`
+      2. anything in the `PYTHONPATH` environment variable
+      3. the standard library
+      4. `site-packages` of the active interpreter (your venv), which includes
+         editable installs of your own project
+
+      ```bash
+      !python -c "import sys; print(*sys.path, sep='\n')"
+      ```
+
+      "Works on my machine" import bugs are almost always the current directory
+      being different. Prefer `python -m questboard` over
+      `python questboard/__main__.py`: `-m` puts the current directory on the
+      path and runs the package *as a package*, so its imports resolve the same
+      way they will in production.
+  - title: "`__main__.py`, and moving files with git"
+    body: |
+      `python -m questboard` looks for `questboard/__main__.py` and runs it.
+      It's your `Program.cs`:
+
+      ```python
+      from questboard import __version__
+
+
+      def main() -> None:
+          print(f"questboard {__version__}")
+
+
+      if __name__ == "__main__":
+          main()
+      ```
+
+      When you move a file, use **`git mv`** so history follows it:
+
+      ```bash
+      !mkdir questboard
+      !git mv basics.py questboard/text.py
+      ```
+
+      (PowerShell's `mkdir` works too. `git log --follow questboard/text.py`
+      will still show its days as `basics.py`.)
+quest:
+  title: Shelve the Basics
+  brief: |
+    Turn your loose script into a package:
+
+    1. `!mkdir questboard` then `!git mv basics.py questboard/text.py`
+       (no `basics.py` left at the root)
+    2. **`questboard/__init__.py`**: a docstring, `__version__ = "0.1.0"`,
+       re-export all four functions, and list them in `__all__`
+    3. **`questboard/__main__.py`**: `python -m questboard` prints
+       `questboard 0.1.0` (use `__version__`, don't hard-code it twice)
+
+    Then try `!python -m questboard` and
+    `!python -c "from questboard import slugify; print(slugify('It Works!'))"`.
+  check: module_library
+  scaffold:
+    questboard/__init__.py: __init__.py
+    questboard/__main__.py: __main__.py
+  hints:
+    - "Run `!mkdir questboard` *before* `scaffold` or `git mv`, or let `scaffold` create the folder and then `!git mv basics.py questboard/text.py`."
+    - "In `__init__.py`: `from questboard.text import format_bounty, parse_rank, slugify, top_quests`, then `__all__ = [\"format_bounty\", \"parse_rank\", \"slugify\", \"top_quests\"]`."
+    - "In `__main__.py`: `from questboard import __version__` and `print(f\"questboard {__version__}\")` inside `main()`, behind the usual guard."
+  solution:
+    files:
+      questboard/__init__.py: __init__.py
+      questboard/__main__.py: __main__.py
+    commands:
+      - git mv basics.py questboard/text.py
+    notes: "Create the folder first if `git mv` complains: `mkdir questboard`."
+  commit_message: "Create the questboard package"
+  reward:
+    xp: 150
+    item:
+      name: Librarian's Index Card
+      aliases: [card, index]
+      text: |
+        * **module** = one `.py` file · **package** = folder with `__init__.py`
+        * `import a.b` runs `a/__init__.py` then `a/b.py`, once (cached in `sys.modules`)
+        * `__init__.py` = public API (`__all__`), `__main__.py` = `python -m pkg`
+        * `_name` = internal by convention · no access modifiers
+        * Import search order: cwd/script dir → `PYTHONPATH` → stdlib → site-packages
+        * Prefer `python -m pkg.module` to `python path/to/file.py`
+        * `from .sibling import x` = relative import (inside packages only)
+        * Move files with `git mv` to keep history

@@ -1,0 +1,230 @@
+id: throne_room
+name: The Throne Room
+order: 16
+zone: Shipping to Azure
+description: |
+  Sunlight pours through windows of sky-blue glass onto a throne carved from
+  a single enormous cloud. Banners show the sigils of every room you've
+  passed: lantern, slate, amulet, tongs, spurs, whistle, insignia, shard,
+  astrolabe, quill, hammer, manifest, baton. The Queen of Azurath looks up from
+  a deployment log and smiles.
+exits:
+  south: durable_sanctum
+npc:
+  name: Queen Azura
+  aliases: [queen, azura]
+  greeting: |
+    "So you're the C# developer who learned to love significant whitespace. The
+    Guild has watched your repository grow commit by commit: a package, a
+    lock file, tests, models, settings, CI, and a durable workflow.
+
+    One task remains, the one that matters most to the Guild: **ship it**.
+    Azure won't read your `uv.lock`, so you'll generate the `requirements.txt` it
+    expects, decide what stays behind, and prove that every test and every lint
+    passes. Then the realm is yours."
+  topics:
+    flex consumption: |
+      "New Linux function apps should use the **Flex Consumption** plan: scale to
+      zero, VNet integration, per-instance memory sizes, faster cold starts. Python
+      apps on Azure Functions run on **Linux** workers, so anything native (the
+      Gopher rooms!) must be built for linux-x64."
+    azd: |
+      "The Azure Developer CLI wires infrastructure (Bicep) and code together:
+      `azd init --template functions-quickstart-python-http-azd` to see a
+      reference layout, then `azd up`. It's what `dotnet new` + an ARM template +
+      a pipeline would be if they shared a brain."
+    opentelemetry: |
+      "`uv add azure-monitor-opentelemetry`, then once at startup:
+      ```python
+      from azure.monitor.opentelemetry import configure_azure_monitor
+      configure_azure_monitor()   # reads APPLICATIONINSIGHTS_CONNECTION_STRING
+      ```
+      Your `logging` calls, plus traces of outgoing HTTP calls and Azure SDK
+      calls, flow to Application Insights. It's the Python side of
+      `AddOpenTelemetry().UseAzureMonitor()`."
+    next: |
+      "Where next? **FastAPI** (pydantic-powered APIs), **asyncio** in depth,
+      **httpx**, **SQLAlchemy 2.0** (EF Core's cousin), **pytest-xdist** and
+      **hypothesis**, **mypy --strict**, publishing libraries to Azure Artifacts
+      with `uv build` and `uv publish`, and, if the Gopher rooms called to you,
+      **PyO3 + maturin** for Rust extensions."
+pages:
+  - title: Packaging for Azure Functions
+    body: |
+      Azure's Python build (Oryx "remote build") runs `pip install -r
+      requirements.txt`. It doesn't know about uv. So **generate** the file
+      from your lock, don't hand-write it:
+
+      ```bash
+      uv export --format requirements-txt --no-dev --no-emit-project --no-hashes -o requirements.txt
+      ```
+
+      * `--no-dev`: production doesn't need pytest
+      * `--no-emit-project`: don't emit `-e .`. Your `questboard/` package is
+        deployed as source next to `function_app.py`, which is why we chose a
+        flat layout.
+      * Regenerate it whenever `uv.lock` changes, and add a CI check that it's
+        current (`uv export ... | diff - requirements.txt`).
+
+      **`.funcignore`** keeps dev clutter out of the deployment zip:
+
+      ```
+      .git*
+      .venv
+      .vscode
+      .azurath
+      __pycache__
+      .pytest_cache
+      .ruff_cache
+      tests
+      local.settings.json
+      ```
+  - title: Deploying
+    body: |
+      ```bash
+      az login
+      az group create -n rg-questboard -l westeurope
+      az storage account create -n stquestboard$RANDOM -g rg-questboard --sku Standard_LRS
+      az functionapp create -n questboard-<unique> -g rg-questboard \
+          --storage-account <storage-name> --flexconsumption-location westeurope \
+          --runtime python --runtime-version <your pinned version>
+      func azure functionapp publish questboard-<unique>
+      ```
+
+      **From GitHub Actions** (the CI you already built), add a deploy job.
+      Use OIDC federated credentials so no secrets are stored:
+
+      ```yaml
+      deploy:
+        needs: test
+        runs-on: ubuntu-latest
+        permissions: { id-token: write, contents: read }
+        steps:
+          - uses: actions/checkout@v4
+          - uses: azure/login@v2
+            with:
+              client-id: ${{ secrets.AZURE_CLIENT_ID }}
+              tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+              subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          - uses: Azure/functions-action@v1
+            with:
+              app-name: questboard-<unique>
+              package: .
+              scm-do-build-during-deployment: true
+              enable-oryx-build: true
+      ```
+
+      Infra as code: Bicep or Terraform, exactly as you would for a .NET app.
+      `azd` templates give you a ready-made Bicep starting point.
+  - title: Identity, secrets and config in the cloud
+    body: |
+      **Same library family as .NET**: `azure-identity`'s
+      `DefaultAzureCredential` walks env vars → managed identity → Azure CLI →
+      VS Code, exactly like `Azure.Identity` in C#.
+
+      ```python
+      from azure.identity import DefaultAzureCredential
+      from azure.storage.blob import BlobServiceClient
+
+      blobs = BlobServiceClient("https://<account>.blob.core.windows.net",
+                                credential=DefaultAzureCredential())
+      ```
+
+      * Prefer **managed identity** + identity-based connections
+        (`AzureWebJobsStorage__accountName=<account>` instead of a connection
+        string).
+      * Secrets go in **Key Vault**; reference them from App Settings
+        (`@Microsoft.KeyVault(SecretUri=...)`). They arrive as env vars, and your
+        pydantic `Settings` picks them up unchanged.
+      * The same `Settings` class works locally (`local.settings.json` / `.env`),
+        in CI (workflow `env:`), and in Azure (App Settings). One code path.
+  - title: Logging and observability
+    body: |
+      ```python
+      import logging
+
+      logger = logging.getLogger(__name__)          # ≈ ILogger<T>, one per module
+
+      logger.info("Quest %s accepted by %s", quest.slug, guild)          # lazy formatting
+      logger.warning("Low reward", extra={"quest_id": str(quest.id)})    # custom dimensions
+      try:
+          ...
+      except Exception:
+          logger.exception("Quest failed")          # logs the traceback at ERROR level
+          raise
+      ```
+
+      | .NET | Python |
+      |---|---|
+      | `ILogger<T>` | `logging.getLogger(__name__)` |
+      | `LogLevel.Information` | `logging.INFO` |
+      | message templates | `%s` args (don't pre-format with f-strings in hot paths) |
+      | `logger.LogError(ex, ...)` | `logger.exception(...)` inside `except` |
+      | `appsettings` `Logging:LogLevel` | `host.json` `logging.logLevel` + `logging.basicConfig` locally |
+
+      On Azure Functions the worker forwards `logging` output to the host and
+      on to Application Insights automatically. For full distributed tracing,
+      `ask queen about opentelemetry`.
+quest:
+  title: Ship It
+  brief: |
+    The final quest. Prepare your repo for deployment:
+
+    1. Generate **`requirements.txt`** from the lock:
+       `!uv export --format requirements-txt --no-dev --no-emit-project --no-hashes -o requirements.txt`
+    2. Write a **`.funcignore`** that excludes at least `.venv`, `tests` and
+       `local.settings.json`
+    3. The **whole** test suite passes (`!uv run pytest`) and
+       `!uv run ruff check .` is clean
+    4. *Optional:* commit everything and push. Bonus if you
+       `ask queen about azd` and deploy for real.
+  check: throne_room
+  scaffold: [.funcignore]
+  hints:
+    - "If `uv export` says the lock is out of date, run `!uv lock` first."
+    - "requirements.txt should contain `azure-functions==...` and `pydantic==...`, but not `pytest` and not a `-e .` line."
+    - "Run the full suite and lint together: `!uv run pytest -q && uv run ruff check .`"
+  solution:
+    files: [.funcignore]
+    commands:
+      - uv export --format requirements-txt --no-dev --no-emit-project --no-hashes -o requirements.txt
+      - uv run ruff check .
+      - uv run pytest -q
+  commit_message: "Prepare for deployment: requirements.txt and .funcignore"
+  epilogue: |
+    The cloud throne rumbles. Queen Azura rises and places a circlet of
+    blue light on your head.
+
+    *"Arise, Archmage. You came to us fluent in C#, and you leave having built a
+    tested, linted, type-hinted, lock-filed, CI-gated, Durable Azure Functions
+    app in Python. Every step of the journey is in your git history:"*
+
+    ```
+    !git log --oneline
+    ```
+
+    **What you learned:** Python syntax and idioms · modules & packages ·
+    venv & pip · TOML & pyproject · uv · pytest & mutation thinking · classes,
+    dataclasses & Protocols · pydantic · pydantic-settings · YAML safety · ruff
+    and GitHub Actions · Azure Functions v2 · Durable orchestrations as generators
+    · shipping with requirements.txt, identity and logging.
+
+    Didn't visit the **Gopher Forge** (east of the Durable Sanctum)? There's a
+    side quest waiting: writing Python extensions in **Go**.
+
+    Thank you for playing **Azurath**. 🏰
+  reward:
+    xp: 500
+    item:
+      name: Crown of Azurath
+      aliases: [crown]
+      text: |
+        ```bash
+        uv export --format requirements-txt --no-dev --no-emit-project --no-hashes -o requirements.txt
+        func start                                   # local host (Azurite for storage)
+        func azure functionapp publish <app>         # deploy
+        azd up                                       # infra + code
+        ```
+
+        `DefaultAzureCredential()` · managed identity · Key Vault references → env → `Settings`
+        `logging.getLogger(__name__)` · `configure_azure_monitor()` · `.funcignore`

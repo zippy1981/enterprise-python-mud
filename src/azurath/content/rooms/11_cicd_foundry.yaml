@@ -1,0 +1,181 @@
+id: cicd_foundry
+name: The CI/CD Foundry
+order: 11
+zone: Linting, type checking & GitHub Actions
+description: |
+  Conveyor belts carry freshly-committed code through a gauntlet of glowing
+  gates: **LINT**, **FORMAT**, **TYPECHECK**, **TEST**. Anything that fails is
+  hurled into a slag heap labelled *red builds*. A forgemaster with
+  rust-coloured gloves keeps the line moving at terrifying speed.
+exits:
+  south: yaml_scriptorium
+  east: functions_docks
+npc:
+  name: Forgemaster Ruff
+  aliases: [forgemaster, ruff]
+  greeting: |
+    "You know pipelines, so I'll skip the sermon. Here's what's different in
+    Python land: the compiler isn't there to catch your mistakes, so the
+    **linter** and the **type checker** do that job, and they run in CI or they
+    don't run at all.
+
+    **ruff** is linter and formatter in one, written in Rust, and it replaced
+    about six older tools. Configure it, make your code pass it, and wire a
+    GitHub Actions workflow that runs ruff and pytest with uv on every push."
+  topics:
+    github: |
+      "Publish your workspace repo:
+
+      * With the GitHub CLI: `!gh repo create questboard --private --source . --push`
+      * Or create an empty repo on github.com, then
+        `!git remote add origin https://github.com/<you>/questboard.git` and
+        `!git push -u origin main`
+
+      Your workflow runs on the first push. Watch it in the repo's Actions tab."
+    azure devops: |
+      "Same steps in Azure Pipelines:
+      ```yaml
+      pool: { vmImage: ubuntu-latest }
+      steps:
+        - script: curl -LsSf https://astral.sh/uv/install.sh | sh
+          displayName: Install uv
+        - script: |
+            export PATH="$HOME/.local/bin:$PATH"
+            uv sync --locked
+            uv run ruff check .
+            uv run pytest --junitxml=test-results.xml
+          displayName: Lint & test
+        - task: PublishTestResults@2
+          inputs: { testResultsFiles: test-results.xml }
+          condition: succeededOrFailed()
+      ```"
+    pre-commit: |
+      "`pre-commit` runs hooks (ruff, trailing whitespace, secret scanning) before
+      each commit, configured in `.pre-commit-config.yaml`. `uvx pre-commit install`.
+      It's the client-side mirror of your CI gates."
+    dependabot: |
+      "Dependabot understands `uv.lock`. Add `.github/dependabot.yml` with
+      `package-ecosystem: uv` and you get dependency PRs, like NuGet updates
+      in Renovate or Dependabot for .NET."
+pages:
+  - title: ruff, your Roslyn analyzers
+    body: |
+      ```bash
+      uv run ruff check .          # lint (≈ analyzers + StyleCop)
+      uv run ruff check --fix .    # auto-fix what it can (imports, upgrades, ...)
+      uv run ruff format .         # format (≈ dotnet format / Black)
+      uv run ruff format --check . # CI mode: fail if anything would change
+      uv run ruff rule B006        # explain a rule (mutable default argument!)
+      ```
+
+      Configure in `pyproject.toml` (`[tool.ruff]`) or a standalone `ruff.toml`
+      (same keys, without the `tool.ruff` prefix):
+
+      ```toml
+      line-length = 100
+      target-version = "py311"
+
+      [lint]
+      # E/F: pycodestyle + pyflakes basics · I: import sorting · UP: pyupgrade
+      # B: bugbear (likely bugs) · SIM: simplifications
+      select = ["E", "F", "I", "UP", "B", "SIM"]
+      ```
+
+      In VS Code, the Ruff extension plus `"editor.formatOnSave": true` and
+      `"[python]": {"editor.defaultFormatter": "charliermarsh.ruff"}` gives you
+      format-on-save, like `dotnet format` on every keystroke.
+  - title: Type checking, the compiler you opt into
+    body: |
+      Your type hints do nothing at runtime. A type checker reads them and
+      reports errors the C# compiler would have caught:
+
+      ```bash
+      uv add --dev mypy && uv run mypy questboard     # the original
+      uvx pyright questboard                         # Microsoft's; powers Pylance in VS Code
+      ```
+
+      ```python
+      def reward_for(rank: Rank) -> int: ...
+      reward_for("S")        # mypy: Argument 1 has incompatible type "str"; expected "Rank"
+      ```
+
+      * Start lenient and ratchet up (`strict = true` in `[tool.mypy]`).
+      * `# type: ignore[code]` is your `#pragma warning disable`.
+      * Ship a `py.typed` marker file in libraries so consumers get your types.
+      * Pylance in VS Code already shows these errors as you type: set
+        `"python.analysis.typeCheckingMode": "standard"`.
+  - title: GitHub Actions with uv
+    body: |
+      ```yaml
+      name: CI
+      on:
+        push:
+          branches: [main]
+        pull_request:
+
+      jobs:
+        test:
+          runs-on: ubuntu-latest
+          strategy:
+            matrix:
+              python-version: ["3.11", "3.12"]
+          steps:
+            - uses: actions/checkout@v4
+            - uses: astral-sh/setup-uv@v6
+              with:
+                enable-cache: true
+                python-version: ${{ matrix.python-version }}
+            - run: uv sync --locked          # fail if uv.lock is stale
+            - run: uv run ruff check .
+            - run: uv run ruff format --check .
+            - run: uv run pytest -q
+      ```
+
+      * `setup-uv` installs uv and (with `python-version`) sets `UV_PYTHON`,
+        so uv downloads that interpreter. No `actions/setup-python` needed.
+      * `uv sync --locked` is your `dotnet restore --locked-mode`.
+      * Test on the Python version Azure will run, at a minimum.
+quest:
+  title: Light the Forge
+  brief: |
+    1. Configure ruff (`[tool.ruff]` in `pyproject.toml`, or a `ruff.toml`)
+    2. Make your code pass: `!uv run ruff check --fix .` then fix the rest by
+       hand, and `!uv run ruff format .`
+    3. Create **`.github/workflows/ci.yml`** that runs on push/pull_request,
+       checks out, sets up uv (`astral-sh/setup-uv`), runs `uv sync --locked`,
+       `ruff check` and `pytest`
+    4. *Optional:* push the repo to GitHub (`ask ruff about github`)
+  check: cicd_foundry
+  scaffold:
+    .github/workflows/ci.yml: ci.yml
+    ruff.toml: ruff.toml
+  hints:
+    - "`scaffold` writes a starter workflow and a `ruff.toml`. The workflow just needs its `run:` steps."
+    - "Lots of `I001` (import sorting) errors? `!uv run ruff check --fix .` sorts them for you."
+    - "`B008`/`B006`-style errors mean something real. `!uv run ruff rule B006` explains any rule."
+  solution:
+    files:
+      .github/workflows/ci.yml: ci.yml
+      ruff.toml: ruff.toml
+    commands:
+      - uv run ruff check --fix .
+      - uv run ruff format .
+  commit_message: "Add ruff config and a GitHub Actions CI workflow"
+  reward:
+    xp: 250
+    item:
+      name: Forgemaster's Hammer
+      aliases: [hammer]
+      text: |
+        ```yaml
+        - uses: actions/checkout@v4
+        - uses: astral-sh/setup-uv@v6
+          with: { enable-cache: true }
+        - run: uv sync --locked
+        - run: uv run ruff check .
+        - run: uv run ruff format --check .
+        - run: uv run pytest -q --junitxml=results.xml
+        ```
+
+        `ruff check --fix` · `ruff format` · `ruff rule X123` · `uvx pyright` · `uv run mypy pkg`
+        `# noqa: E501` (line) · `# type: ignore[arg-type]` · `gh repo create --source . --push`

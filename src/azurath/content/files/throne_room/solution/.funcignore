@@ -1,0 +1,14 @@
+# Files NOT deployed to Azure (like .dockerignore). One pattern per line.
+.git*
+.azurath
+.venv
+.vscode
+__pycache__
+.pytest_cache
+.ruff_cache
+tests
+scripts
+goext
+goquest
+local.settings.json
+.env

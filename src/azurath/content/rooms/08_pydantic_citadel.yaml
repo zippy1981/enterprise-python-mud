@@ -1,0 +1,216 @@
+id: pydantic_citadel
+name: The Pydantic Citadel
+order: 8
+zone: Data validation with pydantic
+description: |
+  A fortress gate where every visitor is searched, measured and coerced into
+  the proper shape before entry. A sign reads: **PARSE, DON'T VALIDATE**. A
+  towering construct of pure schema stands guard, its eyes glowing with
+  `ValidationError`s from the morning's rejected payloads.
+exits:
+  west: class_barracks
+  north: settings_observatory
+npc:
+  name: Validator Prime
+  aliases: [validator, prime]
+  greeting: |
+    "HALT. DECLARE YOUR TYPES.
+
+    ...Apologies. Force of habit. Dataclasses trust whatever you give them.
+    Pydantic does not. You declare a model with ordinary type hints, and
+    pydantic **parses** incoming data into it: coercing `"5"` to `5`, checking
+    constraints, and raising one detailed `ValidationError` listing everything
+    that's wrong.
+
+    Picture DataAnnotations, FluentValidation and System.Text.Json fused into one
+    library, with a core written in Rust. It's the backbone of FastAPI, of
+    pydantic-settings, and soon of your quest board."
+  topics:
+    strict: |
+      "By default pydantic is *lax*: `"5"` becomes `5` and `"true"` becomes `True`.
+      Usually that's what you want at an HTTP boundary. For strictness, use
+      `model_config = ConfigDict(strict=True)` for the whole model,
+      `Field(strict=True)` for one field, or types like `StrictInt`."
+    extra: |
+      "Unknown keys are ignored by default. `ConfigDict(extra="forbid")` rejects
+      them, which is great for catching typos in API payloads. Careful though:
+      `computed_field`s appear in `model_dump()` output, so a forbid model can't
+      re-validate its own dump unless you `exclude` them. Choose per boundary."
+    camelcase: |
+      "C#/JS clients want camelCase JSON, Python wants snake_case attributes.
+      `model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)`
+      (from `pydantic.alias_generators import to_camel`) gives you both. Dump
+      with `model_dump(by_alias=True)`."
+    typeadapter: |
+      "Validate things that aren't models: `TypeAdapter(list[Quest]).validate_python(data)`.
+      The adapter is expensive to build, so make it once at module level."
+    v1: |
+      "You'll find pydantic **v1** code online: `.dict()`, `.json()`,
+      `parse_obj()`, `@validator`, `class Config:`. v2 renamed them to
+      `model_dump()`, `model_dump_json()`, `model_validate()`, `@field_validator`
+      and `model_config = ConfigDict(...)`. Use v2."
+pages:
+  - title: "Models: types that validate"
+    body: |
+      ```python
+      from enum import StrEnum
+      from uuid import UUID, uuid4
+      from pydantic import BaseModel, Field, ValidationError
+
+
+      class Rank(StrEnum):            # an enum whose members are also strings
+          S = "S"
+          A = "A"
+          B = "B"
+          C = "C"
+
+
+      class Quest(BaseModel):
+          id: UUID = Field(default_factory=uuid4)
+          title: str = Field(min_length=3, max_length=80)
+          reward: int = Field(ge=0)               # ≥ 0, like [Range(0, int.MaxValue)]
+          rank: Rank = Rank.C
+          guilds: list[str] = Field(default_factory=list)
+
+
+      q = Quest(title="Slay the dragon", reward="500", rank="S")
+      q.reward              # 500, an int (coerced)
+      q.rank is Rank.S      # True
+
+      try:
+          Quest(title="x", reward=-1)
+      except ValidationError as exc:
+          print(exc.error_count())    # 2: every problem at once, not just the first
+          print(exc.errors()[0]["loc"], exc.errors()[0]["msg"])
+      ```
+  - title: In and out
+    body: |
+      | Direction | pydantic v2 | System.Text.Json analogue |
+      |---|---|---|
+      | dict → model | `Quest.model_validate(data)` | |
+      | JSON → model | `Quest.model_validate_json(raw)` | `JsonSerializer.Deserialize<Quest>` |
+      | model → dict | `q.model_dump()` | |
+      | model → JSON-safe dict | `q.model_dump(mode="json")` (UUID→str, enum→value) | |
+      | model → JSON | `q.model_dump_json()` | `JsonSerializer.Serialize(q)` |
+      | copy with changes | `q.model_copy(update={"reward": 1})` | `with` expression |
+      | JSON Schema | `Quest.model_json_schema()` | OpenAPI schema gen |
+
+      `model_dump(mode="json")` matters a lot in this realm: Durable Functions
+      passes activity inputs and outputs as JSON, and a raw `UUID` object can't
+      be serialized.
+
+      ```python
+      raw = q.model_dump_json()
+      again = Quest.model_validate_json(raw)
+      ```
+  - title: Validators and computed fields
+    body: |
+      ```python
+      from pydantic import computed_field, field_validator, model_validator
+      from questboard.text import parse_rank, slugify
+
+
+      class Quest(BaseModel):
+          model_config = ConfigDict(str_strip_whitespace=True)   # trims all strings
+          ...
+
+          @field_validator("rank", mode="before")   # runs BEFORE type coercion
+          @classmethod
+          def _normalise_rank(cls, value: object) -> object:
+              return parse_rank(value) if isinstance(value, str) else value
+
+          @model_validator(mode="after")             # cross-field, like IValidatableObject
+          def _s_rank_pays(self) -> "Quest":
+              if self.rank is Rank.S and self.reward < 100:
+                  raise ValueError("S-rank quests must pay at least 100 gold")
+              return self
+
+          @computed_field                            # serialised like a field
+          @property
+          def slug(self) -> str:
+              return slugify(self.title)
+      ```
+
+      Raising `ValueError` inside a validator becomes part of the
+      `ValidationError`. Reusable constraints use `Annotated`:
+      `Gold = Annotated[int, Field(ge=0)]`, then `reward: Gold` everywhere.
+  - title: Pydantic at the boundaries
+    body: |
+      **Where to use what:**
+
+      * **pydantic models** wherever untrusted data enters: HTTP bodies, queue
+        messages, files, env vars, activity inputs.
+      * **dataclasses** for internal values you construct yourself (cheaper,
+        and no surprises from coercion).
+      * Convert at the edge, then pass typed objects inward. Your domain code
+        never sees a raw `dict`.
+
+      Testing is easy: a test that constructs a bad model must raise.
+
+      ```python
+      def test_rejects_negative_reward() -> None:
+          with pytest.raises(ValidationError, match="greater than or equal"):
+              Quest(title="Rats", reward=-1)
+      ```
+quest:
+  title: Breach the Citadel
+  brief: |
+    Create **`questboard/models.py`** with a `Rank` `StrEnum` (`S A B C`) and a
+    pydantic **`Quest`** model:
+
+    | Field | Rules |
+    |---|---|
+    | `id: UUID` | defaults to a new `uuid4()` per quest |
+    | `title: str` | whitespace stripped, 3-80 characters |
+    | `reward: int` | `>= 0` |
+    | `rank: Rank` | default `C`; accepts `"s"` / `" a "` (reuse `parse_rank`!) |
+    | `guilds: list[str]` | default empty list |
+    | `slug` | a `@computed_field` using your `slugify(title)` |
+
+    Plus a model validator: **S-rank quests must pay at least 100 gold**.
+
+    And **`tests/test_models.py`** with at least one
+    `pytest.raises(ValidationError)`. All tests must pass.
+  check: pydantic_citadel
+  scaffold:
+    questboard/models.py: models.py
+    tests/test_models.py: test_models.py
+  hints:
+    - "`title: str = Field(min_length=3, max_length=80)` plus `model_config = ConfigDict(str_strip_whitespace=True)` handles trimming *before* the length check."
+    - "Unknown ranks: `parse_rank` raises `ValueError`, and inside a `mode=\"before\"` field validator that becomes a `ValidationError` for you."
+    - "`@computed_field` goes **above** `@property`. Import it from `pydantic`."
+    - "Model validators with `mode=\"after\"` receive `self` and must `return self`."
+  solution:
+    files:
+      questboard/models.py: models.py
+      tests/test_models.py: test_models.py
+  commit_message: "Add the pydantic Quest model"
+  reward:
+    xp: 300
+    item:
+      name: Shard of Prime
+      aliases: [shard]
+      text: |
+        ```python
+        class Quest(BaseModel):
+            model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+            id: UUID = Field(default_factory=uuid4)
+            title: str = Field(min_length=3)
+            reward: Annotated[int, Field(ge=0)]
+
+            @field_validator("title", mode="before")
+            @classmethod
+            def _v(cls, v): ...
+
+            @model_validator(mode="after")
+            def _cross(self) -> Self: ...; return self
+
+            @computed_field
+            @property
+            def slug(self) -> str: ...
+
+        Quest.model_validate(d) · Quest.model_validate_json(s)
+        q.model_dump(mode="json") · q.model_dump_json() · q.model_copy(update={})
+        TypeAdapter(list[Quest]).validate_python(data)
+        except ValidationError as e: e.errors()
+        ```

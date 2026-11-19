@@ -1,0 +1,184 @@
+id: gatehouse
+name: The Gatehouse
+order: 0
+zone: Orientation
+description: |
+  Torchlight flickers across a great iron gate set into walls of pale blue
+  stone. Carved above the arch: **"ALL CODE IS READ MORE THAN IT IS WRITTEN."**
+
+  A small terminal glows beside the gate, its cursor blinking patiently. A
+  stout warden with a ring of keys looks you over, clearly sizing up yet
+  another C# developer who wandered in from the land of semicolons.
+exits:
+  north: hall_of_basics
+npc:
+  name: Warden Pip
+  aliases: [pip, warden]
+  greeting: |
+    "Ho there, traveller! Another refugee from Visual Studio, eh? Don't worry,
+    the Guild takes good care of its C# folk.
+
+    Here's how it works. Every room has a **tome** (`read`) and a mentor like me
+    (`talk`, `ask`). Every room has a **quest** (`quest`), and you complete it
+    by writing real code in your **workspace**, a git repo called *questboard*.
+    When you think you're done, type `check` and the runes will judge you.
+
+    Pass, and the ward on the next door drops, you earn XP and an item (a cheat
+    sheet you can `examine` forever), and your work is **committed to git**.
+    By the end, that repo is a working Azure Functions app."
+  topics:
+    editing: |
+      "Three ways to edit, pick whichever you like:
+
+      * **VS Code**: run me in VS Code's integrated terminal and `edit hello.py`
+        opens the file in the editor beside you. `code` opens the whole workspace.
+      * **vim**: `vim hello.py` drops you into vim, then `:wq` brings you back here.
+        I'll show you a survival cheat sheet first, don't worry.
+      * **Anything else**: set `AZURATH_EDITOR` (e.g. `nano`, `code -r --wait`)."
+    shell: |
+      "Type `!` followed by any command to run it inside your workspace:
+      `!python --version`, `!git status`, `!uv add pydantic`. Once you've made a
+      virtual environment, `!` commands run with it activated, like VS Code's
+      terminal does. `shell` opens a full interactive shell; `exit` brings you back."
+    workspace: |
+      "Your workspace lives at whatever `workspace` says (default `./questboard`).
+      It's a normal git repo, so `log` shows a commit per quest. You can also run
+      `azurath check` from a second terminal while you edit."
+    python: |
+      "Python's a *strongly* but *dynamically* typed language. `1 + "1"` is an
+      error, just at runtime instead of compile time. The standard interpreter,
+      CPython, compiles your `.py` to bytecode (`.pyc` in `__pycache__/`, think
+      `obj/`) and runs it on a VM, a lot like the CLR but without a JIT by
+      default. No `dotnet build`, you just run the file."
+    stuck: |
+      "`hint` reveals hints one at a time. `scaffold` writes a starter file with
+      TODOs. And if you're truly stuck, `solution` shows the reference answer.
+      No shame in it, but try first: that's where the learning happens."
+pages:
+  - title: How this realm works
+    body: |
+      Each room teaches one topic and ends with a quest. The loop is:
+
+      1. `read` the tome (each `read` turns a page, `pages` lists them)
+      2. `talk` to the mentor and `ask <topic>` for asides
+      3. `quest` shows the task, `scaffold` drops starter files into your repo
+      4. `edit <file>` (VS Code / vim / $EDITOR) and write the code
+      5. `check`: the game runs **your** code in **your** environment and
+         grades it. Pass and it commits your work to git.
+
+      Everything you write lands in your workspace repo. `ls`, `cat`, `log`
+      and `!<any shell command>` let you poke at it without leaving the MUD.
+
+      > You know C#, PowerShell, unit testing and CI/CD. We won't re-teach
+      > those. Every page maps the Python idea onto what you already know.
+  - title: Python in one breath, for C# devs
+    body: |
+      | You know (.NET) | Python equivalent |
+      |---|---|
+      | `dotnet run` | `python app.py` |
+      | C# Interactive / `dotnet fsi` / a PowerShell prompt | `python` (the REPL) |
+      | CLR | CPython (the reference interpreter) |
+      | `obj/` | `__pycache__/` (bytecode caches, never commit them) |
+      | NuGet / nuget.org | pip / PyPI (`pypi.org`) |
+      | `.csproj` | `pyproject.toml` |
+      | `dotnet` CLI | `uv` (you'll meet it soon) |
+      | xUnit | pytest |
+
+      **Which `python`?** On Windows the `py` launcher (`py -3.12`) picks a
+      version; on macOS/Linux it's usually `python3`. Inside a virtual
+      environment it's always just `python`. Try it now: `!python --version`
+      (or `!python3 --version`).
+
+      The REPL is great for poking at things. Try `!python -c "print(2 ** 100)"`.
+      Integers never overflow, there's no `long` vs `BigInteger` distinction.
+  - title: Your first script, and `__name__`
+    body: |
+      Python runs a file top to bottom. There's no `Main` method by
+      convention, so we make one:
+
+      ```python
+      def main() -> None:
+          print("Hello, Azurath!")
+
+
+      if __name__ == "__main__":
+          main()
+      ```
+
+      Every module has a `__name__`. When you **run** a file (`python
+      hello.py`), its `__name__` is `"__main__"`. When another file
+      **imports** it (`import hello`), `__name__` is `"hello"`. The `if`
+      guard means "only call `main()` when I'm the program, not a library".
+
+      Forget the guard and every `import` runs your program as a side effect.
+      That's like a static constructor that launches the app.
+
+      Python's own conventions:
+
+      * 4-space indentation **is** the block structure. No braces.
+      * `snake_case` for functions and variables, `PascalCase` for classes,
+        `UPPER_CASE` for constants.
+      * `-> None` is a *type hint* (like `void`). Optional, but we'll use them
+        everywhere, because enterprise.
+  - title: Editing from the MUD
+    body: |
+      * `edit hello.py`: opens in VS Code if you're in its terminal, otherwise
+        `$VISUAL`/`$EDITOR`, otherwise vim.
+      * `vim hello.py`: always vim (cheat sheet shown first).
+      * `code`: open the whole workspace folder in VS Code.
+      * `cat hello.py`: syntax-highlighted view right here.
+
+      **VS Code setup** (one time): install the *Python* extension
+      (`ms-python.python`, which brings Pylance) and *Ruff* (`charliermarsh.ruff`).
+      Later, `Ctrl+Shift+P` → **Python: Select Interpreter** → your project's
+      `.venv` gives you IntelliSense for your dependencies.
+
+      **vim in 30 seconds:** `i` to type, `Esc` to stop typing, `:wq` to save
+      and quit, `:q!` to bail out without saving. That's genuinely enough.
+quest:
+  title: Hello, Azurath
+  brief: |
+    Create **`hello.py`** in your workspace:
+
+    * a function `main()` that prints exactly `Hello, Azurath!`
+    * a `if __name__ == "__main__":` guard that calls `main()`
+
+    The runes will **run** it (it must print the greeting) and **import** it
+    (it must print nothing, because the guard protects importers).
+
+    Try: `scaffold`, then `edit hello.py`, then `!python hello.py`, then `check`.
+  check: gatehouse
+  scaffold: [hello.py]
+  hints:
+    - "`print(\"Hello, Azurath!\")` does the printing. Put it inside `def main() -> None:`, indented 4 spaces."
+    - "The guard goes at the very bottom, not indented: `if __name__ == \"__main__\":` and then, indented, `main()`."
+    - "Run it yourself with `!python hello.py` (or `!python3 hello.py`). If it prints, you're there."
+  solution:
+    files: [hello.py]
+  commit_message: "Add hello.py: the first step into Azurath"
+  reward:
+    xp: 100
+    item:
+      name: Warden's Lantern
+      aliases: [lantern]
+      text: |
+        **MUD essentials**: `read` · `talk` · `quest` · `scaffold` · `edit` · `check` · `hint` · `!cmd`
+
+        **Running Python**
+
+        ```
+        python app.py            # run a script
+        python -m package        # run a module/package (more on this later)
+        python -c "print(1)"     # run a snippet
+        python                   # REPL; exit() or Ctrl+D (Ctrl+Z Enter on Windows)
+        py -3.12 app.py          # Windows launcher: pick a version
+        ```
+
+        **The main guard**
+
+        ```python
+        def main() -> None: ...
+
+        if __name__ == "__main__":
+            main()
+        ```

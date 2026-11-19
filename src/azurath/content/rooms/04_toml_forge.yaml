@@ -1,0 +1,182 @@
+id: toml_forge
+name: The TOML Forge
+order: 4
+zone: TOML & pyproject.toml
+description: |
+  Heat rolls off an anvil where a smith hammers glowing key/value pairs into
+  shape. Racks along the wall hold finished pieces, each stamped with a
+  `[table]` header. A battered `setup.py` hangs on a hook by the door, kept as
+  a warning to apprentices.
+exits:
+  south: module_library
+  north: uv_speedway
+npc:
+  name: Smith Tomasz
+  aliases: [smith, tomasz]
+  greeting: |
+    "TOML: Tom's Obvious, Minimal Language. INI with a real spec and real types.
+    You'll mostly meet it in one file, **`pyproject.toml`**, and that file is
+    your `.csproj`: name, version, target Python, dependencies, how to build,
+    and the settings for every tool (pytest, ruff, mypy) in one place.
+
+    Once upon a time Python projects used `setup.py`, an *executable* build
+    script. We don't do that any more. Write me a declarative `pyproject.toml`."
+  topics:
+    build backends: |
+      "`[build-system]` is like `<Project Sdk="Microsoft.NET.Sdk">`: it names the
+      thing that turns your source into a wheel. Common backends:
+      **hatchling** (`hatchling.build`), **setuptools** (`setuptools.build_meta`),
+      **uv_build** (`uv_build`), **flit**, **poetry-core**, **maturin** (Rust).
+      Front-ends like pip and uv call the backend through a standard interface
+      (PEP 517)."
+    tool tables: |
+      "Every tool reads its own `[tool.<name>]` table: `[tool.pytest.ini_options]`,
+      `[tool.ruff]`, `[tool.mypy]`, `[tool.uv]`, `[tool.hatch]`. Think of it as
+      `Directory.Build.props` + `.editorconfig` + `xunit.runner.json` in one file."
+    version: |
+      "Two ways to keep `__version__` and `pyproject.toml` in sync: read it at
+      runtime with `importlib.metadata.version("questboard")`, or let the build
+      backend read it from your code (`[tool.hatch.version] path = ...` with
+      `dynamic = ["version"]`). Either beats editing two files."
+    entry points: |
+      "`[project.scripts]` gives you console commands: `questboard = "questboard.__main__:main"`
+      installs a `questboard` executable into the venv's `bin/`, like a
+      `dotnet tool`'s command name."
+pages:
+  - title: TOML in five minutes
+    body: |
+      ```toml
+      # comments use a hash
+      title = "Quest Board"            # string
+      max_quests = 10                  # integer
+      ratio = 0.75                     # float
+      enabled = true                   # lowercase booleans
+      launched = 2026-11-19            # real dates!
+      guilds = ["mages", "rogues"]     # array
+      owner = { name = "Ada", id = 1 } # inline table
+
+      [database]                       # a table (≈ a JSON object / INI section)
+      host = "localhost"
+      port = 5432
+
+      [database.pool]                  # nested table: database.pool
+      size = 5
+
+      [[quests]]                       # array of tables: quests[0]
+      name = "rats"
+      [[quests]]                       # quests[1]
+      name = "dragon"
+      ```
+
+      Reading it: `tomllib` is in the stdlib (3.11+). It's read-only, so use
+      `tomli-w` to write. Note the **binary** mode:
+
+      ```python
+      import tomllib
+      with open("pyproject.toml", "rb") as f:
+          config = tomllib.load(f)
+      print(config["project"]["name"])
+      ```
+  - title: "pyproject.toml is your .csproj"
+    body: |
+      ```toml
+      [project]
+      name = "questboard"                 # <PackageId>
+      version = "0.1.0"                   # <Version>
+      description = "The Guild's quest board"
+      readme = "README.md"
+      requires-python = ">=3.11"          # ≈ <TargetFramework>
+      dependencies = [                    # ≈ <PackageReference>
+          "pyyaml>=6.0",
+      ]
+
+      [build-system]                      # ≈ <Project Sdk="...">
+      requires = ["hatchling"]
+      build-backend = "hatchling.build"
+
+      [tool.pytest.ini_options]           # tool config lives here too
+      testpaths = ["tests"]
+      pythonpath = ["."]                  # put the repo root on sys.path for tests
+      ```
+
+      | .csproj | pyproject.toml |
+      |---|---|
+      | `<PackageReference Include="X" Version="1.2.*"/>` | `dependencies = ["x>=1.2,<1.3"]` |
+      | dev-only analyzers (`PrivateAssets=all`) | `[dependency-groups] dev = [...]` (next room) |
+      | `<OutputType>Exe</OutputType>` + tool command | `[project.scripts]` |
+      | `Sdk="Microsoft.NET.Sdk"` | `[build-system]` |
+  - title: Specifiers, markers and extras
+    body: |
+      Dependencies are PEP 508 strings:
+
+      ```toml
+      dependencies = [
+          "pydantic>=2.7,<3",                          # range
+          "azure-functions",                           # any version (the lock pins it)
+          "uvloop; sys_platform != 'win32'",           # environment marker
+          "azure-identity[aio]>=1.17",                 # an *extra* (optional feature set)
+      ]
+
+      [project.optional-dependencies]                  # your own extras
+      go = ["cffi"]                                    # pip install questboard[go]
+      ```
+
+      Rule of thumb for apps: **loose ranges in pyproject, exact pins in the
+      lock file**, the same split as `PackageReference` floating versions
+      versus `packages.lock.json`.
+
+      Hatchling finds your package automatically when the folder name matches
+      the project name (`questboard/`). Other files at the root (`hello.py`,
+      `function_app.py`) don't end up in the wheel.
+quest:
+  title: Forge the pyproject
+  brief: |
+    Write **`pyproject.toml`** at the root of your workspace with:
+
+    * `[project]`: `name = "questboard"`, `version = "0.1.0"`, a `description`,
+      `requires-python` (e.g. `">=3.11"`), and a `dependencies` array (it can be
+      empty for now, or contain `"pyyaml>=6"`)
+    * `[build-system]`: `requires = ["hatchling"]`,
+      `build-backend = "hatchling.build"`
+    * `[tool.pytest.ini_options]`: `testpaths = ["tests"]` and
+      `pythonpath = ["."]` (so tests can import modules at the repo root)
+
+    The runes parse it with `tomllib`, the same way pip and uv do.
+  check: toml_forge
+  scaffold: [pyproject.toml]
+  hints:
+    - "Strings need double quotes in TOML: `name = \"questboard\"`. Arrays use square brackets: `testpaths = [\"tests\"]`."
+    - "`[tool.pytest.ini_options]` is one table header, dots and all."
+    - "Check it parses: `!python -c \"import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project'])\"`"
+  solution:
+    files: [pyproject.toml]
+  commit_message: "Add pyproject.toml"
+  reward:
+    xp: 150
+    item:
+      name: Tomasz's Tongs
+      aliases: [tongs]
+      text: |
+        ```toml
+        [project]
+        name = "questboard"
+        version = "0.1.0"
+        requires-python = ">=3.11"
+        dependencies = ["pydantic>=2.7,<3"]
+
+        [project.scripts]
+        questboard = "questboard.__main__:main"
+
+        [dependency-groups]
+        dev = ["pytest>=8"]
+
+        [build-system]
+        requires = ["hatchling"]
+        build-backend = "hatchling.build"
+
+        [tool.pytest.ini_options]
+        testpaths = ["tests"]
+        ```
+
+        `tomllib.load(open(p, "rb"))` reads TOML (stdlib, read-only).
+        `[a.b]` nested table · `[[x]]` array of tables · `{k = v}` inline table.

@@ -1,0 +1,212 @@
+id: gopher_sanctum
+name: The Gopher Sanctum
+order: 15
+optional: true
+zone: "Go extensions II: the CPython C-API"
+description: |
+  Deeper still, in a chamber lit by the glow of `Python.h`, an ancient gopher
+  sits before a stone table carved with `PyObject*`, `PyMethodDef` and
+  `PyModuleDef`. Reference counts are tallied on an abacus. A sign warns:
+  **THOU SHALT NOT CALL VARIADIC FUNCTIONS FROM CGO**.
+exits:
+  west: gopher_forge
+npc:
+  name: Elder Gopherius
+  aliases: [elder, gopherius]
+  greeting: |
+    "ctypes is a fine tool, young one. But sometimes you want the real thing:
+    a module you simply `import`, whose functions take and return Python
+    objects, and which raises proper Python exceptions.
+
+    That is a **CPython extension module**: a shared library exporting one
+    function, `PyInit_<name>`, which builds and returns a module object. People
+    usually write them in C. We'll write ours in Go, with a few lines of C glue,
+    because cgo has rules."
+  topics:
+    refcounts: |
+      "Every `PyObject*` has a reference count. Functions that return a **new
+      reference** (like `PyLong_FromLongLong`) hand you ownership, and returning
+      it from your function hands ownership to the caller, which is exactly right.
+      If you create an object you *don't* return, `Py_DECREF` it (a macro, so
+      call it through a C shim). Get this wrong and you get leaks or use-after-free."
+    gil: |
+      "Your Go function is called with the **GIL held**, so calling the C-API is
+      safe there. Never call the Python API from a *different* goroutine, since
+      Go may run it on another OS thread without the GIL. For long CPU work you
+      can release the GIL (`Py_BEGIN_ALLOW_THREADS`, via a C shim) and touch no
+      Python objects until you re-acquire it."
+    abi3: |
+      "By default an extension is tied to one Python version (`cpython-313`). With
+      the **Limited API** (`#define Py_LIMITED_API 0x030B0000`) you can build one
+      `abi3` binary that works on 3.11+, using only the stable subset of the API.
+      That's handy when you ship wheels."
+    wheels: |
+      "To ship this, build platform wheels: a hatchling build hook or setuptools
+      `build_ext` that runs `go build`, then **cibuildwheel** in CI to produce
+      `manylinux` / macOS / Windows wheels, plus `auditwheel` to vet them.
+      That's a lot of machinery, and it's exactly what maturin automates for Rust."
+    windows: |
+      "On Windows you need MinGW-w64 gcc for cgo, and the extension must link
+      against `pythonXY.lib` from your Python's `libs` folder (the build script
+      tries `-L<prefix>/libs -lpythonXY`). The output must be named
+      `_goquest.cp313-win_amd64.pyd`. It works, but it's fiddly. On Windows,
+      prefer the ctypes approach or WSL."
+pages:
+  - title: What `import` does with a native module
+    body: |
+      When you `import questboard._goquest`, Python searches the package
+      directory for `_goquest` + one of `importlib.machinery.EXTENSION_SUFFIXES`,
+      for example `_goquest.cpython-313-x86_64-linux-gnu.so`. It `dlopen`s that
+      file and calls **`PyInit__goquest()`**, which must return a module object.
+
+      ```c
+      static PyMethodDef goquest_methods[] = {
+          {"bonus", (PyCFunction)goquest_bonus, METH_VARARGS, "bonus(base, rank) -> int"},
+          {NULL, NULL, 0, NULL}                       /* sentinel */
+      };
+
+      static struct PyModuleDef goquest_module = {
+          PyModuleDef_HEAD_INIT, "_goquest", "Quest maths, written in Go.", -1, goquest_methods
+      };
+      ```
+
+      * `PyMethodDef`: name → C function pointer, plus a calling convention
+        (`METH_VARARGS` means `(self, args_tuple)`).
+      * `PyModuleDef`: the module's name, docstring and method table.
+      * The suffix encodes the Python version and platform, which is why you build
+        with the interpreter that will import it:
+        `python -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))"`
+  - title: "cgo's rules, and the C shim"
+    body: |
+      Three cgo limitations shape the design:
+
+      1. **No variadic C calls.** `PyArg_ParseTuple(args, "Ls", &base, &rank)` is
+         variadic, so wrap it in a tiny fixed-signature C function.
+      2. **Macros aren't functions.** `Py_DECREF`, `Py_RETURN_NONE` and friends
+         need C wrappers too.
+      3. **With `//export`, the Go file's preamble may only contain declarations.**
+         Definitions (the method table, the shims) go in a separate `.c` file in the
+         same folder. `go build` compiles it automatically.
+
+      ```go
+      // goquest/goquest.go
+      package main
+
+      /*
+      #define PY_SSIZE_T_CLEAN
+      #include <Python.h>
+
+      PyObject* goquest_make_module(void);                            // defined in module.c
+      int goquest_parse_bonus_args(PyObject* args, long long* base, const char** rank);
+      void goquest_raise_value_error(const char* msg);
+      */
+      import "C"
+
+      //export goquest_bonus
+      func goquest_bonus(self *C.PyObject, args *C.PyObject) *C.PyObject {
+          var base C.longlong
+          var rank *C.char
+          if C.goquest_parse_bonus_args(args, &base, &rank) == 0 {
+              return nil                       // TypeError already set by PyArg_ParseTuple
+          }
+          ...
+          return C.PyLong_FromLongLong(result) // a new reference, handed to the caller
+      }
+
+      //export PyInit__goquest
+      func PyInit__goquest() *C.PyObject { return C.goquest_make_module() }
+
+      func main() {}
+      ```
+
+      **Raising exceptions:** set the error indicator (`PyErr_SetString`) and
+      return `NULL` (`nil`). That's the C-API's version of `throw`.
+  - title: Building, and what's in a name
+    body: |
+      ```bash
+      !uv run python scripts/build_go.py goquest
+      ```
+
+      Under the hood that runs:
+
+      ```bash
+      CGO_CFLAGS="-I$(python -c 'import sysconfig; print(sysconfig.get_paths()["include"])')" \
+        go build -buildmode=c-shared -o questboard/_goquest$(python -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))') .
+      ```
+
+      * **Headers**: uv-managed Pythons include them. On Debian/Ubuntu system
+        Python, `apt install python3-dev`.
+      * **Linking**: on Linux the module does *not* link against libpython; the
+        symbols come from the interpreter that loads it. On macOS that needs
+        `-undefined dynamic_lookup`.
+      * **One Go runtime per library**: each c-shared library brings its own Go
+        runtime. Loading two (`librewards.so` *and* `_goquest`) into one process
+        works on Linux, but it's officially murky. For production, ship one Go
+        library per process.
+      * **Type stubs**: IDEs can't see inside a `.so`. A `_goquest.pyi` file
+        next to it gives Pylance and mypy the signatures, the same job as
+        reference assemblies or `.d.ts` files.
+  - title: Choosing your weapon
+    body: |
+      | | ctypes + c-shared | C-API module via cgo | PyO3 + maturin (Rust) | separate service |
+      |---|---|---|---|---|
+      | Python-version specific build | no | **yes** | optional (abi3) | no |
+      | Native exceptions & objects | no (sentinels) | yes | yes, ergonomically | n/a |
+      | Boilerplate | low | high (C shims) | low | medium |
+      | Wheel tooling | DIY | DIY + cibuildwheel | **maturin does it all** | container image |
+      | Crash takes down Python | yes | yes | yes (rarely: Rust is safe) | **no** |
+      | Call overhead | ~µs (ctypes) | ~100ns (cgo) | ~ns | ~ms (network) |
+
+      **Enterprise advice:** existing Go code with a chatty, tiny interface → ctypes.
+      Hot path, new code → Rust/PyO3. Anything big or independently deployable
+      → a service. A cgo C-API module is the most educational of the four, and
+      now you know exactly what every other option is abstracting away.
+quest:
+  title: Commune with the Elder
+  brief: |
+    1. `scaffold` (writes `goquest/` with the C glue already done, a Go file to
+       finish, a `.pyi` stub and tests)
+    2. Finish **`goquest/goquest.go`** so `questboard._goquest.bonus(base, rank)`:
+       * returns the same bonuses as the Forge (`S`=×3, `A`=×2, `B`=×1.5, `C`=×1,
+         case-insensitive)
+       * raises **`ValueError`** for unknown ranks
+       * raises **`TypeError`** for wrong argument types (PyArg_ParseTuple does this for you)
+    3. Build: `!uv run python scripts/build_go.py goquest` (and make sure git ignores the result)
+    4. Try it: `!python -c "from questboard import _goquest; print(_goquest.bonus(100, 'S'))"`
+    5. `tests/test_goquest.py` passes (and isn't skipped)
+  check: gopher_sanctum
+  scaffold:
+    goquest/go.mod: go.mod
+    goquest/module.c: module.c
+    goquest/goquest.go: goquest.go
+    questboard/_goquest.pyi: _goquest.pyi
+    tests/test_goquest.py: test_goquest.py
+    scripts/build_go.py: build_go.py
+  hints:
+    - "`Python.h: No such file or directory`? The headers are missing for the Python in `.venv`. Use a uv-managed Python (`!uv python install`, then `!uv venv --python 3.12 && uv sync`) or install `python3-dev`."
+    - "Convert the rank with `strings.ToUpper(C.GoString(rank))` and switch on it, just like in the Forge."
+    - "For an unknown rank: `msg := C.CString(\"unknown rank: \" + r)`, `defer C.free(unsafe.Pointer(msg))`, `C.goquest_raise_value_error(msg)`, `return nil`."
+  solution:
+    files:
+      goquest/go.mod: go.mod
+      goquest/module.c: module.c
+      goquest/goquest.go: goquest.go
+      questboard/_goquest.pyi: _goquest.pyi
+      tests/test_goquest.py: test_goquest.py
+    commands:
+      - uv run python scripts/build_go.py goquest
+  commit_message: "Add a CPython extension module written in Go"
+  reward:
+    xp: 450
+    item:
+      name: Elder's PyObject
+      aliases: [pyobject, elder]
+      text: |
+        * Module file: `name` + `EXT_SUFFIX` · entry point: `PyInit_<name>` returning a module
+        * `PyMethodDef[]` + `PyModuleDef` + `PyModule_Create` (in a `.c` file)
+        * cgo: no variadics, no macros, declarations-only preambles with `//export` → C shims
+        * Raise: `PyErr_SetString(PyExc_ValueError, msg); return NULL;`
+        * New references are owned by you, so return them or `Py_DECREF` them
+        * GIL is held on entry; don't touch Python from other goroutines
+        * `CGO_CFLAGS=-I<include>` · macOS `-undefined dynamic_lookup` · Windows `-lpythonXY`
+        * Ship `.pyi` stubs · abi3 via `Py_LIMITED_API` · wheels via cibuildwheel (or use maturin + Rust)

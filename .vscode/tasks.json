@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Azurath: play",
+      "detail": "Start the MUD in a dedicated terminal. `edit <file>` opens files in this window.",
+      "type": "shell",
+      "command": "uv run azurath",
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "focus": true, "reveal": "always" },
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "Azurath: check current quest",
+      "detail": "Run the current room's check without entering the game.",
+      "type": "shell",
+      "command": "uv run azurath check",
+      "problemMatcher": [],
+      "presentation": { "panel": "shared", "reveal": "always" }
+    },
+    {
+      "label": "Azurath: open my questboard repo in a new window",
+      "type": "shell",
+      "command": "code ${workspaceFolder}/questboard",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+id: testing_grounds
+name: The Testing Grounds
+order: 6
+zone: pytest
+description: |
+  A dusty parade ground ringed with straw dummies, each labelled with an edge
+  case: *empty string*, *None*, *unicode*, *off-by-one*. A drill sergeant
+  paces between them, inspecting each dummy for assertion wounds.
+exits:
+  west: uv_speedway
+  north: class_barracks
+npc:
+  name: Sergeant Fixture
+  aliases: [sergeant, fixture]
+  greeting: |
+    "At ease, recruit. You know xUnit. Good. pytest is the same idea with less
+    ceremony: no `[Fact]`, no test classes required, no `Assert.Equal`. Just
+    functions named `test_*` and a plain `assert`. When an assert fails, pytest
+    rewrites it to show you **both sides**.
+
+    You'll write tests for your text functions. And I don't trust a test I
+    haven't seen *fail*, so the runes will break your code on purpose and check
+    your tests catch it. Mutation testing, recruit."
+  topics:
+    mocking: |
+      "`unittest.mock` is in the stdlib: `Mock`, `MagicMock`, `patch`. pytest's
+      `monkeypatch` fixture is often simpler: `monkeypatch.setattr(module, "fn",
+      fake)`, `monkeypatch.setenv("X", "1")`. Both undo themselves after the
+      test. Moq habits transfer; just patch where the name is *looked up*,
+      not where it's defined."
+    coverage: |
+      "`uv add --dev pytest-cov`, then `uv run pytest --cov=questboard
+      --cov-report=term-missing --cov-report=xml`. The XML is Cobertura, which
+      Azure DevOps' PublishCodeCoverageResults task and most CI services read."
+    vscode: |
+      "VS Code's Testing panel (the beaker icon) runs pytest once you set
+      `"python.testing.pytestEnabled": true` and select your `.venv`
+      interpreter. Click-to-debug works just like Test Explorer."
+    plugins: |
+      "Plugins install like packages: `pytest-xdist` (`-n auto` for parallel
+      runs), `pytest-asyncio` (async tests), `hypothesis` (property-based, like
+      FsCheck), `pytest-randomly` (shuffle order), `pytest-mock`."
+pages:
+  - title: pytest for xUnit people
+    body: |
+      | xUnit | pytest |
+      |---|---|
+      | `[Fact] public void Adds()` | `def test_adds():` |
+      | `Assert.Equal(4, x)` | `assert x == 4` |
+      | `Assert.Throws<ArgumentException>(...)` | `with pytest.raises(ValueError, match="rank"):` |
+      | `[Theory] [InlineData(1, 2)]` | `@pytest.mark.parametrize("a,b", [(1, 2)])` |
+      | constructor / `IDisposable` | fixture with `yield` |
+      | `IClassFixture<T>` | `@pytest.fixture(scope="module")` |
+      | `[Trait("Category","Slow")]` | `@pytest.mark.slow` |
+      | `dotnet test --filter Name~Slug` | `pytest -k slug` |
+      | `[Fact(Skip="...")]` | `@pytest.mark.skip(reason="...")` |
+
+      ```python
+      import pytest
+      from questboard.text import parse_rank, slugify
+
+
+      @pytest.mark.parametrize(
+          ("raw", "expected"),
+          [("Slay the Dragon", "slay-the-dragon"), ("  x  ", "x"), ("!!!", "")],
+      )
+      def test_slugify(raw: str, expected: str) -> None:
+          assert slugify(raw) == expected
+
+
+      def test_parse_rank_rejects_garbage() -> None:
+          with pytest.raises(ValueError):
+              parse_rank("Z")
+      ```
+
+      **Discovery:** files `test_*.py` or `*_test.py`, functions `test_*`,
+      classes `Test*` (with no `__init__`). That's it.
+  - title: "Fixtures: dependency injection for tests"
+    body: |
+      A fixture is a function pytest calls for you, **injected by parameter
+      name**. The code after `yield` is the teardown, like `Dispose()`.
+
+      ```python
+      @pytest.fixture
+      def board(tmp_path):                  # fixtures can use other fixtures
+          path = tmp_path / "board.txt"     # tmp_path: a fresh temp dir per test
+          path.write_text("rats\n")
+          yield path                        # the test runs here
+          print("teardown")                 # after the test, even if it failed
+
+
+      def test_reads_board(board):
+          assert board.read_text() == "rats\n"
+      ```
+
+      * **Scopes:** `function` (default), `class`, `module`, `package`,
+        `session`. Same lifetimes as per-test vs. class vs. collection fixtures.
+      * **`conftest.py`**: fixtures defined there are visible to every test in
+        that folder and below. No imports needed.
+      * **Built-ins you'll use:** `tmp_path`, `monkeypatch`, `capsys`
+        (captured stdout), `caplog` (captured logs).
+  - title: Running tests
+    body: |
+      ```bash
+      uv run pytest                 # everything under testpaths
+      uv run pytest -q              # quiet
+      uv run pytest -x              # stop at first failure
+      uv run pytest -k "slug and not unicode"
+      uv run pytest --lf            # re-run last failures
+      uv run pytest -vv             # full diffs
+      uv run pytest --pdb           # drop into the debugger on failure
+      uv run pytest --junitxml=results.xml   # for PublishTestResults in Azure DevOps
+      uv run pytest --doctest-modules questboard   # run the >>> examples in docstrings
+      ```
+
+      Within the MUD, `!python -m pytest -q` works too: the `!` shell already
+      has your venv active.
+
+      Notice there's no `__init__.py` in `tests/`. With a pyproject-based
+      project installed into the venv (uv did that), tests just
+      `import questboard`.
+quest:
+  title: Drill the Dummies
+  brief: |
+    Write **`tests/test_text.py`** covering `questboard.text`:
+
+    * at least **4** test functions
+    * at least one `@pytest.mark.parametrize` with **3+ cases**
+    * at least one `pytest.raises(ValueError)` for `parse_rank`
+    * every test passes: `!python -m pytest -q` (or `!uv run pytest -q`)
+
+    Then the runes swap in **broken** versions of `slugify` and `parse_rank`
+    and run your tests again. Your tests must **fail** against the mutants.
+  check: testing_grounds
+  scaffold:
+    tests/test_text.py: test_text.py
+  hints:
+    - "Parametrize syntax: `@pytest.mark.parametrize((\"raw\", \"expected\"), [(...), (...), (...)])`, and the test function takes `raw, expected` as parameters."
+    - "To catch the mutant `parse_rank`, assert that something invalid like `parse_rank(\"Z\")` raises: `with pytest.raises(ValueError): parse_rank(\"Z\")`."
+    - "To catch the mutant `slugify`, test a title with spaces and punctuation, e.g. `slugify(\"Slay the Dragon!\") == \"slay-the-dragon\"`."
+  solution:
+    files:
+      tests/test_text.py: test_text.py
+  commit_message: "Add tests for questboard.text"
+  reward:
+    xp: 200
+    item:
+      name: Sergeant's Whistle
+      aliases: [whistle]
+      text: |
+        ```python
+        import pytest
+
+        @pytest.fixture
+        def thing(tmp_path):
+            yield make_thing(tmp_path)     # teardown after yield
+
+        @pytest.mark.parametrize(("a", "b"), [(1, 2), (3, 4)])
+        def test_x(a, b, thing, monkeypatch, capsys):
+            monkeypatch.setenv("KEY", "v")
+            with pytest.raises(ValueError, match="bad"):
+                ...
+            assert capsys.readouterr().out == ""
+        ```
+
+        `pytest -q -x -k expr --lf -vv --pdb --junitxml=r.xml --doctest-modules`

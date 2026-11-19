@@ -1,0 +1,7 @@
+# ruff configuration. Same keys as [tool.ruff] in pyproject.toml.
+line-length = 100
+target-version = "py311"
+
+[lint]
+# E/F: basics · I: import sorting · UP: modern syntax · B: likely bugs
+select = ["E", "F", "I", "UP", "B"]

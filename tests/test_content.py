@@ -9,10 +9,9 @@ from azurath.content import Atlas, Dungeon, RoomRef, load_atlas
 ATLAS = load_atlas()
 DUNGEONS = ATLAS.ordered()
 ROOMS = [(d, r) for d in DUNGEONS for r in d.ordered()]
-
-
-def room_id(param: object) -> str:
-    return f"{param[0].id}/{param[1].id}" if isinstance(param, tuple) else str(param)
+# pytest calls `ids` once per parameter value, not per tuple, so give the ids explicitly.
+# Otherwise each Dungeon's full repr lands in PYTEST_CURRENT_TEST, past Windows' 32K limit.
+ROOM_IDS = [f"{d.id}/{r.id}" for d, r in ROOMS]
 
 
 def reachable(dungeon: Dungeon, allowed: set[str] | None = None) -> set[str]:
@@ -70,7 +69,7 @@ def test_item_names_are_unique(dungeon: Dungeon) -> None:
     assert len(names) == len(set(names))
 
 
-@pytest.mark.parametrize(("dungeon", "room"), ROOMS, ids=room_id)
+@pytest.mark.parametrize(("dungeon", "room"), ROOMS, ids=ROOM_IDS)
 def test_room_files_exist(dungeon: Dungeon, room) -> None:
     quest = room.quest
     for kind, mapping in (("scaffold", quest.scaffold), ("solution", quest.solution.files)):
@@ -80,7 +79,7 @@ def test_room_files_exist(dungeon: Dungeon, room) -> None:
             )
 
 
-@pytest.mark.parametrize(("dungeon", "room"), ROOMS, ids=room_id)
+@pytest.mark.parametrize(("dungeon", "room"), ROOMS, ids=ROOM_IDS)
 def test_room_teaches_something(dungeon: Dungeon, room) -> None:
     assert len(room.pages) >= 3, "every room needs a real lesson"
     assert room.npc and room.npc.topics, "every room needs a mentor with topics"

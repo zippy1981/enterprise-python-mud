@@ -127,7 +127,7 @@ Optional extras, for later rooms:
 Your `questboard/` folder shows up in the Explorer. When you reach the venv rooms, select
 `questboard/.venv` as the interpreter (**Python: Select Interpreter**) for IntelliSense on your
 dependencies. You can also run **Azurath: check current quest** from a second terminal
-without leaving your editor.
+without leaving your editor.azureath
 
 ## Playing with vim (or anything else)
 
@@ -164,7 +164,7 @@ Observatory (see [`src/azurath/settings.py`](src/azurath/settings.py)). Priority
 
 ## How it works
 
-```
+```text
 src/azurath/
   cli.py            argparse entry point (azurath = "azurath.cli:main"); picks the dungeon
   game.py           the game loop and every command (registered with a decorator)

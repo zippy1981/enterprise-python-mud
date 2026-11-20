@@ -208,6 +208,7 @@ quest:
     files:
       function_app.py: function_app.py
       host.json: host.json
+      local.settings.json: local.settings.json
       tests/test_function_app.py: test_function_app.py
       .gitignore: .gitignore
     commands:

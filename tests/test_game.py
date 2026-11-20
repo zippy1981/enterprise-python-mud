@@ -176,7 +176,7 @@ def test_settings_layering(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     (tmp_path / "azurath.toml").write_text('editor = "nano"\nauto_commit = false\n')
     s = AzurathSettings()
     assert s.editor == "nano" and s.auto_commit is False
-    assert s.workspace == (tmp_path / "questboard").resolve()
+    assert s.workspace == (Path.home() / ".azurath" / "questboard").resolve()
     monkeypatch.setenv("AZURATH_EDITOR", "vim")
     assert AzurathSettings().editor == "vim"  # env beats the TOML file
     assert AzurathSettings(editor="code").editor == "code"  # init kwargs beat env

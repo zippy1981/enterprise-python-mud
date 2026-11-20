@@ -1,14 +1,17 @@
-# Azurath: the enterprise Python MUD
+# Azurath: the Python MUD
 
-A text adventure (a MUD) that teaches **enterprise Python on Azure** to developers who
-already know **C#, PowerShell, unit testing and CI/CD**.
-
-Each room teaches one topic, mapped onto what you already know from .NET, and ends with a
-quest. You complete quests by writing real code in a real git repository, **questboard**,
-which you edit in VS Code, vim or any editor. The game runs *your* code in *your* virtual
-environment to grade it. Pass, and it commits your work. By the end, questboard is a
-tested, linted, CI-gated **Azure Functions app with a Durable orchestration**, and its git
+A text adventure (a MUD) that teaches Python by having you build a real project, one quest
+at a time. Each room teaches one topic and ends with a quest, which you complete by writing
+real code in a real git repository that you edit in VS Code, vim or any editor. The game
+runs *your* code to grade it. Pass, and it commits your work, so by the end the repo's git
 history is your journey.
+
+Azurath has two **dungeons** for two very different players:
+
+| Dungeon | For | You build |
+|---|---|---|
+| **The Realm of Azurath** (`enterprise`) | professional developers who know **C#, PowerShell, unit testing and CI/CD** | `questboard`: a tested, linted, CI-gated **Azure Functions app with a Durable orchestration** |
+| **The Pythonwood** (`pythonwood`) | **13-year-olds** with grade-school coding experience (Scratch, a little Python) | `critter-quest`: a tidy, **tested** critter battle game, with a CI robot |
 
 ```
 ╭─ The Durable Sanctum  ·  Durable Functions orchestrations ──────────────────╮
@@ -22,7 +25,9 @@ Quest: Conduct the Symphony · open  (quest)
 Exits: south → The Functions Docks  ·  north → The Throne Room 🔒  ·  east → The Gopher Forge 🔒
 ```
 
-## The curriculum
+## The Realm of Azurath (`enterprise`)
+
+Every idea is mapped onto its .NET equivalent.
 
 | # | Room | You learn | You build in questboard |
 |---|------|-----------|-------------------------|
@@ -48,6 +53,31 @@ Every room has a mentor to `talk` to and `ask` about side topics (asyncio, the G
 Artifacts feeds, Key Vault, PyO3, retries, entities…), and every quest rewards an item: a
 cheat sheet you can `examine` any time.
 
+## The Pythonwood (`pythonwood`)
+
+Short, friendly lessons with animal mentors and lots of Scratch comparisons. It stresses
+**variables, functions and organizing code well**, and teaches testing and CI at a
+grade-school level: write the test first and watch it go 🔴 red, make it 🟢 green, then 🧹
+tidy. When you `check`, *Grizzle the gnome* breaks your functions on purpose, and your
+tests have to catch him. No virtual environments or packaging: the game's `python` and
+`pytest` commands just work.
+
+| # | Room | You learn | You build in critter-quest |
+|---|------|-----------|----------------------------|
+| 0 | The Trailhead | running a program, `print`, comments, reading errors | `hello.py` |
+| 1 | Variable Grove | variables as labelled jars, types, **good names**, f-strings | `critter.py` |
+| 2 | Function Falls | `def`, parameters, **return vs print**, `if`, one job per function | `actions.py` |
+| 3 | The Testing Meadow | tests with `assert` and pytest, **red → green → tidy**, edge cases | `tests/test_actions.py` + `rest()` written test-first |
+| 4 | The Tidy Treehouse | packages and imports, **named constants instead of magic numbers**, docstrings, refactoring safely | the `critters/` package |
+| 5 | The Looping Lagoon | lists, dictionaries, `for` loops, the empty-list edge case | `critters/team.py` |
+| 6 | The Robot Tower | git commits as save points, **CI as a robot that runs every test** | `.github/workflows/tests.yml` |
+| 7 | The Critter Arena | planning, `while` loops, `main()`, all the tidy-code rules together | `critters/battle.py`, `main.py` |
+
+**For parents and teachers:** a grown-up may need to help install uv and git (see Quick
+start). After that, everything happens inside the game. The CI room's optional step of
+putting the project on GitHub needs an account, and GitHub's minimum age is 13; the game
+tells players to ask a parent, guardian or teacher first.
+
 ## Quick start
 
 You need **Python 3.11+**, **git** and **[uv](https://docs.astral.sh/uv/)**.
@@ -70,9 +100,11 @@ cd enterprise-python-mud
 uv run azurath
 ```
 
-The first run creates your questboard repo in `./questboard` (it's ignored by this repo's
-git). Choose another location with `uv run azurath --workspace ~/code/questboard` or
-`AZURATH_WORKSPACE`.
+The first run asks which dungeon you want (or pass `--dungeon pythonwood` /
+`--dungeon enterprise`), then creates your project in `./questboard` or `./critter-quest`.
+Both are ignored by this repo's git. Next time, `uv run azurath` finds your save and carries
+on. Choose another location with `--workspace PATH` or `AZURATH_WORKSPACE`, and list the
+dungeons with `uv run azurath dungeons`.
 
 Optional extras, for later rooms:
 
@@ -106,15 +138,18 @@ uses vim and shows a survival cheat sheet first. `:wq` returns you to the game. 
 |---|---|
 | **Explore** | `look` · `north`/`n` … · `go <dir>` · `goto <room>` · `map` · `talk` · `ask <topic>` |
 | **Learn** | `read` / `read 3` / `read back` · `pages` · `quest` · `hint` · `check` · `scaffold` · `solution [apply]` |
-| **Code** | `edit <file>` · `vim <file>` · `code [file]` · `ls` · `cat <file>` · `!<shell command>` · `shell` · `commit` · `log` · `workspace` |
+| **Code** | `edit <file>` · `vim <file>` · `code [file]` · `ls` · `cat <file>` · `python <file>` · `pytest` · `!<shell command>` · `shell` · `commit` · `log` · `workspace` |
 | **You** | `inventory` · `examine <item>` · `status` · `save` · `quit` · `help [command]` |
 
 `!` commands run in your workspace with its `.venv` activated, so `!uv add pydantic`,
 `!python -m pytest -q` and `!git status` all do what you'd expect. The game removes its *own*
 virtualenv from `PATH` first, so nothing leaks between the two.
 
+`python <file>` and `pytest` run your code and tests with your project's interpreter (its
+`.venv` if it has one, otherwise the game's own). `pytest` reports the result as GREEN or RED.
+
 From your shell: `azurath check` (exit code 0/1), `azurath check <room>`, `azurath status`,
-`azurath rooms`.
+`azurath rooms`, `azurath dungeons`. Add `--dungeon <id>` when it can't tell which you mean.
 
 ## Configuration
 
@@ -128,16 +163,20 @@ Observatory (see [`src/azurath/settings.py`](src/azurath/settings.py)). Priority
 
 ```
 src/azurath/
-  cli.py            argparse entry point (azurath = "azurath.cli:main")
+  cli.py            argparse entry point (azurath = "azurath.cli:main"); picks the dungeon
   game.py           the game loop and every command (registered with a decorator)
-  content.py        pydantic models for rooms; loads content/rooms/*.yaml via importlib.resources
-  workspace.py      runs the player's code in subprocesses with *their* .venv; git helpers
-  checks/           one function per quest, registered with @check("room_id")
+  content.py        pydantic models: Atlas → Dungeon → Room; loads YAML via importlib.resources
+  workspace.py      runs the player's code in subprocesses with *their* interpreter; git helpers
+  checks/           the check framework (Report, the registry, shared pytest/mutation helpers)
   editor.py         VS Code / $EDITOR / vim selection
-  state.py          the save file (a pydantic model → JSON in questboard/.azurath/)
-  content/rooms/    the lessons, written in YAML + Markdown
-  content/files/    per-room scaffold (starter) and solution (reference) files
+  state.py          the save file (a pydantic model → JSON in <project>/.azurath/)
+  dungeons/
+    enterprise/     dungeon.yaml · rooms/*.yaml · files/<room>/{scaffold,solution}/ · checks/
+    pythonwood/     the same layout, for the second dungeon
 ```
+
+See [docs/dungeons.md](docs/dungeons.md) for how dungeons work, and the plan for connecting
+them to each other in future.
 
 The game's own code deliberately uses the techniques it teaches: pyproject + uv, pydantic
 models for the YAML content, pydantic-settings with a TOML source, decorator registries,
@@ -162,9 +201,10 @@ The walkthrough test is the safety net for content changes. For every room it as
 fails on an empty workspace, still fails after `scaffold`, and passes once the reference solution
 and commands are applied.
 
-To add a room: drop a YAML file in `src/azurath/content/rooms/`, put its files under
-`content/files/<room_id>/{scaffold,solution}/`, write a `@check("<room_id>")` function in
-`src/azurath/checks/`, and link it with `exits`. `tests/test_content.py` will tell you what you
+To add a room: drop a YAML file in `src/azurath/dungeons/<dungeon>/rooms/`, put its files under
+`dungeons/<dungeon>/files/<room_id>/{scaffold,solution}/`, write a `@check("<room_id>")`
+function in `dungeons/<dungeon>/checks/`, and link it with `exits`. To add a dungeon, copy
+the layout of an existing one and write a `dungeon.yaml`; the game discovers it. `tests/test_content.py` will tell you what you
 forgot.
 
 ### Working on Azurath with Claude Code

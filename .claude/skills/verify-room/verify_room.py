@@ -2,7 +2,7 @@
 
     uv run python .claude/skills/verify-room/verify_room.py <room_id> [--dungeon ID] [--keep]
 
-Builds a throwaway questboard workspace, replays the reference solution of every
+Builds a throwaway workspace for the room's dungeon, replays the reference solution of every
 earlier room on the target's path (each must pass its check and is committed, as
 in the game), then asserts three things about the target room:
 
@@ -13,7 +13,7 @@ in the game), then asserts three things about the target room:
 Exit code 0 means all three held. `--keep` leaves the workspace on disk so you can
 poke at it (cd there and run `uv run --project <repo> azurath check`).
 
-`--setup-only DIR` replays the earlier rooms into DIR/questboard, records them as
+`--setup-only DIR` replays the earlier rooms into DIR/<project>, records them as
 completed in the save file, puts the player in the target room, and stops. Then
 `cd DIR && uv run --project <repo> azurath` plays the target room for real.
 """
@@ -107,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
         "--setup-only",
         type=Path,
         metavar="DIR",
-        help="replay earlier rooms into DIR/questboard and stop, ready to play the room",
+        help="replay earlier rooms into DIR/<project folder> and stop, ready to play the room",
     )
     args = parser.parse_args(argv)
 
@@ -130,15 +130,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.setup_only:
         scratch = args.setup_only.resolve()
-        if (scratch / "questboard").exists():
-            print(f"{scratch / 'questboard'} already exists; choose an empty DIR", file=sys.stderr)
+        if (scratch / dungeon.workspace).exists():
+            print(
+                f"{scratch / dungeon.workspace} already exists; pick an empty DIR", file=sys.stderr
+            )
             return 2
         scratch.mkdir(parents=True, exist_ok=True)
         args.keep = True
     else:
         scratch = Path(tempfile.mkdtemp(prefix=f"azurath-verify-{target.id}-"))
     prepare_environment(scratch)
-    ws = Workspace(scratch / "questboard")
+    ws = Workspace(scratch / dungeon.workspace)
     ws.initialize()
     state = PlayerState.new(dungeon.id, dungeon.start, name="Playtester")
     state.save(ws.root)

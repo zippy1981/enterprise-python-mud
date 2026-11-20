@@ -29,3 +29,10 @@ intro: |
   New to MUDs? Type **`look`** to see where you are, **`read`** to study the
   tome in each room, **`talk`** to the mentor, **`quest`** for your task and
   **`check`** when you think you're done. **`help`** lists everything.
+readme: |
+  # questboard
+
+  A guild quest board service, built while playing **Azurath**, the enterprise
+  Python MUD.
+
+  Every commit in this repository is a lesson you completed.

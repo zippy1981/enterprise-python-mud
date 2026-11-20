@@ -1,6 +1,6 @@
 ---
 name: verify-room
-description: Verify one Azurath room end to end (its check fails on an empty workspace, still fails after scaffold, and passes with the reference solution) without running the whole slow walkthrough. Use after editing any room's YAML, scaffold/solution files, or its check function in src/azurath/checks/.
+description: Verify one Azurath room end to end (its check fails on an empty workspace, still fails after scaffold, and passes with the reference solution) without running the whole slow walkthrough. Use after editing any room's YAML, scaffold/solution files, or its check function in src/azurath/dungeons/<dungeon>/checks/.
 ---
 
 # Verify a room
@@ -25,8 +25,10 @@ uv run python .claude/skills/verify-room/verify_room.py <room_id> --keep   # kee
 uv run python .claude/skills/verify-room/verify_room.py <room_id> --setup-only DIR  # stop before the room, ready to play it
 ```
 
-Room ids are the YAML `id:` values (`uv run azurath rooms` lists them), e.g. `gatehouse`,
-`pydantic_citadel`, `durable_sanctum`, `gopher_forge`.
+Room ids are the YAML `id:` values (`uv run azurath rooms --dungeon <id>` lists them), e.g.
+`gatehouse`, `durable_sanctum` (enterprise) or `testing_meadow`, `critter_arena`
+(pythonwood). The script finds the dungeon from the room id. Pass `--dungeon` only if two
+dungeons ever share a room id.
 
 * Exit 0 and `VERIFIED` means all three rules hold.
 * `BROKEN` names the rule that failed and prints each ✘ criterion with its detail.

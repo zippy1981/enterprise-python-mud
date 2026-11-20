@@ -41,12 +41,11 @@ __pycache__/
 """
 
 INITIAL_README = """\
-# questboard
+# {name}
 
-A guild quest board service, built while playing **Azurath**, the enterprise
-Python MUD.
+A project built one quest at a time while playing **Azurath**, the Python MUD.
 
-Every commit in this repository is a lesson you completed.
+Every commit in this repository is a quest you completed.
 """
 
 PROBE_MARKER = "@@AZURATH@@"
@@ -273,7 +272,7 @@ class Workspace:
     def is_git_repo(self) -> bool:
         return (self.root / ".git").exists()
 
-    def initialize(self) -> list[str]:
+    def initialize(self, readme: str | None = None) -> list[str]:
         """Create the workspace folder and git repo. Returns human-readable notes."""
         notes: list[str] = []
         self.root.mkdir(parents=True, exist_ok=True)
@@ -281,7 +280,7 @@ class Workspace:
             self.write(".gitignore", INITIAL_GITIGNORE)
             notes.append("wrote .gitignore")
         if not self.exists("README.md"):
-            self.write("README.md", INITIAL_README)
+            self.write("README.md", readme or INITIAL_README.format(name=self.root.name))
             notes.append("wrote README.md")
         if self.git_available() and not self.is_git_repo():
             res = self.git("init", "-b", "main")

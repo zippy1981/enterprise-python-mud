@@ -1,0 +1,48 @@
+id: pythonwood
+name: The Pythonwood
+tagline: Your first real Python project, for curious 13-year-olds
+audience: |
+  Around age 13, with grade-school coding experience (Scratch, code.org, maybe a
+  little Python), but no professional experience. Lessons stress variables,
+  functions and keeping code tidy, and teach testing (red, green, tidy) and a
+  CI robot in kid-sized steps. Each quest adds a piece to a small critter
+  battle game.
+order: 1
+start: trailhead
+workspace: critter-quest
+ranks:
+  - [0, Seedling]
+  - [100, Sprout]
+  - [300, Sapling]
+  - [600, Trail Coder]
+  - [900, Forest Ranger]
+  - [1300, Code Druid]
+  - [1800, Guardian of the Pythonwood]
+intro: |
+  Welcome to **the Pythonwood**, a forest where code grows on trees. 🌲
+
+  If you've made things in **Scratch** or done a little coding at school,
+  you're ready. Here you'll write real **Python**, the same language used to
+  build games, websites and robots, and you'll build a project of your own: a
+  **critter battle game** called *critter-quest*.
+
+  Every room has a friendly mentor, a short lesson and a quest. Finish the
+  quest and the path to the next room opens.
+
+  The commands you'll use most:
+
+  * **`look`** to see where you are
+  * **`read`** to read the lesson (type it again to turn the page)
+  * **`talk`** to chat with the mentor
+  * **`quest`** to see your task
+  * **`check`** when you think you're done
+  * **`help`** to see every command
+
+  Don't worry about mistakes. Errors are just Python telling you what to fix.
+readme: |
+  # critter-quest
+
+  A critter battle game, built one quest at a time in **the Pythonwood**.
+
+  Every commit in this repository is a quest you completed. Type `log` in the
+  game to see them all!

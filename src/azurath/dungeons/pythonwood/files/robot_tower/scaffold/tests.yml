@@ -1,0 +1,13 @@
+# Instructions for the CI robot (GitHub Actions).
+name: Tests
+
+on: [push, pull_request] # run every time code is pushed
+
+jobs:
+  test:
+    runs-on: ubuntu-latest # a fresh Linux computer
+    steps:
+      - uses: actions/checkout@v4 # 1. download my code
+      # TODO: 2. install Python with actions/setup-python@v5
+      # TODO: 3. install pytest
+      # TODO: 4. run all the tests

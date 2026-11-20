@@ -59,7 +59,7 @@ def make_player(tmp_path: Path) -> Iterator[Callable[..., Player]]:
 
         settings = AzurathSettings(workspace=tmp_path / dungeon, auto_commit=auto_commit)
         game = Game(settings, console=console, input_fn=answer, dungeon=load_dungeon(dungeon))
-        game.ws.initialize()
+        game.ws.initialize(readme=game.dungeon.readme)
         game.save()
         return Player(game, buffer, queue)
 

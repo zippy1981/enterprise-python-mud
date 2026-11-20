@@ -84,7 +84,8 @@ def list_dungeons(console: Console, atlas: Atlas) -> None:
         label = f"[bold]{dungeon.name}[/bold]  [dim]({dungeon.id})[/dim]\n{dungeon.tagline}"
         if dungeon.id in started:
             label += "\n[green]you've started this one[/green]"
-        table.add_row(str(i), label, dungeon.audience.strip(), str(len(dungeon.rooms)))
+        audience = " ".join(dungeon.audience.split())  # drop the YAML line breaks
+        table.add_row(str(i), label, audience, str(len(dungeon.rooms)))
     console.print(table)
 
 

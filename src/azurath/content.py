@@ -168,6 +168,7 @@ class Dungeon(BaseModel):
     start: str
     workspace: str = Field(description="Default folder name for the project the player builds.")
     intro: str = ""
+    readme: str | None = Field(default=None, description="README.md for a new workspace.")
     ranks: list[tuple[int, str]] = Field(default_factory=lambda: [(0, "Adventurer")])
     rooms: dict[str, Room] = Field(default_factory=dict)
 

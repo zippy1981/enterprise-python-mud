@@ -1,6 +1,6 @@
 ---
 name: quest-breaker
-description: Adversarially tests Azurath quest checks by trying to make them pass with code that is wrong, incomplete or cheating (hard-coded outputs, skipped tests, unsafe YAML loading, non-deterministic orchestrators), and also looks for correct alternative solutions the check wrongly rejects. Use after writing or changing a check in src/azurath/checks/ to find false passes and false failures. Give it room ids. It reports exploits and does not fix the checks.
+description: Adversarially tests Azurath quest checks by trying to make them pass with code that is wrong, incomplete or cheating (hard-coded outputs, skipped tests, unsafe YAML loading, non-deterministic orchestrators), and also looks for correct alternative solutions the check wrongly rejects. Use after writing or changing a check in src/azurath/dungeons/<dungeon>/checks/ to find false passes and false failures. Give it room ids. It reports exploits and does not fix the checks.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
@@ -10,11 +10,11 @@ that rejects a valid solution teaches them nothing and makes them quit. Find bot
 
 ## Setup for each room
 
-1. Read the room's quest `brief` in `src/azurath/content/rooms/*.yaml`, its check function
-   in `src/azurath/checks/`, and its reference solution in
-   `src/azurath/content/files/<room_id>/solution/`.
+1. Read the room's quest `brief` in `src/azurath/dungeons/<dungeon>/rooms/*.yaml`, its check function
+   in `src/azurath/dungeons/<dungeon>/checks/`, and its reference solution in
+   `src/azurath/dungeons/<dungeon>/files/<room_id>/solution/`.
 2. Build a workspace with every earlier room solved, standing at the target room:
-   `uv run python .claude/skills/verify-room/verify_room.py <room_id> --setup-only "$DIR"`
+   `uv run python .claude/skills/verify-room/verify_room.py <room_id> --dungeon <id> --setup-only "$DIR"`
 3. Run the check directly while you iterate:
    `cd "$DIR" && uv run --project <repo root> azurath check` (exit 0 = pass)
 

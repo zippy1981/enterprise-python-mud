@@ -281,3 +281,60 @@ def test_editing_a_missing_quest_file_starts_from_the_scaffold(
     assert "starter template" in out
     assert "TODO" in player.game.ws.read("hello.py")
     assert "outside your workspace" in player("edit ../escape.py")
+
+
+# --- several dungeons ----------------------------------------------------------------
+
+
+def test_cli_lists_dungeons(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["--no-color", "dungeons"]) == 0
+    out = capsys.readouterr().out
+    assert "Pythonwood" in out and "Realm of Azurath" in out
+
+
+def test_cli_needs_a_dungeon_when_it_cant_tell(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["--no-color", "rooms"]) == 2
+    assert "--dungeon" in capsys.readouterr().err
+    assert main(["--no-color", "--dungeon", "nope", "rooms"]) == 2
+
+
+def test_cli_finds_the_dungeon_from_a_save_in_this_folder(
+    make_player, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from azurath.content import load_dungeon
+
+    make_player(dungeon="pythonwood")  # creates ./pythonwood with a save
+    # the default workspace for this dungeon is ./critter-quest, so point at it explicitly
+    assert main(["--no-color", "--workspace", "pythonwood", "status"]) == 0
+    assert load_dungeon("pythonwood").name in capsys.readouterr().out
+
+
+def test_a_workspace_belongs_to_one_dungeon(
+    make_player, capsys: pytest.CaptureFixture[str]
+) -> None:
+    player = make_player(dungeon="pythonwood")
+    ws = str(player.game.ws.root)
+    assert main(["--no-color", "--dungeon", "enterprise", "--workspace", ws, "status"]) == 2
+    assert "pythonwood" in capsys.readouterr().err
+
+
+def test_each_dungeon_has_its_own_start_intro_and_ranks(make_player) -> None:
+    kid = make_player(dungeon="pythonwood")
+    assert kid.game.state.room == "trailhead"
+    assert kid.game.title == "Seedling"
+    assert "Ranger Juniper" in kid("look")
+    assert "critter-quest" in kid.game.ws.read("README.md")
+
+
+def test_pytest_command_reports_red_and_green(
+    make_player, capfd: pytest.CaptureFixture[str]
+) -> None:
+    player = make_player(dungeon="pythonwood")
+    ws = player.game.ws
+    ws.write("tests/test_math.py", "def test_math():\n    assert 1 + 1 == 3\n")
+    assert "RED" in player("pytest")
+    ws.write("tests/test_math.py", "def test_math():\n    assert 1 + 1 == 2\n")
+    assert "GREEN" in player("pytest")
+    ws.write("hello.py", 'print("hi from", __name__)\n')
+    player("python hello.py")
+    assert "hi from __main__" in capfd.readouterr().out

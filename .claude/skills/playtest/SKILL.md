@@ -6,19 +6,22 @@ description: Drive the Azurath MUD non-interactively to see exactly what a playe
 # Playtest the game
 
 The game reads commands from stdin, so you can script a session by piping input. Run it
-in a scratch directory so the questboard workspace it creates is disposable.
+in a scratch directory so the project folder it creates is disposable. Pick the dungeon
+with `--dungeon` (`uv run azurath dungeons` lists them); without it, a fresh folder shows a
+menu, which takes one more line of input.
 
 ```bash
 PLAY=$(mktemp -d) && cd "$PLAY"
 printf 'y\nTester\nlook\nread\ntalk\nquest\nscaffold\ncheck\nhint\nmap\nquit\n' \
-  | COLUMNS=100 uv run --project /path/to/enterprise-python-mud azurath
+  | COLUMNS=100 uv run --project /path/to/enterprise-python-mud azurath --dungeon pythonwood
 ```
 
 * On a fresh workspace the first two answers are **"Create it now? → y"** and **your
   name**. On later runs the game greets you and goes straight to the prompt.
 * `COLUMNS=100` gives stable wrapping. Add `--no-color` for plain text, or leave colour on
   to check styling.
-* State persists in `questboard/.azurath/save.json`, so a second piped session resumes
+* State persists in `<project>/.azurath/save.json` (`questboard/` for enterprise,
+  `critter-quest/` for pythonwood), so a second piped session resumes
   where the first stopped.
 * Editors are interactive. To exercise `edit` in a script, set `EDITOR=cat` (or `true`),
   which stands in for a blocking editor.
@@ -34,7 +37,7 @@ cd "$PLAY"
 printf 'look\nread\nquest\nscaffold\ncheck\nquit\n' | COLUMNS=100 uv run --project /path/to/enterprise-python-mud azurath
 ```
 
-`$PLAY` must not already contain a `questboard/` folder.
+`$PLAY` must not already contain that dungeon's project folder.
 
 ## What to look for
 

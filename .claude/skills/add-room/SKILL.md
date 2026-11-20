@@ -1,27 +1,37 @@
 ---
 name: add-room
-description: Add a new room (lesson + quest) to the Azurath MUD, or substantially rework an existing one. Covers the room YAML schema, scaffold/solution files, writing the check function with the probe API, wiring exits, and verifying. Use whenever the task is "teach X in the game" or "add a lesson/quest/room".
+description: Add a new room (lesson + quest) to one of the Azurath MUD's dungeons, rework an existing room, or add a whole new dungeon. Covers the dungeon layout, the room YAML schema, scaffold/solution files, writing the check function with the probe API, wiring exits, and verifying. Use whenever the task is "teach X in the game" or "add a lesson/quest/room".
 ---
 
 # Add a room to Azurath
+
+Azurath has several **dungeons**, each a self-contained curriculum for one audience,
+under `src/azurath/dungeons/<dungeon>/` (see `docs/dungeons.md`). Pick the dungeon first,
+and read its `dungeon.yaml`: the `audience` field decides how you write.
 
 A room is four pieces that must agree with each other:
 
 | Piece | Location |
 |---|---|
-| Lesson, mentor, quest text | `src/azurath/content/rooms/NN_<room_id>.yaml` |
-| Starter files | `src/azurath/content/files/<room_id>/scaffold/` |
-| Reference answer | `src/azurath/content/files/<room_id>/solution/` |
-| Grader | a `@check("<room_id>")` function in `src/azurath/checks/*.py` |
+| Lesson, mentor, quest text | `src/azurath/dungeons/<dungeon>/rooms/NN_<room_id>.yaml` |
+| Starter files | `src/azurath/dungeons/<dungeon>/files/<room_id>/scaffold/` |
+| Reference answer | `src/azurath/dungeons/<dungeon>/files/<room_id>/solution/` |
+| Grader | a `@check("<room_id>")` function in `src/azurath/dungeons/<dungeon>/checks/*.py` |
 
 ## 1. Decide what the quest builds
 
-The audience already knows **C#, PowerShell, unit testing and CI/CD**. Every room adds a
-real, useful piece to the player's `questboard` repo, which is a flat-layout Azure
-Functions app (`questboard/` package + `function_app.py` at the root). Read the rooms just
-before yours (`ls src/azurath/content/rooms/`) to see what already exists: `Quest`
-(pydantic), `Settings`, `InMemoryRepository`, `Reward`, `orchestration.py`, and so on.
-Build on those; don't reinvent them.
+Every room adds a real, useful piece to the project the player is building. Read the rooms
+just before yours (`ls src/azurath/dungeons/<dungeon>/rooms/`) to see what already exists,
+and build on it; don't reinvent it.
+
+* **enterprise**: audience knows C#, PowerShell, unit testing and CI/CD. The project is
+  `questboard`, a flat-layout Azure Functions app (`questboard/` package plus
+  `function_app.py` at the root) with `Quest` (pydantic), `Settings`, `InMemoryRepository`,
+  `Reward`, `orchestration.py` and so on.
+* **pythonwood**: 13-year-olds with grade-school coding experience. The project is
+  `critter-quest`, a critter battle game with a `critters/` package (`rules.py`,
+  `actions.py`, `team.py`, `battle.py`) and `tests/`. No virtualenvs or packaging: players
+  use the game's `python` and `pytest` commands.
 
 ## 2. Write the YAML
 
@@ -65,11 +75,21 @@ quest:
       text: |
 ```
 
-**Lesson style:**
+**Lesson style (enterprise):**
 
 * Map each idea onto the C#/.NET (or PowerShell) equivalent, usually with a comparison table.
 * Show runnable code, and give PowerShell variants for shell commands.
 * Point out the traps a C# developer will fall into.
+
+**Lesson style (pythonwood):**
+
+* Short pages, short sentences, friendly animal mentors, and concrete analogies (jars,
+  recipes, save points). Compare with Scratch blocks where it helps.
+* Introduce each new word before using it. Never condescend.
+* Keep the story going: Grizzle the gnome (mutation testing) and Bolt the CI robot.
+* Online safety: anything involving accounts or sharing (GitHub) is optional, and says to
+  ask a parent, guardian or teacher.
+* Failure messages in checks must tell a 13-year-old exactly what to try next.
 * In-game commands appear in backticks (`` `!uv add x` ``). The `!` prefix runs shell
   commands in the player's workspace.
 * Verify every factual claim (library APIs, CLI flags, YAML/TOML behaviour) by actually
@@ -91,8 +111,12 @@ inside `"..."`.
 
 ## 4. Write the check
 
-Put it in the module for its topic group (`foundations`, `packaging`, `domain`, `azure`,
-`golang`) or a new module imported in `_load_all()` in `src/azurath/checks/__init__.py`.
+Checks live in `src/azurath/dungeons/<dungeon>/checks/`. Each module gets its decorator with
+`check = checks_for("<dungeon>")`, and `checks/__init__.py` imports every module (that's
+what registers them). Enterprise groups checks by topic (`foundations`, `packaging`,
+`domain`, `azure`, `golang`); pythonwood uses `quests.py`, with tidy-code helpers in
+`tidy.py` (docstrings, function length, magic numbers, names). Shared pytest and mutation
+helpers (`run_pytest`, `mutation_survives`, `stub_out`) are in `azurath.checks.testing`.
 
 ```python
 @check("my_room")
@@ -109,7 +133,7 @@ def my_room(ws: Workspace, r: Report) -> None:
     """),
         "`do_it` behaves as specified",
     )
-    run_pytest(ws, r, "tests/test_thing.py", "thing tests pass")  # from checks.packaging
+    run_pytest(ws, r, "tests/test_thing.py", "thing tests pass")  # from azurath.checks.testing
 ```
 
 Rules:
@@ -131,7 +155,21 @@ Rules:
 1. Add the reverse exit in the neighbouring room's YAML.
 2. `uv run pytest -q tests/test_content.py` checks schema, files, exits, reachability and
    item uniqueness.
-3. Use the **verify-room** skill: `uv run python .claude/skills/verify-room/verify_room.py my_room`
+3. Use the **verify-room** skill: `uv run python .claude/skills/verify-room/verify_room.py my_room --dungeon <id>`
 4. Play it once: use the **playtest** skill, or delegate to the `playtester` agent.
 5. `uv run pytest -m slow -q` for the full walkthrough, then `uv run ruff check . && uv run ruff format --check .`
 6. Add the room to the curriculum table in `README.md`.
+
+## Adding a whole dungeon
+
+1. Create `src/azurath/dungeons/<id>/` with an `__init__.py`, and copy the layout of an
+   existing dungeon (`rooms/`, `files/`, `checks/`).
+2. Write `dungeon.yaml`: `id` (must match the folder), `name`, `tagline`, `audience`,
+   `order`, `start`, `workspace` (a default project folder name that no other dungeon
+   uses), `intro`, `readme` and `ranks` (starting at 0, with the top rank reachable from
+   the main path's total XP).
+3. Create `checks/__init__.py` importing your check modules.
+4. Exits stay inside the dungeon. Cross-dungeon exits (`"other:room"`) are rejected until
+   portals are built (see `docs/dungeons.md`).
+5. `uv run pytest -q` (content tests run for every dungeon) and
+   `uv run pytest -m slow -k <id>` (plays the whole dungeon).

@@ -138,7 +138,7 @@ class Game:
                 return False
             name = self.ask("What should we call you? ") or "Adventurer"
             self.state.name = name[:40]
-            for note in self.ws.initialize():
+            for note in self.ws.initialize(readme=self.dungeon.readme):
                 self.out.info(f"  · {note}")
             if not self.ws.git_available():
                 self.out.warn("git isn't installed. You can play, but nothing will be committed.")

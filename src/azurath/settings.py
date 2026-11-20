@@ -31,9 +31,13 @@ class AzurathSettings(BaseSettings):
         extra="ignore",
     )
 
-    workspace: Path = Field(
-        default=Path("questboard"),
-        description="Folder where you build the questboard repo, relative to the current dir.",
+    dungeon: str | None = Field(
+        default=None,
+        description="Which dungeon to play. Unset = the one your workspace belongs to, or ask.",
+    )
+    workspace: Path | None = Field(
+        default=None,
+        description="Folder for the project you build. Unset = ./<the dungeon's default name>.",
     )
     editor: str | None = Field(
         default=None,
@@ -49,8 +53,8 @@ class AzurathSettings(BaseSettings):
 
     @field_validator("workspace")
     @classmethod
-    def _expand(cls, value: Path) -> Path:
-        return value.expanduser().resolve()
+    def _expand(cls, value: Path | None) -> Path | None:
+        return value.expanduser().resolve() if value is not None else None
 
     @classmethod
     def settings_customise_sources(

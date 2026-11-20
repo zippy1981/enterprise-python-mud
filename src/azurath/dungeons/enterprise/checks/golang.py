@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import shutil
 
-from azurath.checks import Report, check
+from azurath.checks import Report, checks_for
 from azurath.workspace import Workspace
+
+check = checks_for("enterprise")
 
 
 def _toolchain(ws: Workspace, r: Report) -> bool:

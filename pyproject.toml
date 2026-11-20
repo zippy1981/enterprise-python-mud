@@ -2,7 +2,7 @@
 [project]
 name = "azurath"
 version = "0.1.0"
-description = "A MUD that teaches enterprise Python on Azure to C#/PowerShell developers."
+description = "A MUD that teaches Python by having you build a real project, one quest at a time."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
@@ -12,6 +12,9 @@ dependencies = [
     "pydantic-settings>=2.6",
     "pyyaml>=6.0",
     "rich>=13.7",
+    # The game runs players' tests (and the `pytest` command) with its own interpreter
+    # when their project has no virtualenv, as in the Pythonwood dungeon.
+    "pytest>=8.0",
 ]
 
 [project.scripts]
@@ -27,7 +30,6 @@ packages = ["src/azurath"]
 
 [dependency-groups]
 dev = [
-    "pytest>=8.0",
     "ruff>=0.6",
 ]
 
@@ -41,7 +43,7 @@ markers = [
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = ["src/azurath/content/files"]
+extend-exclude = ["src/azurath/dungeons/*/files"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -49,3 +51,4 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.ruff.lint.per-file-ignores]
 # Checks embed whole probe scripts in string literals; the formatter can't wrap those.
 "src/azurath/checks/*.py" = ["E501"]
+"src/azurath/dungeons/*/checks/*.py" = ["E501"]

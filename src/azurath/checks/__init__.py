@@ -1,19 +1,31 @@
 """Quest checks: small functions that inspect the player's workspace.
 
-Each room's quest names a check (``check: venv_crypt`` in its YAML). Checks
-register themselves with the ``@check`` decorator into ``REGISTRY``, a plain
-dict. Decorator-based registration like this is everywhere in Python: pytest
-fixtures, FastAPI routes and Azure Functions triggers all work this way. The C#
-equivalent is attribute scanning with reflection, without the reflection.
+Each room's quest names a check (``check: venv_crypt`` in its YAML). Each
+dungeon keeps its checks in ``azurath/dungeons/<id>/checks/``, and they register
+themselves into ``REGISTRY``, a plain dict keyed by ``(dungeon_id, check_name)``:
+
+    check = checks_for("enterprise")
+
+    @check("venv_crypt")
+    def venv_crypt(ws: Workspace, r: Report) -> None: ...
+
+Decorator-based registration like this is everywhere in Python: pytest fixtures,
+FastAPI routes and Azure Functions triggers all work this way. The C# equivalent
+is attribute scanning with reflection, without the reflection.
 """
 
 from __future__ import annotations
 
 import ast
+import importlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from azurath.workspace import ProbeResult, Workspace
+
+if TYPE_CHECKING:
+    from azurath.content import Dungeon
 
 
 @dataclass
@@ -60,36 +72,44 @@ class Report:
 
 
 CheckFn = Callable[[Workspace, Report], None]
-REGISTRY: dict[str, CheckFn] = {}
+REGISTRY: dict[tuple[str, str], CheckFn] = {}
 
 
-def check(name: str) -> Callable[[CheckFn], CheckFn]:
-    def register(fn: CheckFn) -> CheckFn:
-        if name in REGISTRY:
-            raise ValueError(f"duplicate check {name}")
-        REGISTRY[name] = fn
-        return fn
+def checks_for(dungeon_id: str) -> Callable[[str], Callable[[CheckFn], CheckFn]]:
+    """Return a ``@check(name)`` decorator that registers checks for one dungeon."""
 
-    return register
+    def check(name: str) -> Callable[[CheckFn], CheckFn]:
+        def register(fn: CheckFn) -> CheckFn:
+            key = (dungeon_id, name)
+            if key in REGISTRY:
+                raise ValueError(f"duplicate check {dungeon_id}/{name}")
+            REGISTRY[key] = fn
+            return fn
+
+        return register
+
+    return check
 
 
-def run_check(name: str, ws: Workspace) -> Report:
-    _load_all()
+def load_checks(dungeon: Dungeon) -> None:
+    """Importing a dungeon's checks package runs its @check decorators."""
+    importlib.import_module(dungeon.checks_module)
+
+
+def run_check(dungeon: Dungeon, name: str, ws: Workspace) -> Report:
+    load_checks(dungeon)
     report = Report()
-    fn = REGISTRY.get(name)
+    fn = REGISTRY.get((dungeon.id, name))
     if fn is None:
-        report.require(False, f"check {name!r} exists", "This is a bug in the game content.")
+        report.require(
+            False, f"check {dungeon.id}/{name} exists", "This is a bug in the game content."
+        )
         return report
     try:
         fn(ws, report)
     except Exception as exc:  # a bug in a check shouldn't kill the game
         report.require(False, "the check ran", f"{type(exc).__name__}: {exc}")
     return report
-
-
-def _load_all() -> None:
-    # Importing the modules runs their @check decorators.
-    from azurath.checks import azure, domain, foundations, golang, packaging  # noqa: F401
 
 
 # --- small AST helpers shared by checks -----------------------------------------

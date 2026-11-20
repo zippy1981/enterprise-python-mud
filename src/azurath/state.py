@@ -10,22 +10,14 @@ from pydantic import BaseModel, Field, ValidationError
 SAVE_DIR = ".azurath"
 SAVE_FILE = "save.json"
 
-LEVELS: list[tuple[int, str]] = [
-    (0, "Curious Visitor"),
-    (100, "Apprentice Pythonista"),
-    (400, "Junior Pythonista"),
-    (900, "Pythonista"),
-    (1500, "Senior Pythonista"),
-    (2200, "Staff Pythonista"),
-    (3000, "Principal Pythonista"),
-    (4000, "Archmage of Azurath"),
-]
-
 
 class PlayerState(BaseModel):
     """Everything we need to resume a session."""
 
     version: int = 1
+    # Which dungeon this save (and its workspace) belongs to. Saves written before
+    # there was more than one dungeon have no field, so they default to the first.
+    dungeon: str = "enterprise"
     name: str = "Adventurer"
     room: str = "gatehouse"
     visited: list[str] = Field(default_factory=lambda: ["gatehouse"])
@@ -35,13 +27,9 @@ class PlayerState(BaseModel):
     inventory: list[str] = Field(default_factory=list)
     xp: int = 0
 
-    @property
-    def title(self) -> str:
-        current = LEVELS[0][1]
-        for threshold, name in LEVELS:
-            if self.xp >= threshold:
-                current = name
-        return current
+    @classmethod
+    def new(cls, dungeon_id: str, start_room: str, name: str = "Adventurer") -> PlayerState:
+        return cls(dungeon=dungeon_id, name=name, room=start_room, visited=[start_room])
 
     def visit(self, room_id: str) -> None:
         self.room = room_id

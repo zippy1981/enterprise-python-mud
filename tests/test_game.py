@@ -7,7 +7,7 @@ import pytest
 
 from azurath.checks import Report, run_check
 from azurath.cli import main
-from azurath.content import room_file
+from azurath.content import load_dungeon
 from azurath.editor import choose_editor
 from azurath.game import QUIT
 from azurath.settings import AzurathSettings
@@ -16,7 +16,8 @@ from azurath.workspace import Workspace
 
 
 def solve_gatehouse(ws: Workspace) -> None:
-    ws.write("hello.py", room_file("gatehouse", "solution", "hello.py").read_text())
+    source = load_dungeon("enterprise").room_file("gatehouse", "solution", "hello.py")
+    ws.write("hello.py", source.read_text(encoding="utf-8"))
 
 
 def test_new_workspace_is_a_git_repo_with_an_initial_commit(make_player) -> None:
@@ -176,7 +177,8 @@ def test_settings_layering(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     (tmp_path / "azurath.toml").write_text('editor = "nano"\nauto_commit = false\n')
     s = AzurathSettings()
     assert s.editor == "nano" and s.auto_commit is False
-    assert s.workspace == (tmp_path / "questboard").resolve()
+    assert s.workspace is None  # each dungeon picks its own default folder
+    assert AzurathSettings(workspace="here").workspace == (tmp_path / "here").resolve()
     monkeypatch.setenv("AZURATH_EDITOR", "vim")
     assert AzurathSettings().editor == "vim"  # env beats the TOML file
     assert AzurathSettings(editor="code").editor == "code"  # init kwargs beat env
@@ -194,7 +196,7 @@ def test_cli_check_exit_codes(make_player, capsys: pytest.CaptureFixture[str]) -
 
 
 def test_cli_rooms_lists_the_curriculum(capsys: pytest.CaptureFixture[str]) -> None:
-    assert main(["--no-color", "rooms"]) == 0
+    assert main(["--no-color", "--dungeon", "enterprise", "rooms"]) == 0
     assert "Durable Sanctum" in capsys.readouterr().out
 
 
@@ -235,13 +237,13 @@ def test_probe_reports_failures_and_crashes(tmp_path: Path) -> None:
 
 
 def test_unknown_check_is_reported_not_raised(tmp_path: Path) -> None:
-    report = run_check("no_such_check", Workspace(tmp_path))
+    report = run_check(load_dungeon("enterprise"), "no_such_check", Workspace(tmp_path))
     assert isinstance(report, Report) and not report.passed
 
 
 def test_checks_survive_garbage_code(make_player) -> None:
     """Every check must report (not crash) when the workspace is full of junk."""
-    from azurath.content import load_world
+    from azurath.content import load_atlas
 
     player = make_player()
     ws = player.game.ws
@@ -258,10 +260,15 @@ def test_checks_survive_garbage_code(make_player) -> None:
     ws.write("pyproject.toml", "[[[ not toml")
     ws.write("data/quests.yaml", "{ not: [yaml")
     ws.write(".github/workflows/ci.yml", ":\n  - [")
-    for room in load_world().ordered():
-        report = run_check(room.quest.check, ws)
-        assert not report.passed, room.id
-        assert all(c.description != "the check ran" for c in report.items), (room.id, report.items)
+    for dungeon in load_atlas().ordered():
+        for room in dungeon.ordered():
+            report = run_check(dungeon, room.quest.check, ws)
+            assert not report.passed, (dungeon.id, room.id)
+            assert all(c.description != "the check ran" for c in report.items), (
+                dungeon.id,
+                room.id,
+                report.items,
+            )
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="uses `true` as the editor")

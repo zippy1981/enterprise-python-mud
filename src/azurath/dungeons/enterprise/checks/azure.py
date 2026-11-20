@@ -6,9 +6,12 @@ import ast
 import json
 import re
 
-from azurath.checks import Report, calls, check, dotted
-from azurath.checks.packaging import load_pyproject, run_pytest, runtime_deps
+from azurath.checks import Report, calls, checks_for, dotted
+from azurath.checks.testing import run_pytest
+from azurath.dungeons.enterprise.checks.packaging import load_pyproject, runtime_deps
 from azurath.workspace import Workspace
+
+check = checks_for("enterprise")
 
 HTTP_PROBE = """
 import inspect, asyncio, json

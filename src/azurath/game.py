@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import difflib
+import os
+import shlex
 import shutil
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -15,7 +17,7 @@ from rich.tree import Tree
 
 from azurath import __version__
 from azurath.checks import Report, run_check
-from azurath.content import DIRECTIONS, Item, Room, World, load_world, room_file
+from azurath.content import DIRECTIONS, Dungeon, Item, Room, load_dungeon
 from azurath.editor import VIM_CHEATSHEET, choose_editor, in_vscode_terminal
 from azurath.render import Renderer
 from azurath.settings import AzurathSettings
@@ -30,22 +32,12 @@ BANNER = r"""
   / _ \  |_  / | | | '__/ _` | __| '_ \
  / ___ \  / /| |_| | | | (_| | |_| | | |
 /_/   \_\/___|\__,_|_|  \__,_|\__|_| |_|[/bold cyan]
-[dim]      the enterprise Python MUD  ·  v{version}[/dim]
+[dim]      the Python MUD  ·  v{version}[/dim]
 """
 
-INTRO = """\
-You are a seasoned **C#** developer. You have shipped services, written
-xUnit tests, tamed YAML pipelines and bent PowerShell to your will. Now the
-Guild of Azurath needs a **Python** service running on **Azure Functions**,
-and they've sent for you.
 
-As you travel the realm you'll build a real git repository, **questboard**,
-one quest at a time. Edit it in VS Code, in vim, or right here.
-
-New to MUDs? Type **`look`** to see where you are, **`read`** to study the
-tome in each room, **`talk`** to the mentor, **`quest`** for your task and
-**`check`** when you think you're done. **`help`** lists everything.
-"""
+class WrongDungeonError(Exception):
+    """The workspace's save file belongs to a different dungeon."""
 
 
 @dataclass
@@ -78,22 +70,33 @@ class Game:
         settings: AzurathSettings,
         console: Console | None = None,
         input_fn: Callable[[str], str] | None = None,
-        world: World | None = None,
+        dungeon: Dungeon | None = None,
     ) -> None:
         self.settings = settings
         self.console = console or Console(no_color=not settings.color, highlight=False)
         self.out = Renderer(self.console, settings.code_theme)
         self._input = input_fn or (lambda prompt: self.console.input(prompt))
-        self.world = world or load_world()
-        self.ws = Workspace(settings.workspace)
-        self.state = PlayerState.load(self.ws.root) or PlayerState()
-        self._new_player = not PlayerState.path_for(self.ws.root).exists()
+        self.dungeon = dungeon or load_dungeon(settings.dungeon or "enterprise")
+        root = settings.workspace or (Path.cwd() / self.dungeon.workspace)
+        self.ws = Workspace(root.resolve())
+        saved = PlayerState.load(self.ws.root)
+        if saved is not None and saved.dungeon != self.dungeon.id:
+            raise WrongDungeonError(
+                f"{self.ws.root} holds a save for the {saved.dungeon!r} dungeon, "
+                f"not {self.dungeon.id!r}. Pick a different --workspace."
+            )
+        self.state = saved or PlayerState.new(self.dungeon.id, self.dungeon.start)
+
+    @property
+    def title(self) -> str:
+        """The player's rank in this dungeon, from their XP."""
+        return self.dungeon.rank_for(self.state.xp)
 
     # --- plumbing --------------------------------------------------------------
 
     @property
     def room(self) -> Room:
-        return self.world.rooms.get(self.state.room) or self.world.rooms[self.world.start]
+        return self.dungeon.rooms.get(self.state.room) or self.dungeon.rooms[self.dungeon.start]
 
     def save(self) -> None:
         if self.ws.root.exists():
@@ -126,13 +129,14 @@ class Game:
         """Greet the player and make sure the workspace exists. False means abort."""
         self.out.say(BANNER.format(version=__version__))
         if not self.ws.root.exists() or not (self.ws.root / ".azurath").exists():
-            self.out.md(INTRO)
+            if self.dungeon.intro:
+                self.out.md(self.dungeon.intro)
             self.out.info(f"Your project will be created at: {self.ws.root}")
             self.out.info("(change it with --workspace PATH or the AZURATH_WORKSPACE env var)")
             if not self.confirm("Create it now?", default=True):
                 self.out.warn("No workspace, no quests. Farewell!")
                 return False
-            name = self.ask("What shall the Guild call you? ") or "Adventurer"
+            name = self.ask("What should we call you? ") or "Adventurer"
             self.state.name = name[:40]
             for note in self.ws.initialize():
                 self.out.info(f"  · {note}")
@@ -144,7 +148,8 @@ class Game:
                     "You're in a VS Code terminal: `edit <file>` opens files in the editor."
                 )
         else:
-            self.out.ok(f"Welcome back, {self.state.name} the {self.state.title}.")
+            name = escape(self.state.name)
+            self.out.ok(f"Welcome back to {self.dungeon.name}, {name} the {self.title}.")
         self.cmd_look("")
         return True
 
@@ -229,7 +234,7 @@ class Game:
             self.out.say(f"Quest: [bold]{room.quest.title}[/bold] · {status}  [dim](quest)[/dim]")
         exits = []
         for direction, target_id in room.exits.items():
-            target = self.world.rooms[target_id]
+            target = self.dungeon.rooms[target_id]
             lock = " 🔒" if self.exit_locked(target) else ""
             exits.append(f"[bold]{direction}[/bold] → {target.name}{lock}")
         self.out.say("Exits: " + ("  ·  ".join(exits) if exits else "none"))
@@ -247,7 +252,7 @@ class Game:
         if not target_id:
             self.out.warn(f"You can't go '{arg}' from here.")
             return
-        target = self.world.rooms[target_id]
+        target = self.dungeon.rooms[target_id]
         if self.exit_locked(target):
             self.out.warn(
                 f"A shimmering ward blocks the way to {target.name}. "
@@ -267,7 +272,7 @@ class Game:
         if not arg:
             self.cmd_map("")
             return
-        room = self.world.find_room(arg)
+        room = self.dungeon.find_room(arg)
         if not room:
             self.out.warn(f"No room matches '{arg}'. See `map`.")
         elif room.id not in self.state.visited:
@@ -278,12 +283,12 @@ class Game:
 
     @command("map", "rooms", help="Show the realm and your progress through it.")
     def cmd_map(self, arg: str) -> None:
-        table = Table(title="The Realm of Azurath", show_lines=False, header_style="bold")
+        table = Table(title=escape(self.dungeon.name), show_lines=False, header_style="bold")
         table.add_column("#", justify="right")
         table.add_column("Room")
         table.add_column("Topic")
         table.add_column("Status")
-        for room in self.world.ordered():
+        for room in self.dungeon.ordered():
             here = room.id == self.state.room
             if self.quest_done(room):
                 status = "[green]✔ complete[/green]"
@@ -404,7 +409,7 @@ class Game:
             tips.insert(0, "`scaffold` for starter files")
         self.out.say("[dim]" + " · ".join(tips) + f" · workspace: {self.ws.root}[/dim]")
 
-    @command("check", "verify", "test", help="Check your work against the quest's requirements.")
+    @command("check", "verify", help="Check your work against the quest's requirements.")
     def cmd_check(self, arg: str) -> Report | None:
         room = self.room
         quest = room.quest
@@ -412,7 +417,7 @@ class Game:
             self.out.warn("Nothing to check here.")
             return None
         with self.console.status("The runes examine your code…"):
-            report = run_check(quest.check, self.ws)
+            report = run_check(self.dungeon, quest.check, self.ws)
         self.out.report(report, f"Check: {quest.title}")
         if report.passed:
             self._complete(room, report)
@@ -426,7 +431,7 @@ class Game:
             return
         reward = quest.reward
         self.state.xp += reward.xp
-        self.out.ok(f"+{reward.xp} XP · rank: {self.state.title} ({self.state.xp} XP)")
+        self.out.ok(f"+{reward.xp} XP · rank: {self.title} ({self.state.xp} XP)")
         if reward.item and reward.item.name not in self.state.inventory:
             self.state.inventory.append(reward.item.name)
             self.out.ok(f"You receive: {reward.item.name}  (examine {reward.item.handle})")
@@ -446,9 +451,9 @@ class Game:
                         "!git config --global user.email you@example.com\n```"
                     )
         opened = [
-            self.world.rooms[t].name
+            self.dungeon.rooms[t].name
             for t in room.exits.values()
-            if self.world.rooms[t].order > room.order
+            if self.dungeon.rooms[t].order > room.order
         ]
         if opened:
             self.out.say(
@@ -486,7 +491,7 @@ class Game:
             if self.ws.exists(target):
                 self.out.info(f"  · {target} already exists, leaving it alone")
                 continue
-            content = room_file(self.room.id, "scaffold", source).read_text(encoding="utf-8")
+            content = self.dungeon.room_text(self.room.id, "scaffold", source)
             self.ws.write(target, content)
             self.out.ok(f"wrote {target}")
         first = next(iter(quest.scaffold))
@@ -510,7 +515,7 @@ class Game:
         ):
             return
         for target, source in sol.files.items():
-            text = room_file(self.room.id, "solution", source).read_text(encoding="utf-8")
+            text = self.dungeon.room_text(self.room.id, "solution", source)
             self.out.code(text, target)
         if sol.commands:
             cmds = "\n".join(sol.commands)
@@ -526,7 +531,7 @@ class Game:
             ):
                 return
             for target, source in sol.files.items():
-                text = room_file(self.room.id, "solution", source).read_text(encoding="utf-8")
+                text = self.dungeon.room_text(self.room.id, "solution", source)
                 existing = self.ws.path(target)
                 if existing.exists():
                     shutil.copy2(existing, existing.with_name(existing.name + ".bak"))
@@ -565,7 +570,7 @@ class Game:
         rel = path.relative_to(self.ws.root).as_posix()
         quest = self.room.quest
         if not path.exists() and quest and rel in quest.scaffold:
-            starter = room_file(self.room.id, "scaffold", quest.scaffold[rel])
+            starter = self.dungeon.room_file(self.room.id, "scaffold", quest.scaffold[rel])
             self.ws.write(rel, starter.read_text(encoding="utf-8"))
             self.out.info(f"(created {rel} from the quest's starter template)")
         choice = choose_editor(path, self.settings.editor, force=force)
@@ -674,6 +679,52 @@ class Game:
         elif code:
             self.out.warn(f"exit code {code}")
 
+    def _args(self, arg: str) -> list[str]:
+        try:
+            return shlex.split(arg, posix=os.name != "nt")
+        except ValueError:
+            return arg.split()
+
+    @command(
+        "python",
+        "py",
+        usage="python <file.py> [args]",
+        help="Run a Python file with your project's Python (its .venv if it has one).",
+    )
+    def cmd_python(self, arg: str) -> None:
+        args = self._args(arg)
+        if not args:
+            self.out.warn("Run which file? e.g. `python hello.py`")
+            return
+        self.out.say(f"[dim]$ python {escape(arg)}[/dim]")
+        code = self.ws.interactive([self.ws.python(), *args])
+        if code:
+            self.out.warn(f"your program stopped with exit code {code} (read the error above)")
+
+    @command(
+        "pytest",
+        "test",
+        "tests",
+        usage="pytest [args]",
+        help="Run your project's tests and say whether they're green (pass) or red (fail).",
+    )
+    def cmd_pytest(self, arg: str) -> None:
+        args = self._args(arg) or ["-q"]
+        self.out.say(f"[dim]$ pytest {escape(' '.join(args))}[/dim]")
+        code = self.ws.interactive(
+            [self.ws.python(), "-m", "pytest", "-p", "no:cacheprovider", *args]
+        )
+        if code == 0:
+            self.out.ok("GREEN: every test passed.")
+        elif code == 1:
+            self.out.warn("RED: some tests failed. Read the first failure above and fix one thing.")
+        elif code == 5:
+            self.out.warn("No tests found. Test files are named test_*.py, tests are def test_*().")
+        else:
+            self.out.error(
+                f"pytest couldn't run your tests (exit code {code}). See the error above."
+            )
+
     @command(
         "shell",
         "terminal",
@@ -682,10 +733,10 @@ class Game:
     def cmd_shell(self, arg: str) -> None:
         argv = self.ws.shell_argv(None, self.settings.shell)
         self.out.info(
-            f"Opening {Path(argv[0]).name} in {self.ws.root}. Type `exit` to return to Azurath."
+            f"Opening {Path(argv[0]).name} in {self.ws.root}. Type `exit` to return to the game."
         )
         self.ws.interactive(argv)
-        self.out.ok("Welcome back to Azurath.")
+        self.out.ok(f"Welcome back to {self.dungeon.name}.")
 
     @command("commit", usage="commit [message]", help="git add -A && git commit in your workspace.")
     def cmd_commit(self, arg: str) -> None:
@@ -723,13 +774,13 @@ class Game:
         if not self.state.inventory:
             self.out.info("Your pack is empty. Complete quests to earn items.")
             return
-        items = self.world.items()
+        items = self.dungeon.items()
         for name in self.state.inventory:
             alias = items[name].handle if name in items else name
             self.out.say(f" • [bold]{name}[/bold]  [dim](examine {alias})[/dim]")
 
     def _find_item(self, text: str) -> Item | None:
-        items = self.world.items()
+        items = self.dungeon.items()
         for name in self.state.inventory:
             item = items.get(name)
             if item and item.matches(text):
@@ -759,13 +810,13 @@ class Game:
 
     @command("status", "score", "whoami", help="Your title, XP and progress.")
     def cmd_status(self, arg: str) -> None:
-        total = sum(1 for r in self.world.ordered() if r.quest and not r.optional)
+        total = sum(1 for r in self.dungeon.ordered() if r.quest and not r.optional)
         done = sum(
-            1 for r in self.world.ordered() if r.quest and not r.optional and self.quest_done(r)
+            1 for r in self.dungeon.ordered() if r.quest and not r.optional and self.quest_done(r)
         )
-        side = [r for r in self.world.ordered() if r.optional and self.quest_done(r)]
+        side = [r for r in self.dungeon.ordered() if r.optional and self.quest_done(r)]
         self.out.md(
-            f"**{self.state.name}** the *{self.state.title}*  \n"
+            f"**{self.state.name}** the *{self.title}*  \n"
             f"XP: **{self.state.xp}** · Main quests: **{done}/{total}**"
             + (f" · Side quests: **{len(side)}**" if side else "")
             + f" · Items: **{len(self.state.inventory)}**"
@@ -792,6 +843,8 @@ class Game:
                 "code",
                 "ls",
                 "cat",
+                "python",
+                "pytest",
                 "sh",
                 "shell",
                 "commit",
@@ -819,7 +872,7 @@ class Game:
         self.save()
         self.out.ok(f"saved to {PlayerState.path_for(self.ws.root)}")
 
-    @command("quit", "exit", "q!", "bye", help="Save and leave Azurath.")
+    @command("quit", "exit", "q!", "bye", help="Save and leave the game.")
     def cmd_quit(self, arg: str) -> object:
         self.save()
         name = escape(self.state.name)

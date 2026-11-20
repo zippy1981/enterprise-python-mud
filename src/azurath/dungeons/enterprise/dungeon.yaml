@@ -1,0 +1,31 @@
+id: enterprise
+name: The Realm of Azurath
+tagline: Enterprise Python on Azure, for C# and PowerShell developers
+audience: |
+  Experienced professional developers who know C#, .NET, PowerShell, unit testing
+  and CI/CD, and are new to Python. Lessons map every idea onto its .NET
+  equivalent and build toward a production Azure Functions app.
+order: 0
+start: gatehouse
+workspace: questboard
+ranks:
+  - [0, Curious Visitor]
+  - [100, Apprentice Pythonista]
+  - [400, Junior Pythonista]
+  - [900, Pythonista]
+  - [1500, Senior Pythonista]
+  - [2200, Staff Pythonista]
+  - [3000, Principal Pythonista]
+  - [4000, Archmage of Azurath]
+intro: |
+  You are a seasoned **C#** developer. You have shipped services, written
+  xUnit tests, tamed YAML pipelines and bent PowerShell to your will. Now the
+  Guild of Azurath needs a **Python** service running on **Azure Functions**,
+  and they've sent for you.
+
+  As you travel the realm you'll build a real git repository, **questboard**,
+  one quest at a time. Edit it in VS Code, in vim, or right here.
+
+  New to MUDs? Type **`look`** to see where you are, **`read`** to study the
+  tome in each room, **`talk`** to the mentor, **`quest`** for your task and
+  **`check`** when you think you're done. **`help`** lists everything.

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import re
 
-from azurath.checks import Report, check, defined_functions, has_main_guard
+from azurath.checks import Report, checks_for, defined_functions, has_main_guard
 from azurath.workspace import Workspace
+
+check = checks_for("enterprise")
 
 BASICS_PROBE = """
 import importlib

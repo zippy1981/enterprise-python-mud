@@ -1,14 +1,26 @@
-"""World content: rooms are YAML files validated by pydantic models.
+"""Game content: dungeons of rooms, written in YAML and validated by pydantic models.
 
-The lesson text lives in ``content/rooms/*.yaml``. Starter (scaffold) and
-reference (solution) files live in ``content/files/<room_id>/``. Loading them
-through ``importlib.resources`` means it still works after the package is
-installed as a wheel, the same way you'd read an embedded resource from an
+Each dungeon is a self-contained folder (and Python package) under
+``azurath/dungeons/<dungeon_id>/``:
+
+    dungeon.yaml          name, audience, start room, ranks, intro text
+    rooms/*.yaml          one file per room (lesson, mentor, quest)
+    files/<room_id>/      scaffold/ (starter) and solution/ (reference) files
+    checks/               the @check functions that grade each quest
+
+Loading through ``importlib.resources`` means it all still works after the
+package is installed as a wheel, the way you'd read an embedded resource from an
 assembly in .NET.
+
+Dungeons don't connect to each other yet. When they do, an exit will name a room
+in another dungeon as ``"<dungeon_id>:<room_id>"``. Everything that follows an
+exit goes through ``RoomRef.parse`` and ``Atlas.resolve`` so that change lands in
+one place; today a qualified exit is rejected at load time. See docs/dungeons.md.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import cache
 from importlib import resources
 from importlib.resources.abc import Traversable
@@ -28,6 +40,25 @@ DIRECTIONS = {
     "se": "southeast",
     "sw": "southwest",
 }
+
+DEFAULT_DUNGEON = "enterprise"
+
+
+@dataclass(frozen=True)
+class RoomRef:
+    """A pointer to a room: ``room_id`` (same dungeon) or ``dungeon_id:room_id``."""
+
+    dungeon: str | None
+    room: str
+
+    @classmethod
+    def parse(cls, text: str) -> RoomRef:
+        dungeon, sep, room = text.partition(":")
+        return cls(dungeon, room) if sep else cls(None, text)
+
+    @property
+    def is_local(self) -> bool:
+        return self.dungeon is None
 
 
 class Page(BaseModel):
@@ -126,19 +157,41 @@ class Room(BaseModel):
         return {DIRECTIONS.get(k, k): v for k, v in (value or {}).items()}
 
 
-class World(BaseModel):
-    rooms: dict[str, Room]
-    start: str = "gatehouse"
+class Dungeon(BaseModel):
+    """One self-contained curriculum: its rooms, audience and progression."""
+
+    id: str
+    name: str
+    tagline: str
+    audience: str = Field(description="Who this dungeon is written for (shown when choosing).")
+    order: int = 0
+    start: str
+    workspace: str = Field(description="Default folder name for the project the player builds.")
+    intro: str = ""
+    ranks: list[tuple[int, str]] = Field(default_factory=lambda: [(0, "Adventurer")])
+    rooms: dict[str, Room] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def _check_links(self) -> World:
+    def _check_links(self) -> Dungeon:
         for room in self.rooms.values():
             for direction, target in room.exits.items():
-                if target not in self.rooms:
-                    raise ValueError(f"{room.id}: exit {direction} -> unknown room {target!r}")
+                ref = RoomRef.parse(target)
+                if not ref.is_local:
+                    raise ValueError(
+                        f"{self.id}/{room.id}: exit {direction} -> {target!r} points into another "
+                        "dungeon; cross-dungeon exits aren't supported yet (see docs/dungeons.md)"
+                    )
+                if ref.room not in self.rooms:
+                    raise ValueError(
+                        f"{self.id}/{room.id}: exit {direction} -> unknown room {target!r}"
+                    )
         if self.start not in self.rooms:
-            raise ValueError(f"start room {self.start!r} missing")
+            raise ValueError(f"{self.id}: start room {self.start!r} missing")
+        if not self.ranks or self.ranks[0][0] != 0:
+            raise ValueError(f"{self.id}: ranks must start at 0 XP")
         return self
+
+    # --- rooms -------------------------------------------------------------------
 
     def ordered(self) -> list[Room]:
         return sorted(self.rooms.values(), key=lambda r: r.order)
@@ -157,29 +210,82 @@ class World(BaseModel):
                 return room
         return None
 
+    def rank_for(self, xp: int) -> str:
+        current = self.ranks[0][1]
+        for threshold, title in self.ranks:
+            if xp >= threshold:
+                current = title
+        return current
 
-def content_root() -> Traversable:
-    return resources.files("azurath") / "content"
+    # --- files -------------------------------------------------------------------
+
+    def root(self) -> Traversable:
+        return resources.files("azurath") / "dungeons" / self.id
+
+    def room_file(self, room_id: str, kind: str, name: str) -> Traversable:
+        """Locate ``files/<room>/<kind>/<name>`` (kind is ``scaffold`` or ``solution``)."""
+        return self.root() / "files" / room_id / kind / name
+
+    def room_text(self, room_id: str, kind: str, name: str) -> str:
+        return self.room_file(room_id, kind, name).read_text(encoding="utf-8")
+
+    @property
+    def checks_module(self) -> str:
+        """The package whose import registers this dungeon's @check functions."""
+        return f"azurath.dungeons.{self.id}.checks"
 
 
-def _rooms_dir() -> Traversable:
-    return content_root() / "rooms"
+class Atlas(BaseModel):
+    """Every dungeon the game knows about."""
+
+    dungeons: dict[str, Dungeon]
+
+    def ordered(self) -> list[Dungeon]:
+        return sorted(self.dungeons.values(), key=lambda d: (d.order, d.id))
+
+    def get(self, dungeon_id: str) -> Dungeon:
+        try:
+            return self.dungeons[dungeon_id]
+        except KeyError:
+            known = ", ".join(self.dungeons)
+            raise KeyError(f"unknown dungeon {dungeon_id!r} (known: {known})") from None
+
+    def resolve(self, current: Dungeon, target: str) -> tuple[Dungeon, Room]:
+        """Follow an exit. Today only local refs exist; portals will resolve here later."""
+        ref = RoomRef.parse(target)
+        dungeon = current if ref.is_local else self.get(ref.dungeon or "")
+        return dungeon, dungeon.rooms[ref.room]
+
+
+def _dungeons_dir() -> Traversable:
+    return resources.files("azurath") / "dungeons"
+
+
+def _load_dungeon(folder: Traversable) -> Dungeon:
+    meta = yaml.safe_load((folder / "dungeon.yaml").read_text(encoding="utf-8"))
+    rooms: dict[str, Room] = {}
+    for entry in sorted((folder / "rooms").iterdir(), key=lambda t: t.name):
+        if not entry.name.endswith((".yaml", ".yml")):
+            continue
+        room = Room.model_validate(yaml.safe_load(entry.read_text(encoding="utf-8")))
+        if room.id in rooms:
+            raise ValueError(f"{meta.get('id')}: duplicate room id {room.id}")
+        rooms[room.id] = room
+    dungeon = Dungeon.model_validate({**meta, "rooms": rooms})
+    if dungeon.id != folder.name:
+        raise ValueError(f"dungeon folder {folder.name!r} declares id {dungeon.id!r}")
+    return dungeon
 
 
 @cache
-def load_world() -> World:
-    rooms: dict[str, Room] = {}
-    for entry in sorted(_rooms_dir().iterdir(), key=lambda t: t.name):
-        if not entry.name.endswith((".yaml", ".yml")):
-            continue
-        data = yaml.safe_load(entry.read_text(encoding="utf-8"))
-        room = Room.model_validate(data)
-        if room.id in rooms:
-            raise ValueError(f"duplicate room id {room.id}")
-        rooms[room.id] = room
-    return World(rooms=rooms)
+def load_atlas() -> Atlas:
+    dungeons: dict[str, Dungeon] = {}
+    for folder in sorted(_dungeons_dir().iterdir(), key=lambda t: t.name):
+        if folder.is_dir() and (folder / "dungeon.yaml").is_file():
+            dungeon = _load_dungeon(folder)
+            dungeons[dungeon.id] = dungeon
+    return Atlas(dungeons=dungeons)
 
 
-def room_file(room_id: str, kind: str, name: str) -> Traversable:
-    """Locate ``content/files/<room>/<kind>/<name>`` (kind is scaffold or solution)."""
-    return content_root() / "files" / room_id / kind / name
+def load_dungeon(dungeon_id: str = DEFAULT_DUNGEON) -> Dungeon:
+    return load_atlas().get(dungeon_id)

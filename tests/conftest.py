@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from rich.console import Console
 
+from azurath.content import load_dungeon
 from azurath.game import Game
 from azurath.settings import AzurathSettings
 
@@ -46,7 +47,9 @@ class Player:
 
 @pytest.fixture
 def make_player(tmp_path: Path) -> Iterator[Callable[..., Player]]:
-    def factory(auto_commit: bool = True, answers: list[str] | None = None) -> Player:
+    def factory(
+        auto_commit: bool = True, answers: list[str] | None = None, dungeon: str = "enterprise"
+    ) -> Player:
         buffer = io.StringIO()
         console = Console(file=buffer, width=140, color_system=None, force_terminal=False)
         queue = list(answers or [])
@@ -54,8 +57,8 @@ def make_player(tmp_path: Path) -> Iterator[Callable[..., Player]]:
         def answer(prompt: str) -> str:
             return queue.pop(0) if queue else "y"
 
-        settings = AzurathSettings(workspace=tmp_path / "questboard", auto_commit=auto_commit)
-        game = Game(settings, console=console, input_fn=answer)
+        settings = AzurathSettings(workspace=tmp_path / dungeon, auto_commit=auto_commit)
+        game = Game(settings, console=console, input_fn=answer, dungeon=load_dungeon(dungeon))
         game.ws.initialize()
         game.save()
         return Player(game, buffer, queue)

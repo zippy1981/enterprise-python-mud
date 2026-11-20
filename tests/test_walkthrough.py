@@ -7,8 +7,9 @@ For every room, in curriculum order, this checks that:
 3. it PASSES after applying the room's reference solution and commands,
 4. completing it commits to git and unlocks the next room.
 
-It needs network access (uv installs packages), and Go plus a C compiler for
-the optional Gopher rooms. Run it with:  uv run pytest -m slow
+Every dungeon is played. The enterprise dungeon needs network access (uv installs
+packages), and Go plus a C compiler for its optional Gopher rooms.
+Run it with:  uv run pytest -m slow
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ import subprocess
 import pytest
 
 from azurath.checks import run_check
-from azurath.content import load_world, room_file
+from azurath.content import load_atlas
 
 pytestmark = [
     pytest.mark.slow,
@@ -38,26 +39,27 @@ def _failures(report) -> str:
     )
 
 
-def test_full_walkthrough(make_player, python_on_path) -> None:
-    player = make_player()
+@pytest.mark.parametrize("dungeon", load_atlas().ordered(), ids=lambda d: d.id)
+def test_full_walkthrough(dungeon, make_player, python_on_path) -> None:
+    player = make_player(dungeon=dungeon.id)
     game, ws = player.game, player.game.ws
-    rooms = [r for r in load_world().ordered() if HAVE_GO or not r.id.startswith("gopher")]
+    rooms = [r for r in dungeon.ordered() if HAVE_GO or not r.id.startswith("gopher")]
 
     for room in rooms:
         quest = room.quest
         assert quest is not None
         game.state.visit(room.id)
 
-        before = run_check(quest.check, ws)
+        before = run_check(dungeon, quest.check, ws)
         assert not before.passed, f"{room.id}: check passed before any work was done"
 
         if quest.scaffold:
             player("scaffold")
-            scaffolded = run_check(quest.check, ws)
+            scaffolded = run_check(dungeon, quest.check, ws)
             assert not scaffolded.passed, f"{room.id}: the scaffold alone passes the check"
 
         for target, source in quest.solution.files.items():
-            ws.write(target, room_file(room.id, "solution", source).read_text(encoding="utf-8"))
+            ws.write(target, dungeon.room_text(room.id, "solution", source))
         for command in quest.solution.commands:
             proc = subprocess.run(
                 command,
@@ -80,4 +82,4 @@ def test_full_walkthrough(make_player, python_on_path) -> None:
     assert len(log) == len(rooms) + 1, log  # one commit per quest + the initial commit
     assert ws.git("status", "--porcelain").stdout.strip() == ""
     if HAVE_GO:
-        assert game.state.title == "Archmage of Azurath"
+        assert game.title == dungeon.ranks[-1][1], "finishing everything earns the top rank"

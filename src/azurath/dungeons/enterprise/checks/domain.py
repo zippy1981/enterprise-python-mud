@@ -7,9 +7,11 @@ import re
 
 import yaml
 
-from azurath.checks import Report, calls, check, decorator_names, defined_functions
-from azurath.checks.packaging import run_pytest
+from azurath.checks import Report, calls, checks_for, decorator_names, defined_functions
+from azurath.checks.testing import run_pytest
 from azurath.workspace import Workspace
+
+check = checks_for("enterprise")
 
 
 def _uses_fixture(tree: ast.Module) -> bool:

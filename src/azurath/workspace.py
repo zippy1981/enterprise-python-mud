@@ -35,7 +35,7 @@ INITIAL_GITIGNORE = """\
 # Azurath keeps your save game here. It is not part of your project.
 .azurath/
 
-# Python bytecode caches (like bin/ and obj/ in .NET)
+# Python's caches of compiled code (it can always rebuild them)
 __pycache__/
 *.py[cod]
 """
@@ -173,6 +173,35 @@ class Workspace:
                 full = Path(dirpath) / name
                 out.append(full.relative_to(self.root).as_posix())
         return out
+
+    def enclosing_project(self) -> Path | None:
+        """The nearest folder *above* the workspace that has a pyproject.toml, if any.
+
+        uv treats a project inside another project as a possible workspace member,
+        so ``uv init`` here would edit that outer pyproject.toml.
+        """
+        for parent in self.root.parents:
+            if (parent / "pyproject.toml").is_file():
+                return parent
+        return None
+
+    def joined_uv_workspace(self) -> Path | None:
+        """The outer pyproject.toml that lists this workspace as a uv workspace member."""
+        import tomllib
+
+        for parent in self.root.parents:
+            pyproject = parent / "pyproject.toml"
+            if not pyproject.is_file():
+                continue
+            try:
+                data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+            except (tomllib.TOMLDecodeError, OSError):
+                continue
+            members = data.get("tool", {}).get("uv", {}).get("workspace", {}).get("members", [])
+            rel = self.root.relative_to(parent).as_posix()
+            if any(m == rel or Path(parent, m).resolve() == self.root for m in members):
+                return pyproject
+        return None
 
     def gitignore_patterns(self) -> list[str]:
         text = self.read(".gitignore") or ""

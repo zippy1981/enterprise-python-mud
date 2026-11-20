@@ -59,8 +59,10 @@ Short, friendly lessons with animal mentors and lots of Scratch comparisons. It 
 **variables, functions and organizing code well**, and teaches testing and CI at a
 grade-school level: write the test first and watch it go 🔴 red, make it 🟢 green, then 🧹
 tidy. When you `check`, *Grizzle the gnome* breaks your functions on purpose, and your
-tests have to catch him. No virtual environments or packaging: the game's `python` and
-`pytest` commands just work.
+tests have to catch him. For the first five rooms there's nothing to install: the game's
+`python` and `pytest` commands just work. Then the Backpack Burrow introduces **packages,
+virtual environments and uv**: the project gets its own `.venv` "backpack", and from then
+on the game's commands (and the CI robot) use it.
 
 | # | Room | You learn | You build in critter-quest |
 |---|------|-----------|----------------------------|
@@ -69,9 +71,10 @@ tests have to catch him. No virtual environments or packaging: the game's `pytho
 | 2 | Function Falls | `def`, parameters, **return vs print**, `if`, one job per function | `actions.py` |
 | 3 | The Testing Meadow | tests with `assert` and pytest, **red → green → tidy**, edge cases | `tests/test_actions.py` + `rest()` written test-first |
 | 4 | The Tidy Treehouse | packages and imports, **named constants instead of magic numbers**, docstrings, refactoring safely | the `critters/` package |
-| 5 | The Looping Lagoon | lists, dictionaries, `for` loops, the empty-list edge case | `critters/team.py` |
-| 6 | The Robot Tower | git commits as save points, **CI as a robot that runs every test** | `.github/workflows/tests.yml` |
-| 7 | The Critter Arena | planning, `while` loops, `main()`, all the tidy-code rules together | `critters/battle.py`, `main.py` |
+| 5 | The Backpack Burrow | **packages** (code you can borrow from PyPI), **virtual environments** as a project's own backpack, **uv** (`init`, `add`, `add --dev`, `run`, `sync`), the packing list and the receipt | `pyproject.toml`, `uv.lock`, `.venv`, `fun.py` |
+| 6 | The Looping Lagoon | lists, dictionaries, `for` loops, the empty-list edge case | `critters/team.py` |
+| 7 | The Robot Tower | git commits as save points, **CI as a robot that runs every test** (with uv) | `.github/workflows/tests.yml` |
+| 8 | The Critter Arena | planning, `while` loops, `main()`, all the tidy-code rules together | `critters/battle.py`, `main.py` |
 
 **For parents and teachers:** a grown-up may need to help install uv and git (see Quick
 start). After that, everything happens inside the game. The CI room's optional step of

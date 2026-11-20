@@ -9,7 +9,7 @@ description: |
   crooked label for the third time.
 exits:
   east: testing_meadow
-  north: looping_lagoon
+  north: backpack_burrow
 npc:
   name: Marigold the Magpie
   aliases: [marigold, magpie]

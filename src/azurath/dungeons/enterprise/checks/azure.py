@@ -7,8 +7,8 @@ import json
 import re
 
 from azurath.checks import Report, calls, checks_for, dotted
+from azurath.checks.pyproject import load_pyproject, runtime_deps
 from azurath.checks.testing import run_pytest
-from azurath.dungeons.enterprise.checks.packaging import load_pyproject, runtime_deps
 from azurath.workspace import Workspace
 
 check = checks_for("enterprise")

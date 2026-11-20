@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import re
 import shutil
-import tomllib
 from typing import Any
 
 import yaml
 
 from azurath.checks import Report, calls, checks_for
+from azurath.checks.pyproject import dev_deps, load_pyproject, normalize, runtime_deps
 from azurath.checks.testing import (
     mutation_survives,
     parametrize_case_counts,
@@ -19,55 +19,6 @@ from azurath.checks.testing import (
 from azurath.workspace import Workspace
 
 check = checks_for("enterprise")
-
-_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
-
-
-def normalize(name: str) -> str:
-    return re.sub(r"[-_.]+", "-", name).lower()
-
-
-def requirement_names(reqs: list[Any]) -> set[str]:
-    names = set()
-    for req in reqs:
-        if isinstance(req, str) and (m := _NAME.match(req)):
-            names.add(normalize(m.group(1)))
-    return names
-
-
-def load_pyproject(ws: Workspace, r: Report | None = None) -> dict[str, Any] | None:
-    text = ws.read("pyproject.toml")
-    if text is None:
-        if r:
-            r.require(False, "`pyproject.toml` exists", "Back to the TOML Forge with you.")
-        return None
-    try:
-        data = tomllib.loads(text)
-    except tomllib.TOMLDecodeError as exc:
-        if r:
-            r.require(False, "`pyproject.toml` is valid TOML", str(exc))
-        return None
-    if r:
-        r.require(True, "`pyproject.toml` is valid TOML")
-    return data
-
-
-def runtime_deps(pyproject: dict[str, Any]) -> set[str]:
-    return requirement_names(pyproject.get("project", {}).get("dependencies", []) or [])
-
-
-def dev_deps(pyproject: dict[str, Any]) -> set[str]:
-    found: set[str] = set()
-    groups = pyproject.get("dependency-groups", {}) or {}
-    for name in ("dev", "test", "lint"):
-        found |= requirement_names(groups.get(name, []) or [])
-    found |= requirement_names(
-        pyproject.get("tool", {}).get("uv", {}).get("dev-dependencies", []) or []
-    )
-    found |= requirement_names(
-        pyproject.get("project", {}).get("optional-dependencies", {}).get("dev", []) or []
-    )
-    return found
 
 
 @check("toml_forge")

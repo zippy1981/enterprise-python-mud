@@ -13,7 +13,7 @@ dependencies = [
     "pyyaml>=6.0",
     "rich>=13.7",
     # The game runs players' tests (and the `pytest` command) with its own interpreter
-    # when their project has no virtualenv, as in the Pythonwood dungeon.
+    # until their project has a virtualenv (the Pythonwood's first five rooms).
     "pytest>=8.0",
 ]
 

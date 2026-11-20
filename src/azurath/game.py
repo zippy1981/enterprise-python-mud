@@ -671,6 +671,8 @@ class Game:
         if not arg:
             self.out.warn("Run what? e.g. `!uv --version` or `!pytest -q`")
             return
+        if self._unsafe_uv_init(arg):
+            return
         argv = self.ws.shell_argv(arg, self.settings.shell)
         self.out.say(f"[dim]$ {arg}[/dim]")
         code = self.ws.interactive(argv)
@@ -678,6 +680,27 @@ class Game:
             self.out.error("command not found")
         elif code:
             self.out.warn(f"exit code {code}")
+
+    def _unsafe_uv_init(self, command: str) -> bool:
+        """Refuse `uv init` that would join this project to an enclosing one."""
+        words = self._args(command)
+        if words[:2] != ["uv", "init"] or "--no-workspace" in words:
+            return False
+        outer = self.ws.enclosing_project()
+        if outer is None:
+            return False
+        self.out.warn(
+            f"Careful! Your project is inside another project ({outer}). Plain `uv init` "
+            "would change that project's pyproject.toml and put your packages in ITS "
+            "virtual environment. Add `--no-workspace` to keep your project separate:"
+        )
+        self.out.say(f"[bold]  !{escape(command)} --no-workspace[/bold]")
+        return True
+
+    def _which_python(self) -> str:
+        if self.ws.venv_python():
+            return "using your project's .venv"
+        return "using the game's Python; your project has no .venv yet"
 
     def _args(self, arg: str) -> list[str]:
         try:
@@ -696,7 +719,7 @@ class Game:
         if not args:
             self.out.warn("Run which file? e.g. `python hello.py`")
             return
-        self.out.say(f"[dim]$ python {escape(arg)}[/dim]")
+        self.out.say(f"[dim]$ python {escape(arg)}   ({self._which_python()})[/dim]")
         code = self.ws.interactive([self.ws.python(), *args])
         if code:
             self.out.warn(f"your program stopped with exit code {code} (read the error above)")
@@ -710,7 +733,7 @@ class Game:
     )
     def cmd_pytest(self, arg: str) -> None:
         args = self._args(arg) or ["-q"]
-        self.out.say(f"[dim]$ pytest {escape(' '.join(args))}[/dim]")
+        self.out.say(f"[dim]$ pytest {escape(' '.join(args))}   ({self._which_python()})[/dim]")
         code = self.ws.interactive(
             [self.ws.python(), "-m", "pytest", "-p", "no:cacheprovider", *args]
         )

@@ -9,10 +9,12 @@ player's tests must turn red.
 from __future__ import annotations
 
 import ast
+import sys
 
 import yaml
 
 from azurath.checks import Report, calls, checks_for, has_main_guard
+from azurath.checks.pyproject import dev_deps, load_pyproject, runtime_deps
 from azurath.checks.testing import mutation_survives, run_pytest, stub_out, test_functions
 from azurath.dungeons.pythonwood.checks import tidy
 from azurath.workspace import Workspace
@@ -298,7 +300,88 @@ def tidy_treehouse(ws: Workspace, r: Report) -> None:
     run_pytest(ws, r, tests, "all your tests are still GREEN (you refactored safely!)")
 
 
-# --- 5. Looping Lagoon -----------------------------------------------------------------
+# --- 5. Backpack Burrow ----------------------------------------------------------------
+
+
+def _imported_top_modules(tree: ast.Module) -> set[str]:
+    found = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            found |= {a.name.split(".")[0] for a in node.names}
+        elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+            found.add(node.module.split(".")[0])
+    return found
+
+
+@check("backpack_burrow")
+def backpack_burrow(ws: Workspace, r: Report) -> None:
+    joined = ws.joined_uv_workspace()
+    if joined is not None:
+        r.require(
+            False,
+            "your project has its own packing list, not joined to another project",
+            f"uv added critter-quest to the project in {joined.parent}. Ask a grown-up to help: "
+            f"open {joined}, delete the `[tool.uv.workspace]` section, then run "
+            "`!uv add --dev pytest` again here.",
+        )
+        return
+    data = load_pyproject(ws, r)
+    if data is None:
+        return
+    venv = ws.venv_python()
+    if not r.require(
+        venv is not None,
+        "your project has its own backpack (a `.venv` folder)",
+        "Run `!uv add --dev pytest`. If it still isn't there, you probably left out "
+        "`--no-workspace` (`ask barnaby about no workspace`).",
+    ):
+        return
+    r.require(ws.exists("uv.lock"), "there's a receipt (`uv.lock`)", "`!uv add ...` writes it.")
+    r.require(
+        "pytest" in dev_deps(data), "pytest is in the **dev** pocket", "`!uv add --dev pytest`"
+    )
+    borrowed = runtime_deps(data) - {"pytest"}
+    r.require(borrowed, "you borrowed a package (it's in `dependencies`)", "`!uv add cowsay`")
+    if borrowed:
+        modules = " ".join(sorted(borrowed))
+        found = ws.run(["uv", "pip", "show", "--python", str(venv), *sorted(borrowed)])
+        r.require(
+            found.ok, f"the backpack really contains {modules}", found.tail(4) + "\n`!uv sync`"
+        )
+
+    tree = r.python_file(ws, "fun.py")
+    if tree is not None:
+        local = {p.split("/")[0].removesuffix(".py") for p in ws.files()}
+        outside = _imported_top_modules(tree) - set(sys.stdlib_module_names) - local
+        r.require(
+            outside,
+            "`fun.py` imports a package you borrowed",
+            "Add `import cowsay` (or your package) at the top.",
+        )
+        run = ws.run([str(venv), "fun.py"])
+        r.require(
+            run.ok and run.stdout.strip(),
+            "`python fun.py` runs and shows something",
+            run.tail(8) or "it printed nothing",
+        )
+
+    patterns = {p.rstrip("/") for p in ws.gitignore_patterns()}
+    r.require(
+        ".venv" in patterns,
+        "`.gitignore` has a `.venv/` line",
+        "`edit .gitignore` and add `.venv/`",
+    )
+    if ws.is_git_repo():
+        r.require(
+            not ws.git_tracks(".venv"),
+            "git isn't saving the backpack",
+            "`!git rm -r --cached .venv`",
+        )
+    if ws.files("tests"):
+        run_pytest(ws, r, "tests", "your tests are still GREEN, now running from the backpack")
+
+
+# --- 6. Looping Lagoon -----------------------------------------------------------------
 
 TEAM_PROBE = """
 import copy
@@ -362,7 +445,7 @@ def looping_lagoon(ws: Workspace, r: Report) -> None:
     )
 
 
-# --- 6. Robot Tower --------------------------------------------------------------------
+# --- 7. Robot Tower --------------------------------------------------------------------
 
 
 def _workflow(ws: Workspace) -> str | None:
@@ -403,17 +486,25 @@ def robot_tower(ws: Workspace, r: Report) -> None:
         any(u.startswith("actions/checkout") for u in uses),
         "a step downloads your code (`actions/checkout`)",
     )
-    r.require(
-        any(u.startswith("actions/setup-python") for u in uses),
-        "a step installs Python (`actions/setup-python`)",
+    uv_way = any(u.startswith("astral-sh/setup-uv") for u in uses)
+    pip_way = any(u.startswith("actions/setup-python") for u in uses) and any(
+        "pip install" in c and "pytest" in c for c in runs
     )
     r.require(
-        any("pip install" in c and "pytest" in c for c in runs), "a step runs `pip install pytest`"
+        uv_way or pip_way,
+        "a step gets uv (`astral-sh/setup-uv`) so the robot can pack your backpack",
+        "Add `- uses: astral-sh/setup-uv@v6` after the checkout step.",
     )
     r.require(
         any("pytest" in c and "install" not in c for c in runs),
-        "a step runs your tests (`python -m pytest`)",
+        "a step runs your tests (`uv run python -m pytest`)",
     )
+    if uv_way:
+        r.require(
+            ws.exists("pyproject.toml") and ws.exists("uv.lock"),
+            "your packing list (`pyproject.toml`) and receipt (`uv.lock`) are there for the robot",
+            "Go back to the Backpack Burrow!",
+        )
     run_pytest(ws, r, "tests", "all your tests are GREEN (the robot will run every one!)")
     if ws.is_git_repo():
         remote = ws.git("remote", "-v")
@@ -424,7 +515,7 @@ def robot_tower(ws: Workspace, r: Report) -> None:
         )
 
 
-# --- 7. Critter Arena ------------------------------------------------------------------
+# --- 8. Critter Arena ------------------------------------------------------------------
 
 BATTLE_PROBE = """
 import copy

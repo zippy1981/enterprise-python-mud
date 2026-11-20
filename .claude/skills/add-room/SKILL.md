@@ -30,8 +30,11 @@ and build on it; don't reinvent it.
   `Reward`, `orchestration.py` and so on.
 * **pythonwood**: 13-year-olds with grade-school coding experience. The project is
   `critter-quest`, a critter battle game with a `critters/` package (`rules.py`,
-  `actions.py`, `team.py`, `battle.py`) and `tests/`. No virtualenvs or packaging: players
-  use the game's `python` and `pytest` commands.
+  `actions.py`, `team.py`, `battle.py`) and `tests/`. Players use the game's `python` and
+  `pytest` commands throughout. Until the Backpack Burrow (room 5) those run on the game's
+  own interpreter. From then on the project has a uv-managed `.venv` (made with
+  `uv init --bare --no-workspace`), `pyproject.toml` and `uv.lock`, and every command and
+  check uses that `.venv`. Rooms after it may `uv add` packages.
 
 ## 2. Write the YAML
 

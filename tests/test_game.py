@@ -332,9 +332,31 @@ def test_pytest_command_reports_red_and_green(
     player = make_player(dungeon="pythonwood")
     ws = player.game.ws
     ws.write("tests/test_math.py", "def test_math():\n    assert 1 + 1 == 3\n")
-    assert "RED" in player("pytest")
+    out = player("pytest")
+    assert "RED" in out and "game's Python" in out
     ws.write("tests/test_math.py", "def test_math():\n    assert 1 + 1 == 2\n")
     assert "GREEN" in player("pytest")
     ws.write("hello.py", 'print("hi from", __name__)\n')
     player("python hello.py")
     assert "hi from __main__" in capfd.readouterr().out
+
+
+def test_uv_init_inside_another_project_is_refused(make_player, tmp_path: Path) -> None:
+    player = make_player(dungeon="pythonwood")
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "outer"\nversion = "0"\n')
+    out = player("!uv init --bare")
+    assert "--no-workspace" in out and "Careful" in out
+    assert not player.game.ws.exists("pyproject.toml")  # nothing ran
+
+
+def test_check_explains_a_project_joined_to_an_outer_workspace(make_player, tmp_path: Path) -> None:
+    from azurath.checks import run_check
+
+    player = make_player(dungeon="pythonwood")
+    outer = tmp_path / "pyproject.toml"
+    outer.write_text(
+        '[project]\nname = "o"\nversion = "0"\n[tool.uv.workspace]\nmembers = ["pythonwood"]\n'
+    )
+    report = run_check(player.game.dungeon, "backpack_burrow", player.game.ws)
+    assert not report.passed
+    assert str(outer) in report.items[0].detail

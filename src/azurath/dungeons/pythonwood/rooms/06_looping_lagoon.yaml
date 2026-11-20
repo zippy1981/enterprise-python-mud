@@ -1,6 +1,6 @@
 id: looping_lagoon
 name: The Looping Lagoon
-order: 5
+order: 6
 zone: Lists, dictionaries & loops
 description: |
   A lagoon of lily pads, arranged in a long row. A frog hops from pad to pad,
@@ -8,7 +8,7 @@ description: |
   again. Each lily pad holds a little card describing a critter:
   `{"name": "Mossy", "health": 80}`.
 exits:
-  south: tidy_treehouse
+  south: backpack_burrow
   east: robot_tower
 npc:
   name: Loopy the Frog

@@ -8,8 +8,5 @@ jobs:
     runs-on: ubuntu-latest # a fresh Linux computer
     steps:
       - uses: actions/checkout@v4 # 1. download my code
-      - uses: actions/setup-python@v5 # 2. install Python
-        with:
-          python-version: "3.12"
-      - run: pip install pytest # 3. install pytest
-      - run: python -m pytest # 4. run all the tests!
+      - uses: astral-sh/setup-uv@v6 # 2. get uv
+      - run: uv run python -m pytest # 3. pack the backpack and run all the tests!

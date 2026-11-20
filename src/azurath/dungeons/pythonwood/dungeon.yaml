@@ -4,8 +4,8 @@ tagline: Your first real Python project, for curious 13-year-olds
 audience: |
   Around age 13, with grade-school coding experience (Scratch, code.org, maybe a
   little Python), but no professional experience. Lessons stress variables,
-  functions and keeping code tidy, and teach testing (red, green, tidy) and a
-  CI robot in kid-sized steps. Each quest adds a piece to a small critter
+  functions and keeping code tidy, and teach testing (red, green, tidy), packages
+  and virtual environments with uv, and a CI robot, all in kid-sized steps. Each quest adds a piece to a small critter
   battle game.
 order: 1
 start: trailhead
@@ -15,9 +15,9 @@ ranks:
   - [100, Sprout]
   - [300, Sapling]
   - [600, Trail Coder]
-  - [900, Forest Ranger]
-  - [1300, Code Druid]
-  - [1800, Guardian of the Pythonwood]
+  - [1000, Forest Ranger]
+  - [1400, Code Druid]
+  - [2000, Guardian of the Pythonwood]
 intro: |
   Welcome to **the Pythonwood**, a forest where code grows on trees. 🌲
 

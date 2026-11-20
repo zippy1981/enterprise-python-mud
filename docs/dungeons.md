@@ -6,7 +6,7 @@ audience, with its own rooms, mentors, ranks and project.
 | Dungeon | id | For | Project the player builds |
 |---|---|---|---|
 | The Realm of Azurath | `enterprise` | professional C#/PowerShell developers new to Python | `questboard`, an Azure Functions app with a Durable orchestration |
-| The Pythonwood | `pythonwood` | 13-year-olds with grade-school coding experience | `critter-quest`, a tested critter battle game |
+| The Pythonwood | `pythonwood` | 13-year-olds with grade-school coding experience | `critter-quest`, a tested critter battle game with its own uv-managed `.venv` |
 
 ## Layout
 
@@ -52,6 +52,20 @@ they load as `enterprise`.
 * **Workspace folder name**: must be unique across dungeons (a test checks this)
 * **Checks**: registered under `(dungeon_id, check_name)`, so two dungeons may
   reuse room or check names without clashing
+
+## Projects nested inside other projects
+
+By default a workspace is created under the current directory, which is often
+this repo (itself a uv project). Plain `uv init` in a nested folder would add
+it to the outer project as a **uv workspace member**: it edits the outer
+`pyproject.toml` and puts packages in the *outer* virtualenv, which can be the
+game's own. So:
+
+* the Pythonwood teaches `uv init --bare --no-workspace`
+* the game refuses a `!uv init` without `--no-workspace` when an enclosing
+  `pyproject.toml` exists (`Workspace.enclosing_project`), explaining why
+* the Backpack Burrow check detects a workspace that was already joined
+  (`Workspace.joined_uv_workspace`) and names the file to fix
 
 ## Plan: connecting dungeons (not built yet)
 

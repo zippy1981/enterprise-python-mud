@@ -1,6 +1,6 @@
 id: robot_tower
 name: The Robot Tower
-order: 6
+order: 7
 zone: Save points & the CI robot
 description: |
   A tall tower of brass and moss rises above the treetops. Inside, a friendly
@@ -68,7 +68,8 @@ pages:
 
       1. You push your commits to GitHub
       2. 🤖 The robot gets a brand-new computer
-      3. It downloads your code, installs Python and pytest
+      3. It downloads your code and packs a backpack from your **packing list**
+         (`pyproject.toml` and `uv.lock`), exactly like yours
       4. It runs **all** your tests
       5. ✅ green or ❌ red appears next to your commit, for everyone to see
 
@@ -93,15 +94,14 @@ pages:
           runs-on: ubuntu-latest       # WHERE: a fresh Linux computer
           steps:                       # WHAT to do, in order
             - uses: actions/checkout@v4          # 1. download my code
-            - uses: actions/setup-python@v5      # 2. install Python
-              with:
-                python-version: "3.12"
-            - run: pip install pytest            # 3. install pytest
-            - run: python -m pytest              # 4. run all my tests!
+            - uses: astral-sh/setup-uv@v6        # 2. get uv
+            - run: uv run python -m pytest       # 3. pack the backpack and run all my tests!
       ```
 
-      * `uses:` borrows a ready-made step someone else wrote.
+      * `uses:` borrows a ready-made step someone else wrote (like a package!).
       * `run:` types a command, like you would in a terminal.
+      * `uv run` packs the backpack from `uv.lock` first, so the robot gets exactly
+        the same versions of everything that you have. Remember the receipt?
       * **Indentation matters**: the steps belong to the job, which belongs to `jobs`.
 quest:
   title: Program the Robot
@@ -110,9 +110,12 @@ quest:
 
     * run `on` every **push**
     * one job that `runs-on` **ubuntu-latest**
-    * steps that: download your code (`actions/checkout`), install Python
-      (`actions/setup-python`), `pip install pytest`, and run your tests with
-      `python -m pytest`
+    * steps that: download your code (`actions/checkout`), get uv
+      (`astral-sh/setup-uv`), and run your tests from the backpack with
+      `uv run python -m pytest`
+
+    Make sure `pyproject.toml` and `uv.lock` are saved in git (the game does it
+    when you finish a quest), because the robot needs your packing list!
 
     The robot will also run **all** your tests now, so make sure `pytest` is
     green!
@@ -125,7 +128,7 @@ quest:
   hints:
     - "`scaffold` writes most of the file for you. Fill in the missing steps under `steps:`."
     - "Each step starts with `- ` and lines up with the steps above it. A step uses either `uses:` (a ready-made step) or `run:` (a command)."
-    - "The last two steps are `- run: pip install pytest` and `- run: python -m pytest`."
+    - "The last two steps are `- uses: astral-sh/setup-uv@v6` and `- run: uv run python -m pytest`."
   solution:
     files:
       .github/workflows/tests.yml: tests.yml
@@ -146,10 +149,8 @@ quest:
             runs-on: ubuntu-latest
             steps:
               - uses: actions/checkout@v4
-              - uses: actions/setup-python@v5
-                with: { python-version: "3.12" }
-              - run: pip install pytest
-              - run: python -m pytest
+              - uses: astral-sh/setup-uv@v6
+              - run: uv run python -m pytest
         ```
 
         **Never break the build:** if the robot says red, fix it first!

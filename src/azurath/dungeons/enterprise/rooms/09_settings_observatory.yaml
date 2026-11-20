@@ -1,0 +1,172 @@
+id: settings_observatory
+name: The Settings Observatory
+order: 9
+zone: Configuration with pydantic-settings
+description: |
+  A domed observatory where a brass telescope points at a sky full of
+  environment variables. Constellations spell out `QUESTBOARD_ENVIRONMENT`
+  and `AzureWebJobsStorage`. A careful astronomer logs each one into a ledger,
+  and the secret ones are written in ink that only shows `**********`.
+exits:
+  south: pydantic_citadel
+  east: yaml_scriptorium
+npc:
+  name: Astronomer Env
+  aliases: [astronomer, env]
+  greeting: |
+    "Ah, a .NET traveller! You'll know `IConfiguration` layering:
+    `appsettings.json`, then environment variables, then command-line args,
+    bound into `IOptions<T>` with validation on start. pydantic-settings is the
+    same idea in one class. Declare a model, and it fills itself from the
+    environment, a `.env` file, or other sources, validated and typed.
+
+    On Azure Functions every **App Setting** is an environment variable, and
+    locally `local.settings.json`'s `Values` become environment variables too.
+    So a `BaseSettings` class is all the configuration system you need."
+  topics:
+    double underscore: |
+      "Same convention as .NET! `env_nested_delimiter="__"` lets
+      `QUESTBOARD_DB__HOST=x` populate `settings.db.host`, exactly like
+      `Db__Host` binding to `Db:Host` in ASP.NET Core."
+    key vault: |
+      "Two good options. (1) **Key Vault references** in App Settings
+      (`@Microsoft.KeyVault(SecretUri=...)`): Azure resolves them and your code
+      just sees an env var. (2) pydantic-settings ships an
+      `AzureKeyVaultSettingsSource` you can add in `settings_customise_sources`.
+      Prefer (1) for Functions, since it keeps code cloud-agnostic."
+    testing: |
+      "`get_settings()` is cached, so tests must clear the cache:
+      ```python
+      def test_prod(monkeypatch):
+          monkeypatch.setenv("QUESTBOARD_ENVIRONMENT", "prod")
+          get_settings.cache_clear()
+          assert get_settings().environment == "prod"
+      ```
+      Or skip the env entirely: `Settings(environment="prod", storage_connection="x")`.
+      Init kwargs win over env vars."
+    sources: |
+      "Default priority: init kwargs > env vars > `.env` file > secrets dir >
+      field defaults. Override `settings_customise_sources` to add TOML, YAML,
+      JSON or Key Vault sources, or to reorder them. The MUD's own
+      `src/azurath/settings.py` adds a TOML source; read it!"
+pages:
+  - title: Twelve-factor config, Python-style
+    body: |
+      | .NET | Python |
+      |---|---|
+      | `Environment.GetEnvironmentVariable("X")` | `os.environ.get("X")` (always a `str` or `None`) |
+      | `IOptions<QuestOptions>` | `Settings` instance (a `BaseSettings` subclass) |
+      | `services.AddOptions<T>().ValidateOnStart()` | validation happens when `Settings()` is constructed |
+      | `appsettings.Development.json` | `.env` file (local only, gitignored) |
+      | `Section__Key` env vars | `env_nested_delimiter="__"` |
+      | `[Required]` | a field with no default |
+      | `SecureString` (sort of) | `SecretStr` |
+
+      Raw `os.environ` gives you strings and `KeyError`s at the worst possible
+      moment. A settings class gives you typed values and a fail-fast error
+      listing *every* missing or malformed variable at startup.
+  - title: BaseSettings
+    body: |
+      ```python
+      from functools import lru_cache
+      from typing import Literal
+      from pydantic import Field, SecretStr
+      from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+      class Settings(BaseSettings):
+          model_config = SettingsConfigDict(
+              env_prefix="QUESTBOARD_",    # QUESTBOARD_ENVIRONMENT -> environment
+              env_file=".env",             # optional local overrides (gitignore it!)
+              extra="ignore",
+          )
+
+          environment: Literal["dev", "test", "prod"] = "dev"
+          storage_connection: SecretStr                   # required: no default
+          max_active_quests: int = Field(default=10, ge=1)
+          guilds: list[str] = ["mages", "rogues", "bards"]
+
+
+      @lru_cache                                          # one instance per process
+      def get_settings() -> Settings:
+          return Settings()
+      ```
+
+      * Names match **case-insensitively**: `QUESTBOARD_MAX_ACTIVE_QUESTS=5`.
+      * Complex types are parsed from JSON: `QUESTBOARD_GUILDS='["mages","clerics"]'`.
+      * `Literal[...]` is a closed set of allowed values, like an enum without the ceremony.
+      * `SecretStr` prints as `**********`. Call `.get_secret_value()` when you
+        actually need it.
+  - title: Caching and dependency injection
+    body: |
+      There's no DI container by default in Python. Common patterns:
+
+      1. **Cached factory**: `@lru_cache def get_settings()`, the singleton
+         registration. Call it wherever you need config.
+      2. **Constructor injection**: pass a `Settings` into the things that need
+         it (`QuestService(settings)`). The easiest to test.
+      3. Frameworks with DI (FastAPI's `Depends`) build on 1 and 2.
+
+      `@lru_cache` (or `@functools.cache`) memoises a function. With no
+      arguments that means "compute once". `get_settings.cache_clear()` resets
+      it in tests.
+
+      A local `.env` file looks like this, and must be in `.gitignore`:
+
+      ```bash
+      QUESTBOARD_STORAGE_CONNECTION=UseDevelopmentStorage=true
+      QUESTBOARD_ENVIRONMENT=dev
+      ```
+quest:
+  title: Chart the Constellations
+  brief: |
+    Create **`questboard/settings.py`** with a `Settings(BaseSettings)`:
+
+    * env prefix **`QUESTBOARD_`**, and reads an optional **`.env`** file
+    * `environment`: one of `"dev"`, `"test"`, `"prod"`, default `"dev"`
+    * `storage_connection`: a **required** `SecretStr`
+    * `max_active_quests`: `int`, default `10`, must be `>= 1`
+    * `guilds`: `list[str]`, default `["mages", "rogues", "bards"]`
+
+    Plus a cached **`get_settings()`** that returns the same instance every
+    time, `.env` added to **`.gitignore`**, and **`tests/test_settings.py`**
+    that uses `monkeypatch`.
+  check: settings_observatory
+  scaffold:
+    questboard/settings.py: settings.py
+    tests/test_settings.py: test_settings.py
+  hints:
+    - "`model_config = SettingsConfigDict(env_prefix=\"QUESTBOARD_\", env_file=\".env\")`"
+    - "`environment: Literal[\"dev\", \"test\", \"prod\"] = \"dev\"` (import `Literal` from `typing`)."
+    - "A field with no default is required: `storage_connection: SecretStr`."
+    - "In tests: `monkeypatch.setenv(\"QUESTBOARD_STORAGE_CONNECTION\", \"x\")` then `Settings()`. Or `Settings(storage_connection=\"x\", _env_file=None)` to ignore any local `.env`."
+  solution:
+    files:
+      questboard/settings.py: settings.py
+      tests/test_settings.py: test_settings.py
+      .gitignore: .gitignore
+  commit_message: "Add typed settings with pydantic-settings"
+  reward:
+    xp: 250
+    item:
+      name: Astrolabe of Configuration
+      aliases: [astrolabe]
+      text: |
+        ```python
+        class Settings(BaseSettings):
+            model_config = SettingsConfigDict(env_prefix="APP_", env_file=".env",
+                                              env_nested_delimiter="__", extra="ignore")
+            secret: SecretStr                 # required
+            mode: Literal["dev", "prod"] = "dev"
+            hosts: list[str] = []             # APP_HOSTS='["a","b"]'
+
+        @lru_cache
+        def get_settings() -> Settings: return Settings()
+
+        # tests
+        monkeypatch.setenv("APP_SECRET", "x"); get_settings.cache_clear()
+        Settings(secret="x", _env_file=None)   # ignore .env
+        ```
+
+        Priority: init kwargs > env > .env > secrets dir > defaults.
+        Azure App Settings & local.settings.json `Values` are env vars.

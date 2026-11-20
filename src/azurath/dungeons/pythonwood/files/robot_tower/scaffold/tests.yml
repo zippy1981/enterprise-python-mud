@@ -1,0 +1,12 @@
+# Instructions for the CI robot (GitHub Actions).
+name: Tests
+
+on: [push, pull_request] # run every time code is pushed
+
+jobs:
+  test:
+    runs-on: ubuntu-latest # a fresh Linux computer
+    steps:
+      - uses: actions/checkout@v4 # 1. download my code
+      # TODO: 2. get uv with astral-sh/setup-uv@v6
+      # TODO: 3. pack the backpack and run all the tests: uv run python -m pytest

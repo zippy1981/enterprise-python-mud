@@ -1,0 +1,265 @@
+id: durable_sanctum
+name: The Durable Sanctum
+order: 13
+zone: Durable Functions orchestrations
+description: |
+  A vast circular hall where an orchestra plays without pause, even though
+  half the musicians are asleep. Whenever the conductor turns a page, the
+  entire symphony **replays from the first bar**, faster than the eye can
+  follow, until it reaches the new note. Nobody seems bothered. A great
+  ledger, the *History Table*, records every note ever played.
+exits:
+  south: functions_docks
+  north: throne_room
+  east: gopher_forge
+npc:
+  name: The Orchestrator
+  aliases: [orchestrator, conductor]
+  greeting: |
+    "You've written Durable Functions in C#? Then you know the deal: an
+    orchestrator is code that **replays**. Every time an activity finishes,
+    the framework re-runs the orchestrator from the start, feeding it recorded
+    results from history until it reaches new work.
+
+    In C# you `await context.CallActivityAsync(...)`. In Python, orchestrators
+    are **generators** and you `yield context.call_activity(...)`. The
+    framework drives the generator, sending results back in. Same rules
+    apply: be deterministic or be haunted. And because it's just a generator,
+    you can unit-test it with a fake context, no Azure required."
+  topics:
+    determinism: |
+      "On replay your code must make exactly the same decisions. So, inside an
+      orchestrator:
+
+      | Don't | Do |
+      |---|---|
+      | `datetime.now()` / `utcnow()` | `context.current_utc_datetime` |
+      | `uuid.uuid4()` | `context.new_uuid()` |
+      | `random.*` | pass randomness in via input, or do it in an activity |
+      | `time.sleep()` | `yield context.create_timer(fire_at)` |
+      | HTTP calls, DB queries, file I/O | do them in an **activity** |
+      | `async def` orchestrator | a plain `def` with `yield` |
+      | log unconditionally | `if not context.is_replaying: logger.info(...)` |"
+    retries: |
+      "```python
+      retry = df.RetryOptions(first_retry_interval_in_milliseconds=5_000,
+                              max_number_of_attempts=3)
+      result = yield context.call_activity_with_retry("notify_guild", retry, notice)
+      ```"
+    timeouts: |
+      "Race an activity against a timer with `task_any`:
+      ```python
+      deadline = context.current_utc_datetime + timedelta(minutes=5)
+      timer = context.create_timer(deadline)
+      work = context.call_activity("slow_thing", data)
+      winner = yield context.task_any([work, timer])
+      if winner == work:
+          timer.cancel()
+      ```"
+    external events: |
+      "Human-in-the-loop: `approval = yield context.wait_for_external_event("Approved")`,
+      and elsewhere `await client.raise_event(instance_id, "Approved", True)`.
+      Same as `WaitForExternalEvent` in C#."
+    backends: |
+      "State lives in a storage provider: Azure Storage (the default; Azurite
+      locally), MSSQL, Netherite, or the managed **Durable Task Scheduler**
+      (which has a local Docker emulator and a dashboard). Your code doesn't
+      change; `host.json` does."
+    entities: |
+      "Durable Entities (`@app.entity_trigger`) are small addressable state
+      machines, like actors. Handy for counters and aggregators. Python's API is
+      function-based: `context.get_state()`, `context.set_state()`,
+      `context.operation_name`."
+pages:
+  - title: Generators are coroutines in disguise
+    body: |
+      You met `yield` in the Hall of Basics as a way to produce sequences.
+      It also *receives* values: `x = yield something` pauses, hands
+      `something` to whoever is driving, and resumes when they call
+      `gen.send(value)`, at which point `x == value`.
+
+      ```python
+      def conversation():
+          name = yield "What's your name?"
+          quest = yield f"Hello {name}. What is your quest?"
+          return f"{name} seeks {quest}"
+
+      g = conversation()
+      print(next(g))                     # What's your name?
+      print(g.send("Ada"))               # Hello Ada. What is your quest?
+      try:
+          g.send("the Holy Grail")
+      except StopIteration as done:
+          print(done.value)              # Ada seeks the Holy Grail
+      ```
+
+      That's the whole trick behind Python orchestrators. The Durable framework
+      is the driver: you `yield` a task, it schedules or replays it and
+      `send`s you the result. C#'s `await` is the compiler building that state
+      machine for you; Python just shows you the gears.
+  - title: Orchestrators, activities and clients
+    body: |
+      ```python
+      import azure.durable_functions as df
+      import azure.functions as func
+
+      app = df.DFApp(http_auth_level=func.AuthLevel.FUNCTION)   # a FunctionApp with Durable powers
+
+
+      @app.route(route="quests/process", methods=["POST"])       # 1. client: starts instances
+      @app.durable_client_input(client_name="client")
+      async def start_quest(req: func.HttpRequest, client: df.DurableOrchestrationClient):
+          instance_id = await client.start_new("process_quest_orchestrator",
+                                               client_input=req.get_json())
+          return client.create_check_status_response(req, instance_id)   # 202 + status URLs
+
+
+      @app.orchestration_trigger(context_name="context")          # 2. orchestrator: a generator
+      def process_quest_orchestrator(context: df.DurableOrchestrationContext):
+          quest = context.get_input()
+          validated = yield context.call_activity("validate_quest", quest)
+          ...
+          return result
+
+
+      @app.activity_trigger(input_name="quest")                   # 3. activity: does real work
+      def validate_quest(quest: dict) -> dict:
+          return Quest.model_validate(quest).model_dump(mode="json")
+      ```
+
+      * Inputs and outputs cross a JSON boundary, so `model_dump(mode="json")`
+        is your friend.
+      * **Fan-out/fan-in**: build a list of tasks *without* yielding each one,
+        then `results = yield context.task_all(tasks)`. That's `Task.WhenAll`.
+        (Guard the empty list: `results = (yield context.task_all(tasks)) if tasks else []`.)
+      * `create_check_status_response` returns the familiar `statusQueryGetUri`,
+        `sendEventPostUri` and `terminatePostUri` links.
+  - title: Keep the workflow pure, and test it
+    body: |
+      Put the workflow logic in your package as a plain generator that takes
+      *any* object shaped like a context. `function_app.py` just delegates:
+
+      ```python
+      # function_app.py
+      from questboard import orchestration
+
+      @app.orchestration_trigger(context_name="context")
+      def process_quest_orchestrator(context: df.DurableOrchestrationContext):
+          return (yield from orchestration.process_quest(context))
+      ```
+
+      `yield from` forwards every yield and send to the inner generator, and
+      evaluates to its return value. Now test it with a fake:
+
+      ```python
+      class FakeContext:
+          def __init__(self, input_):
+              self._input = input_
+          def get_input(self):
+              return self._input
+          def call_activity(self, name, input_=None):
+              return ("activity", name, input_)        # a "task" is just a token here
+          def task_all(self, tasks):
+              return ("all", list(tasks))
+
+      def drive(gen, activities):
+          """Play the Durable framework: resolve each yielded task and send the result."""
+          def resolve(task):
+              if task[0] == "all":
+                  return [resolve(t) for t in task[1]]
+              _, name, payload = task
+              return activities[name](payload)
+          try:
+              task = next(gen)
+              while True:
+                  task = gen.send(resolve(task))
+          except StopIteration as done:
+              return done.value
+      ```
+
+      This is the Python version of mocking `TaskOrchestrationContext` with Moq,
+      and it's a lot less typing.
+  - title: Running it for real
+    body: |
+      ```bash
+      # terminal 1: storage emulator (Durable needs real storage)
+      npx azurite --silent --location .azurite      # (add .azurite/ to .gitignore)
+
+      # terminal 2: the function host
+      func start
+
+      # terminal 3: start an orchestration
+      curl -X POST http://localhost:7071/api/quests/process \
+           -H "Content-Type: application/json" \
+           -d '{"title": "Slay the dragon", "reward": 1500, "rank": "S", "guilds": ["mages", "bards"]}'
+      # → 202 with statusQueryGetUri; GET it until runtimeStatus is "Completed"
+      ```
+
+      PowerShell users: `Invoke-RestMethod -Method Post -Uri ... -Body (@{...} | ConvertTo-Json) -ContentType application/json`.
+
+      Durable Functions uses the extension bundle you declared in `host.json`,
+      so there's nothing else to install on the host side. The Python half is
+      the `azure-functions-durable` package.
+quest:
+  title: Conduct the Symphony
+  brief: |
+    1. `!uv add azure-functions-durable`
+    2. **`questboard/orchestration.py`**: a generator `process_quest(context)` that
+       * gets the quest dict from `context.get_input()`
+       * `yield`s `call_activity("validate_quest", quest)`
+       * **fans out** one `call_activity("notify_guild", {...})` per guild in the
+         *validated* quest, and `yield`s `context.task_all(...)` once
+       * `yield`s `call_activity("award_reward", validated)`
+       * returns a dict with keys `quest_id`, `notified` and `reward`
+       * uses nothing non-deterministic (`datetime.now`, `uuid4`, `random`, ...)
+    3. **`function_app.py`**: switch to `app = df.DFApp(...)`, keep `create_quest`, and add
+       * an orchestrator that delegates with `yield from`
+       * activities **`validate_quest`**, **`notify_guild`** and **`award_reward`**
+         (use your `Quest` model and `Reward` dataclass; return JSON-safe values)
+       * an HTTP client function that starts the orchestrator **by its function name**
+    4. **`tests/test_orchestration.py`**: drive `process_quest` with a fake context
+  check: durable_sanctum
+  scaffold:
+    questboard/orchestration.py: orchestration.py
+    tests/test_orchestration.py: test_orchestration.py
+  hints:
+    - "Build the notify tasks first, without yielding: `tasks = [context.call_activity(\"notify_guild\", {\"guild\": g, \"quest_id\": validated[\"id\"]}) for g in validated[\"guilds\"]]`, then `notified = yield context.task_all(tasks)`."
+    - "The orchestrator in function_app.py is three lines: the decorator, `def process_quest_orchestrator(context):`, and `return (yield from orchestration.process_quest(context))`."
+    - "`client.start_new(\"process_quest_orchestrator\", client_input=...)`: the string must be the orchestrator *function's name*."
+    - "Activities return JSON: `Quest.model_validate(quest).model_dump(mode=\"json\")`, and `dataclasses.asdict(Reward(...))`."
+  solution:
+    files:
+      questboard/orchestration.py: orchestration.py
+      function_app.py: function_app.py
+      tests/test_orchestration.py: test_orchestration.py
+    commands:
+      - uv add azure-functions-durable
+  commit_message: "Add a Durable Functions orchestration for processing quests"
+  reward:
+    xp: 400
+    item:
+      name: Conductor's Baton
+      aliases: [baton]
+      text: |
+        ```python
+        app = df.DFApp(http_auth_level=func.AuthLevel.FUNCTION)
+
+        @app.orchestration_trigger(context_name="context")
+        def orch(context: df.DurableOrchestrationContext):
+            x = yield context.call_activity("act", payload)            # await CallActivityAsync
+            rs = yield context.task_all([context.call_activity(...)])  # Task.WhenAll
+            w = yield context.task_any([t1, timer])                    # Task.WhenAny
+            yield context.create_timer(context.current_utc_datetime + timedelta(minutes=5))
+            ev = yield context.wait_for_external_event("Approved")
+            return result
+
+        @app.activity_trigger(input_name="payload")
+        def act(payload: dict) -> dict: ...
+
+        @app.route(route="start") @app.durable_client_input(client_name="client")
+        async def start(req, client):
+            iid = await client.start_new("orch", client_input={...})
+            return client.create_check_status_response(req, iid)
+        ```
+
+        Determinism: `context.current_utc_datetime`, `context.new_uuid()`, no I/O, `context.is_replaying`.

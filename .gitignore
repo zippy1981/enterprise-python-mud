@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# The default location of the repo you build while playing (it's its own git repo)
+/questboard/
+
+# Your personal game config
+/azurath.toml
+
+# Editors
+.idea/

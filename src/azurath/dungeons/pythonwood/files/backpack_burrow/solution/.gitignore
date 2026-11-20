@@ -1,0 +1,9 @@
+# Azurath keeps your save game here. It is not part of your project.
+.azurath/
+
+# Python's caches of compiled code (it can always rebuild them)
+__pycache__/
+*.py[cod]
+
+# The project's backpack (virtual environment). uv can always re-pack it.
+.venv/

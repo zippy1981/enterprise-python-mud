@@ -1,0 +1,18 @@
+# Copy to azurath.toml (in the folder you run `azurath` from) to change defaults.
+# Every key can also be set with an AZURATH_<KEY> environment variable, which wins.
+
+# Where your questboard repo lives (relative paths are relative to the current directory)
+workspace = "questboard"
+
+# Editor used by `edit`. Unset = VS Code inside its terminal, else $VISUAL/$EDITOR, else vim.
+# editor = "vim"
+# editor = "code -r --wait"
+
+# Shell used for `!` commands. Unset = $SHELL, or pwsh/powershell on Windows.
+# shell = "pwsh"
+
+# Commit to your questboard repo automatically when a quest is completed
+auto_commit = true
+
+# Pygments theme for code blocks (try "github-dark", "solarized-light", "one-dark")
+code_theme = "monokai"

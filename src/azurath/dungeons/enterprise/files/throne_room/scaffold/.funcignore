@@ -1,0 +1,4 @@
+# Files NOT deployed to Azure (like .dockerignore). One pattern per line.
+.git*
+.azurath
+# TODO: .venv, tests, local.settings.json, caches...

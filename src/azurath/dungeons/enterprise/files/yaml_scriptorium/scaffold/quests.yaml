@@ -1,0 +1,10 @@
+# Starting quests for the guild board.
+# TODO: define an anchor with shared defaults, e.g.
+# defaults: &defaults
+#   rank: C
+#   guilds: [rogues]
+
+quests:
+  - title: Clear the cellar of rats
+    reward: 5
+  # TODO: at least two more quests, at least one using `<<: *defaults`

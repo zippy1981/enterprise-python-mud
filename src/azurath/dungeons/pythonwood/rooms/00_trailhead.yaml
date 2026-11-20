@@ -1,0 +1,144 @@
+id: trailhead
+name: The Trailhead
+order: 0
+zone: Your first program
+description: |
+  A wooden signpost marks the start of a winding path into a forest of tall,
+  glowing trees. Fireflies spell out `print("hi")` in the air. On a low branch
+  sits an owl wearing a tiny ranger's hat, holding a clipboard.
+exits:
+  north: variable_grove
+npc:
+  name: Ranger Juniper
+  aliases: [juniper, ranger, owl]
+  greeting: |
+    "Hoo! A new coder! Welcome to the Pythonwood.
+
+    Here's how it works. Each room has a **lesson** (`read`), a **mentor**
+    like me (`talk`, and `ask` me about things), and a **quest** (`quest`).
+    You finish a quest by writing real Python code in your project folder,
+    *critter-quest*. When you think it's right, type `check` and I'll test it.
+
+    Pass, and the path to the next room opens. You get XP, and a **cheat card**
+    you can `examine` whenever you forget something. Plus, the game saves your
+    work as a **commit**, a save point you can always go back to."
+  topics:
+    scratch: |
+      "In Scratch you snap blocks together. In Python you **type** the blocks
+      instead. `say [Hello!]` becomes `print("Hello!")`. Same idea, more power,
+      and you can do it on any computer!"
+    errors: |
+      "Errors are normal! Every coder sees hundreds of them. Python's error
+      messages are clues: **read the last line first**. It says what went
+      wrong, like `NameError: name 'pirnt' is not defined`. That one means you
+      typed `pirnt` instead of `print`. The line above it tells you which line
+      of your file to look at."
+    editing: |
+      "To change a file, type `edit hello.py`.
+
+      * If you're in **VS Code**, it opens in the editor next to you. Save with
+        Ctrl+S (Cmd+S on a Mac), then come back here.
+      * Otherwise you might get **nano**: type your code, press **Ctrl+O** then
+        Enter to save, and **Ctrl+X** to exit.
+      * Or **vim**: press `i` to type, `Esc` when done, then `:wq` and Enter.
+        (If you're stuck in vim, `Esc` then `:q!` gets you out.)"
+    stuck: |
+      "Type `hint` for a clue. Each time you type it, you get a bigger clue.
+      `scaffold` gives you a starter file with some of the code already there.
+      And if you're really stuck, `solution` shows you an answer. Try on your
+      own first, though. Struggling a bit is how your brain learns!"
+pages:
+  - title: How this forest works
+    body: |
+      You'll go through the same steps in every room:
+
+      1. **`read`** the lesson (every time you type `read`, the page turns)
+      2. **`talk`** to the mentor, and **`ask`** them about topics
+      3. **`quest`** tells you what to build
+      4. **`scaffold`** gives you a starter file, and **`edit <file>`** opens it
+      5. **`python <file>`** runs your code, so you can see what it does
+      6. **`check`** asks the mentor to test your work
+
+      All your code goes into one folder, your project, called
+      **critter-quest**. Type `ls` to see what's in it, and `cat <file>` to
+      look at a file without opening it.
+
+      > The game keeps track of your progress. Type `quit` any time, and come
+      > back later to carry on where you left off.
+  - title: Talking to the computer
+    body: |
+      A **program** is a list of instructions. The computer does them **in
+      order, top to bottom**, just like a Scratch script runs from the top
+      block down.
+
+      Here's a whole Python program:
+
+      ```python
+      print("Hello!")
+      print("I am learning Python.")
+      ```
+
+      `print(...)` shows text on the screen, like Scratch's **say** block.
+      The text goes inside **quotes**. That tells Python "this is words, not
+      code."
+
+      Run a file with the game's `python` command:
+
+      ```
+      python hello.py
+      ```
+
+      (Outside the game, in a normal terminal, it's `python3 hello.py` on a
+      Mac or Linux, or `py hello.py` on Windows.)
+  - title: Leaving notes with comments
+    body: |
+      A line starting with `#` is a **comment**. Python skips it completely.
+      Comments are notes for humans, including future you!
+
+      ```python
+      # This program says hello to the forest.
+      print("Hello, Pythonwood!")   # comments can go at the end of a line, too
+      ```
+
+      Good coders leave comments that explain **why** something is there.
+      You'll see lots of them in the starter files.
+
+      **Spelling matters.** `print` must be lowercase, every opening `(`
+      needs a closing `)`, and every quote needs a partner. If you mix those
+      up, Python tells you with a `SyntaxError`, which means "I can't read
+      this line."
+quest:
+  title: Say Hello
+  brief: |
+    Make a file called **`hello.py`** that prints exactly:
+
+    ```
+    Hello, Pythonwood!
+    ```
+
+    Steps: `scaffold` → `edit hello.py` → `python hello.py` → `check`
+
+    *Bonus:* add a `#` comment saying what your program does.
+  check: trailhead
+  scaffold: [hello.py]
+  hints:
+    - "Inside `hello.py` you need one line that uses `print`, with your message inside quotes."
+    - "Check the punctuation: a capital H, a comma after Hello, and an exclamation mark at the end."
+    - "The whole line is: `print(\"Hello, Pythonwood!\")`"
+  solution:
+    files: [hello.py]
+  commit_message: "Say hello to the Pythonwood"
+  reward:
+    xp: 100
+    item:
+      name: Juniper's Feather
+      aliases: [feather]
+      text: |
+        **Game commands:** `read` · `talk` · `quest` · `scaffold` · `edit <file>` · `python <file>` · `check` · `hint`
+
+        ```python
+        print("Hello!")        # show text on the screen
+        # a comment: Python ignores it, humans read it
+        ```
+
+        Errors? **Read the last line first.** It tells you what went wrong.

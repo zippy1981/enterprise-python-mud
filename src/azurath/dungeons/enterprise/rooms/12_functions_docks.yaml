@@ -1,0 +1,240 @@
+id: functions_docks
+name: The Functions Docks
+order: 12
+zone: Azure Functions (Python v2 model)
+description: |
+  A bustling harbour where ships appear from nowhere the instant cargo
+  arrives, then vanish once it's unloaded. *Serverless*, the dockhands call it.
+  Cranes are labelled with decorators: `@app.route`, `@app.timer_trigger`,
+  `@app.queue_trigger`. A harbourmaster in an Azure-blue coat checks each
+  vessel's `host.json`.
+exits:
+  west: cicd_foundry
+  north: durable_sanctum
+npc:
+  name: Harbormaster Func
+  aliases: [harbormaster, func]
+  greeting: |
+    "Welcome to the Docks! Good news first: this is the **same Functions host**
+    you've used with C#. The host (a .NET process) handles triggers, bindings,
+    scaling and `host.json`, and talks to a **Python worker** over gRPC, much
+    like the C# isolated worker model.
+
+    In the Python **v2 programming model** there's no `function.json`. You
+    declare functions with **decorators** in `function_app.py`, and they play
+    the same role as `[Function]` and `[HttpTrigger]` attributes. Let's dock
+    your first function: an HTTP endpoint that accepts a quest."
+  topics:
+    core tools: |
+      "Install Azure Functions Core Tools v4 (`winget install Microsoft.Azure.FunctionsCoreTools`,
+      `brew tap azure/functions && brew install azure-functions-core-tools@4`, or `npm i -g
+      azure-functions-core-tools@4`). Then, with your venv active:
+      `!func start`. It reads `local.settings.json` and serves
+      `http://localhost:7071/api/quests`. The VS Code *Azure Functions* extension
+      wraps all of this with F5 debugging."
+    azurite: |
+      "`AzureWebJobsStorage=UseDevelopmentStorage=true` points at **Azurite**, the
+      local storage emulator: `npx azurite`, the VS Code extension, or
+      `docker run -p 10000-10002:10000-10002 mcr.microsoft.com/azure-storage/azurite`.
+      HTTP-only apps can run without it; Durable Functions can't."
+    async: |
+      "Functions can be `async def`. The worker runs them on an asyncio event
+      loop. asyncio is single-threaded `async/await`: never call blocking I/O
+      (like `requests.get` or `time.sleep`) inside an `async def`, or you'll stall
+      every concurrent invocation. Use async clients (`aiohttp`, `httpx.AsyncClient`,
+      `azure.storage.blob.aio`) or keep the function synchronous; sync functions
+      run in a thread pool."
+    logging: |
+      "Use the stdlib `logging` module: `logger = logging.getLogger(__name__)`,
+      then `logger.info("Quest %s posted", slug)`. The worker forwards it to the
+      host, and from there to Application Insights. It's `ILogger<T>`, and
+      %-style args keep formatting lazy, like message templates."
+    blueprints: |
+      "Big app? Split functions across files with `func.Blueprint()` (like
+      ASP.NET controllers) and `app.register_functions(bp)` in `function_app.py`."
+pages:
+  - title: Anatomy of a Python function app
+    body: |
+      ```
+      questboard/                  # the function app root = your repo root
+        function_app.py            # all functions declared here (v2 model)
+        host.json                  # host config, same file as in C#
+        local.settings.json        # local env vars, NEVER committed
+        requirements.txt           # what Azure installs (generated, see Throne Room)
+        .funcignore                # what not to deploy (like .dockerignore)
+        questboard/                # your package, imported by function_app.py
+      ```
+
+      | C# isolated worker | Python v2 model |
+      |---|---|
+      | `Program.cs` + `HostBuilder` | `app = func.FunctionApp()` in `function_app.py` |
+      | `[Function("CreateQuest")]` | function name (or `@app.function_name("CreateQuest")`) |
+      | `[HttpTrigger(AuthorizationLevel.Function, "post", Route = "quests")]` | `@app.route(route="quests", methods=["POST"])` |
+      | `HttpRequestData` / `HttpResponseData` | `func.HttpRequest` / `func.HttpResponse` |
+      | `ILogger<T>` | `logging.getLogger(__name__)` |
+      | `local.settings.json` | `local.settings.json` (same!) |
+  - title: Decorators, demystified
+    body: |
+      A decorator is a function that takes a function and returns something,
+      usually a wrapped function. `@x` above `def f` means `f = x(f)`, and it
+      runs **at import time**.
+
+      ```python
+      import functools, time
+
+      def timed(fn):
+          @functools.wraps(fn)                 # keep fn's name and docstring
+          def wrapper(*args, **kwargs):
+              start = time.perf_counter()
+              try:
+                  return fn(*args, **kwargs)
+              finally:
+                  print(f"{fn.__name__} took {time.perf_counter() - start:.3f}s")
+          return wrapper
+
+      @timed
+      def slow() -> None: time.sleep(0.1)
+      ```
+
+      A decorator **with arguments** is a function that *returns* a decorator:
+      `@app.route(route="quests")` calls `app.route(...)` first, then applies
+      the result. Azure's decorators don't wrap your function. They
+      **register** it with `app`, plus its trigger and bindings, so the host can
+      discover it when it imports `function_app.py`. Same idea as attributes plus
+      reflection, minus the reflection.
+  - title: An HTTP trigger
+    body: |
+      ```python
+      import json
+      import logging
+
+      import azure.functions as func
+      from pydantic import ValidationError
+
+      from questboard.models import Quest
+
+      app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
+      logger = logging.getLogger(__name__)
+
+
+      @app.route(route="quests", methods=["POST"])
+      def create_quest(req: func.HttpRequest) -> func.HttpResponse:
+          try:
+              quest = Quest.model_validate_json(req.get_body())   # bad JSON → ValidationError too
+          except ValidationError as exc:
+              errors = json.loads(exc.json(include_url=False))    # JSON-safe error list
+              return func.HttpResponse(json.dumps({"errors": errors}), status_code=400,
+                                       mimetype="application/json")
+          logger.info("Quest posted: %s", quest.slug)
+          return func.HttpResponse(quest.model_dump_json(), status_code=201,
+                                   mimetype="application/json")
+      ```
+
+      * `req.get_json()`, `req.params` (query string), `req.route_params`,
+        `req.headers` are all available.
+      * `AuthLevel.FUNCTION` requires a function key (`?code=` or
+        `x-functions-key`) in Azure. Locally `func start` doesn't enforce it.
+      * Why `exc.json()` instead of `json.dumps(exc.errors())`? Errors from your
+        own validators carry the original `ValueError` object, which isn't JSON.
+  - title: host.json, local.settings.json, and testing
+    body: |
+      ```json
+      {
+        "version": "2.0",
+        "extensionBundle": {
+          "id": "Microsoft.Azure.Functions.ExtensionBundle",
+          "version": "[4.*, 5.0.0)"
+        }
+      }
+      ```
+
+      ```json
+      {
+        "IsEncrypted": false,
+        "Values": {
+          "FUNCTIONS_WORKER_RUNTIME": "python",
+          "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+          "QUESTBOARD_STORAGE_CONNECTION": "UseDevelopmentStorage=true"
+        }
+      }
+      ```
+
+      `local.settings.json` holds **secrets**: gitignore it. (`func init`
+      does this for you; we're doing it by hand to learn it.) Notice
+      `QUESTBOARD_STORAGE_CONNECTION`: your pydantic settings class reads it as
+      an environment variable, here and in Azure.
+
+      **Unit testing** a decorated function: grab the original Python function
+      and call it with a hand-built request. No host needed.
+
+      ```python
+      import azure.functions as func
+      import function_app
+
+      create = function_app.create_quest.build().get_user_function()
+
+      def test_rejects_bad_quests() -> None:
+          req = func.HttpRequest(method="POST", url="/api/quests", body=b'{"title": "x"}')
+          assert create(req).status_code == 400
+      ```
+quest:
+  title: Dock the First Function
+  brief: |
+    1. `!uv add azure-functions`
+    2. **`function_app.py`** at the repo root: `app = func.FunctionApp(...)` and an
+       HTTP **POST** function on route **`quests`** that:
+       * parses the body into your `Quest` model
+       * returns **201** with the quest as JSON (including `slug` and `id`)
+       * returns **400** with an `errors` list for invalid quests **or malformed JSON**
+    3. **`host.json`**: version `"2.0"` and the extension bundle
+    4. **`local.settings.json`** with `FUNCTIONS_WORKER_RUNTIME` = `python`, and
+       **gitignored**
+    5. **`tests/test_function_app.py`** calling your function with
+       `func.HttpRequest`: at least one success and one failure case
+
+    Got Core Tools? Try it live: `!func start` in a `shell`, then POST to
+    `http://localhost:7071/api/quests`.
+  check: functions_docks
+  scaffold:
+    function_app.py: function_app.py
+    host.json: host.json
+    local.settings.json: local.settings.json
+    tests/test_function_app.py: test_function_app.py
+  hints:
+    - "`Quest.model_validate_json(req.get_body())` raises `ValidationError` for both invalid fields *and* malformed JSON. One `except` covers both."
+    - "Return JSON with `func.HttpResponse(text, status_code=201, mimetype=\"application/json\")`, where `text` is `quest.model_dump_json()`."
+    - "Ignore `local.settings.json` by adding it to `.gitignore`. If you already committed it: `!git rm --cached local.settings.json`."
+  solution:
+    files:
+      function_app.py: function_app.py
+      host.json: host.json
+      local.settings.json: local.settings.json
+      tests/test_function_app.py: test_function_app.py
+      .gitignore: .gitignore
+    commands:
+      - uv add azure-functions
+  commit_message: "Add an Azure Functions HTTP trigger for quests"
+  reward:
+    xp: 300
+    item:
+      name: Harbormaster's Manifest
+      aliases: [manifest]
+      text: |
+        ```python
+        app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
+
+        @app.route(route="quests/{id}", methods=["GET"])
+        def get(req: func.HttpRequest) -> func.HttpResponse:
+            req.route_params["id"]; req.params.get("q"); req.get_json()
+            return func.HttpResponse(body, status_code=200, mimetype="application/json")
+
+        @app.timer_trigger(schedule="0 */5 * * * *", arg_name="timer")
+        @app.queue_trigger(arg_name="msg", queue_name="q", connection="AzureWebJobsStorage")
+        @app.blob_trigger(arg_name="blob", path="c/{name}", connection="...")
+
+        # tests
+        fn = function_app.get.build().get_user_function()
+        fn(func.HttpRequest(method="GET", url="/api/quests/1", body=b"", route_params={"id": "1"}))
+        ```
+
+        `func start` · Azurite: `UseDevelopmentStorage=true` · gitignore `local.settings.json`

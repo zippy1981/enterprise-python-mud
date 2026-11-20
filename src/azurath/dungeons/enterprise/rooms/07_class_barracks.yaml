@@ -1,0 +1,241 @@
+id: class_barracks
+name: The Class Barracks
+order: 7
+zone: Classes, dataclasses & Protocols
+description: |
+  Rows of bunks, each stencilled with a class name. There are no locks on the
+  footlockers (no `private` here), just polite signs reading `_please_dont`. A
+  captain inspects recruits, who all salute by passing themselves as the first
+  argument.
+exits:
+  south: testing_grounds
+  east: pydantic_citadel
+npc:
+  name: Captain Self
+  aliases: [captain, self]
+  greeting: |
+    "Attention! You know classes. You know interfaces, generics, records, operator
+    overloading. All of it exists here, just spelled differently, and with far
+    less enforcement. Python trusts you. We're all consenting adults.
+
+    Your mission: a generic **in-memory repository** behind a **Protocol**
+    (an interface), and an immutable **`Reward`** record. Tested, with a
+    fixture, because the Sergeant is watching."
+  topics:
+    self: |
+      "`self` is `this`, but explicit: every instance method takes it as its first
+      parameter. `obj.method(x)` is literally `Type.method(obj, x)`. There's no
+      magic. You'll forget to type it exactly twice."
+    properties: |
+      "```python
+      class Quest:
+          def __init__(self, reward: int) -> None:
+              self._reward = reward
+
+          @property
+          def reward(self) -> int:          # get
+              return self._reward
+
+          @reward.setter
+          def reward(self, value: int) -> None:   # set
+              if value < 0:
+                  raise ValueError("no negative gold")
+              self._reward = value
+      ```
+      Start with plain attributes and switch to a property later. Callers don't
+      change, so there's no need for auto-property boilerplate up front."
+    static: |
+      "`@staticmethod`: a plain function in the class namespace (C# `static`).
+      `@classmethod`: receives the class as `cls`, perfect for alternative
+      constructors (`Quest.from_dict(d)`) because subclasses get the right type.
+      Class attributes (assigned in the class body) are shared, like static fields.
+      Careful with mutable ones!"
+    inheritance: |
+      "`class Paladin(Knight):` inherits. Call the base with
+      `super().__init__(...)`. Python has multiple inheritance with a C3 method
+      resolution order (`Paladin.__mro__`), used mostly for small 'mixin' classes.
+      Prefer composition and Protocols, as you would in C#."
+    generics: |
+      "Python 3.12+ has C#-like generic syntax: `class Repo[T]:` and
+      `def first[T](xs: list[T]) -> T:`. On 3.11 use `T = TypeVar("T")` and
+      `class Repo(Generic[T]):`. It's all for the type checker; at runtime
+      `Repo[int]()` and `Repo()` are the same thing."
+pages:
+  - title: Classes without the ceremony
+    body: |
+      ```python
+      class Adventurer:
+          guild = "Unaffiliated"                 # class attribute (≈ static field)
+
+          def __init__(self, name: str, level: int = 1) -> None:   # the constructor
+              self.name = name                   # instance attributes are created here,
+              self.level = level                 # no field declarations needed
+              self._xp = 0                       # leading underscore = "internal"
+
+          def gain(self, xp: int) -> None:       # explicit self (≈ this)
+              self._xp += xp
+              if self._xp >= 100 * self.level:
+                  self.level += 1
+
+          def __repr__(self) -> str:             # ≈ ToString() for debugging
+              return f"Adventurer({self.name!r}, level={self.level})"
+
+
+      ada = Adventurer("Ada")    # no `new`
+      ada.gain(150)
+      print(ada)                 # Adventurer('Ada', level=2)
+      ```
+
+      | C# | Python |
+      |---|---|
+      | `public`/`private`/`internal` | everything public; `_x` internal by convention; `__x` name-mangled |
+      | `this` | `self` (explicit parameter) |
+      | constructor | `__init__` |
+      | `ToString()` | `__str__` (for users), `__repr__` (for developers) |
+      | `static` method | `@staticmethod` / `@classmethod` |
+      | auto-property | plain attribute (upgrade to `@property` later) |
+  - title: "Dunder methods: operators and protocols"
+    body: |
+      "Dunder" = **d**ouble **under**score. Implementing them makes your
+      objects work with built-in syntax, like implementing `IEnumerable`,
+      `IEquatable` and operator overloads:
+
+      | You write | Python calls | C# analogue |
+      |---|---|---|
+      | `len(x)` | `x.__len__()` | `Count` |
+      | `item in x` | `x.__contains__(item)` | `Contains()` |
+      | `for i in x` | `x.__iter__()` | `GetEnumerator()` |
+      | `x[k]` | `x.__getitem__(k)` | indexer |
+      | `a + b` | `a.__add__(b)` | `operator +` |
+      | `a == b` | `a.__eq__(b)` | `Equals` (also define `__hash__`!) |
+      | `with x:` | `__enter__` / `__exit__` | `IDisposable` |
+      | `x()` | `x.__call__()` | a delegate |
+
+      This is **duck typing**: if it has `__iter__`, it's iterable. No
+      interface declaration required. Return `NotImplemented` from `__add__`
+      for types you don't support, and Python raises a proper `TypeError`.
+  - title: "dataclasses: Python's records"
+    body: |
+      ```python
+      from dataclasses import dataclass, field, replace
+
+
+      @dataclass(frozen=True, slots=True)      # ≈ public sealed record Reward(int Gold, int Xp = 0)
+      class Reward:
+          gold: int
+          xp: int = 0
+          tags: tuple[str, ...] = ()
+
+          def __add__(self, other: object) -> "Reward":
+              if not isinstance(other, Reward):
+                  return NotImplemented
+              return Reward(self.gold + other.gold, self.xp + other.xp)
+
+
+      a = Reward(10, xp=5)
+      b = replace(a, gold=20)                  # ≈ `a with { Gold = 20 }`
+      a == Reward(10, 5)                       # True: value equality, generated __eq__
+      a.gold = 1                               # FrozenInstanceError
+      ```
+
+      `@dataclass` generates `__init__`, `__repr__` and `__eq__` (plus
+      `__hash__` when frozen) from the annotations. Mutable defaults need
+      `field(default_factory=list)`. Dataclasses **don't validate** anything:
+      `Reward("lots")` happily stores a string. That's the next room's job.
+  - title: "Interfaces: ABCs vs Protocols"
+    body: |
+      **ABCs** are nominal, like an abstract base class:
+
+      ```python
+      from abc import ABC, abstractmethod
+
+      class Notifier(ABC):
+          @abstractmethod
+          def send(self, message: str) -> None: ...
+
+      class Email(Notifier):                   # must inherit explicitly
+          def send(self, message: str) -> None: print(message)
+      ```
+
+      **Protocols** are structural, like a C# interface that's implemented
+      automatically by anything with matching members. (Go programmers: it's
+      Go interfaces.)
+
+      ```python
+      from typing import Protocol, TypeVar, Generic
+
+      T = TypeVar("T")
+
+      class Repository(Protocol[T]):           # 3.12+: class Repository[T](Protocol):
+          def add(self, key: str, item: T) -> None: ...
+          def get(self, key: str) -> T | None: ...
+          def all(self) -> list[T]: ...
+
+      class InMemoryRepository(Generic[T]):    # no inheritance from Repository needed!
+          ...
+
+      def seed(repo: Repository[str]) -> None: ...   # pyright checks the shape fits
+      ```
+
+      Prefer Protocols at boundaries (repositories, clients, notifiers): your
+      tests can pass any fake with the right shape, no mocking framework needed.
+quest:
+  title: Barracks Inspection
+  brief: |
+    Create **`questboard/repository.py`** with:
+
+    * **`Reward`**: a `@dataclass(frozen=True)` with `gold: int` and `xp: int = 0`,
+      supporting `+` (`Reward(10, 5) + Reward(1, 1) == Reward(11, 6)`).
+      Adding anything else should return `NotImplemented` so Python raises `TypeError`.
+    * **`Repository`**: a `typing.Protocol` with `add(key, item)`, `get(key)`, `all()`
+    * **`InMemoryRepository`** (generic over `T`):
+      * `add(key, item)` raises `KeyError` if the key already exists
+      * `get(key)` returns the item, or `None` if missing
+      * `all()` returns a list in insertion order
+      * `len(repo)`, `key in repo`, and `for item in repo` all work
+
+    And **`tests/test_repository.py`**: at least 3 tests that share a
+    `@pytest.fixture`. All must pass.
+  check: class_barracks
+  scaffold:
+    questboard/repository.py: repository.py
+    tests/test_repository.py: test_repository.py
+  hints:
+    - "Store items in a dict: `self._items: dict[str, T] = {}`. Dicts keep insertion order (guaranteed since 3.7), so `list(self._items.values())` is ordered."
+    - "`__len__` returns `len(self._items)`, `__contains__(self, key)` returns `key in self._items`, and `__iter__` returns `iter(self._items.values())`."
+    - "In `Reward.__add__`, start with `if not isinstance(other, Reward): return NotImplemented`."
+    - "Fixture: `@pytest.fixture` above `def repo() -> InMemoryRepository[str]: return InMemoryRepository()`, then `def test_add(repo): ...`."
+  solution:
+    files:
+      questboard/repository.py: repository.py
+      tests/test_repository.py: test_repository.py
+  commit_message: "Add Reward and a generic InMemoryRepository"
+  reward:
+    xp: 250
+    item:
+      name: Captain's Insignia
+      aliases: [insignia]
+      text: |
+        ```python
+        @dataclass(frozen=True, slots=True)          # record
+        class Reward:
+            gold: int
+            xp: int = 0
+            tags: list[str] = field(default_factory=list)
+
+        class Repo(Protocol[T]):                     # interface (structural)
+            def get(self, key: str) -> T | None: ...
+
+        class Mem(Generic[T]):                       # 3.12+: class Mem[T]:
+            def __init__(self) -> None: self._d: dict[str, T] = {}
+            def __len__(self) -> int: ...
+            def __contains__(self, k: object) -> bool: ...
+            def __iter__(self) -> Iterator[T]: ...
+
+            @property
+            def size(self) -> int: ...
+            @classmethod
+            def from_items(cls, items) -> "Mem[T]": ...
+        ```
+
+        `replace(rec, x=1)` ≈ `rec with { X = 1 }` · return `NotImplemented` for unsupported operands.

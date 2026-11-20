@@ -1,0 +1,9 @@
+# Azurath keeps your save game here. It is not part of your project.
+.azurath/
+
+# Python bytecode caches (like bin/ and obj/ in .NET)
+__pycache__/
+*.py[cod]
+
+# Virtual environments: build artifacts, never commit them
+.venv/

@@ -1,0 +1,242 @@
+id: gopher_forge
+name: The Gopher Forge
+order: 14
+optional: true
+zone: "Go extensions I: c-shared + ctypes"
+description: |
+  Down a tunnel east of the Sanctum, the air smells of solder. Small,
+  industrious gophers in leather aprons hammer Go source into gleaming
+  `.so` ingots and pass them through a hatch marked **C ABI**. On the other
+  side, a Python snake catches each ingot with `ctypes` and wraps it in
+  a neat little function.
+exits:
+  west: durable_sanctum
+  east: gopher_sanctum
+npc:
+  name: Gopher Gwen
+  aliases: [gopher, gwen]
+  greeting: |
+    "A side quest! You've got a Go library the Guild already trusts for reward
+    maths, and the Python service needs it. Two ways in:
+
+    1. **This room:** compile Go to a plain C shared library
+       (`-buildmode=c-shared`) and call it from Python with **ctypes**.
+       That's P/Invoke for Python. Simple, works everywhere cgo works, and it
+       doesn't depend on the Python version.
+    2. **Next room:** compile Go into a real **CPython extension module**
+       that you `import` like any other module.
+
+    You'll need **Go** and a **C compiler** (cgo uses it): gcc on Linux, the
+    Xcode command-line tools on macOS, MinGW-w64 on Windows."
+  topics:
+    install: |
+      "* Go: https://go.dev/dl/ (or `winget install GoLang.Go`, `brew install go`)
+      * C compiler: `sudo apt install build-essential` / `xcode-select --install` /
+        on Windows install MSYS2 and `pacman -S mingw-w64-ucrt-x86_64-gcc`, then put
+        its `bin` on PATH.
+      * Check: `!go version` and `!go env CC`, and make sure that compiler is on PATH."
+    p/invoke: |
+      "| C# P/Invoke | Python ctypes |
+      |---|---|
+      | `[DllImport("rewards")]` | `lib = ctypes.CDLL(path)` |
+      | `static extern long CalculateBonus(long b, string r);` | `lib.CalculateBonus.argtypes = [c_longlong, c_char_p]`, `restype = c_longlong` |
+      | `[MarshalAs(UnmanagedType.LPStr)]` | pass `bytes` (`"S".encode()`) to `c_char_p` |
+      | `Marshal.PtrToStringAnsi(ptr)` | `ctypes.string_at(ptr).decode()` |
+      | `Marshal.FreeHGlobal` / a native `Free` | call the library's own free function |"
+    why not: |
+      "Before you reach for native code, ask: could this be a separate Go
+      **service** (HTTP or gRPC) or a CLI you call with `subprocess`? Those
+      deploy and scale independently and can't crash your Python process. In-process
+      extensions win when calls are very frequent and very small."
+    rust: |
+      "Most new native Python extensions today are written in **Rust** with
+      **PyO3** and built with **maturin**: safe, ergonomic, great tooling, and
+      wheels for every platform. Pydantic's core and ruff are both Rust. If you
+      aren't tied to an existing Go codebase, Rust is the mainstream path."
+    azure: |
+      "Azure Functions Python apps run on **Linux x64** workers, so the `.so`
+      you deploy must be built for linux/amd64 against glibc. Build it in CI on
+      `ubuntu-latest` (add `actions/setup-go` and run the build script) or in a
+      Docker container. Cross-compiling cgo from Windows or macOS needs a cross C
+      toolchain, which is painful. Don't."
+pages:
+  - title: Why native code, and why Go is unusual
+    body: |
+      Python calls into native code all the time: `json`, `re`, numpy,
+      pydantic-core. Reasons to do it yourself:
+
+      * reuse an existing native library (your Guild's Go reward engine)
+      * hot loops where CPython is too slow
+      * releasing the GIL for CPU-heavy work
+
+      | Approach | Language | How Python sees it |
+      |---|---|---|
+      | **ctypes / cffi** + shared library | C, Go, Rust, Zig, anything with a C ABI | load a `.so`/`.dll`, declare signatures |
+      | **CPython C-API** extension module | C, C++, Go (cgo), ... | `import mymodule` |
+      | **PyO3 + maturin** | Rust | `import mymodule` (the popular choice) |
+      | pybind11 / nanobind | C++ | `import mymodule` |
+      | Cython | Python-ish | `import mymodule` |
+
+      **Go's catch:** a Go shared library carries the *entire Go runtime*
+      (garbage collector, scheduler, signal handlers) into your Python process.
+      It works, but keep the interface small, never hand Go pointers to Python,
+      and expect each library to add a few MB.
+  - title: "cgo and -buildmode=c-shared"
+    body: |
+      ```go
+      // goext/rewards.go
+      package main                   // c-shared libraries must be package main
+
+      /*
+      #include <stdlib.h>
+      */
+      import "C"                     // enables cgo; the comment above is C code
+
+      import "unsafe"
+
+      //export CalculateBonus
+      func CalculateBonus(base C.longlong, rank *C.char) C.longlong {
+          switch C.GoString(rank) {  // copy the C string into a Go string
+          case "S":
+              return base * 3
+          }
+          return -1                  // C has no exceptions: use a sentinel
+      }
+
+      //export GuildMotto
+      func GuildMotto(name *C.char) *C.char {
+          return C.CString("For " + C.GoString(name) + " and the Guild!")  // malloc'd!
+      }
+
+      //export FreeString
+      func FreeString(p *C.char) { C.free(unsafe.Pointer(p)) }
+
+      func main() {}                 // required, never called
+      ```
+
+      * `//export Name` (no space after `//`) puts the function in the C
+        symbol table.
+      * `C.CString` **mallocs** a copy. Whoever receives it must `free` it with
+        the *same* allocator, which is why the library exports `FreeString`.
+      * Build: `go build -buildmode=c-shared -o librewards.so .` produces the
+        library plus a `librewards.h` header.
+  - title: "ctypes: P/Invoke for Python"
+    body: |
+      ```python
+      import ctypes
+      from pathlib import Path
+
+      lib = ctypes.CDLL(str(Path(__file__).with_name("librewards.so")))
+
+      lib.CalculateBonus.argtypes = [ctypes.c_longlong, ctypes.c_char_p]   # declare the signature,
+      lib.CalculateBonus.restype = ctypes.c_longlong                       # or ctypes guesses (badly)
+
+      lib.GuildMotto.argtypes = [ctypes.c_char_p]
+      lib.GuildMotto.restype = ctypes.c_void_p     # NOT c_char_p: keep the raw pointer so we can free it
+      lib.FreeString.argtypes = [ctypes.c_void_p]
+
+
+      def guild_motto(name: str) -> str:
+          ptr = lib.GuildMotto(name.encode("utf-8"))   # str → bytes for char*
+          try:
+              return ctypes.string_at(ptr).decode("utf-8")
+          finally:
+              lib.FreeString(ptr)                      # or you leak on every call
+      ```
+
+      **The `c_char_p` restype trap:** ctypes would happily convert the
+      returned `char*` into `bytes` for you, but then you've lost the pointer
+      and can never free it. A memory leak per call. Use `c_void_p`.
+
+      Wrap the C conventions in a Pythonic API: turn the `-1` sentinel into a
+      `ValueError`, validate inputs before they cross the boundary, and load
+      the library lazily so importing `questboard.native` never crashes when
+      it isn't built yet.
+  - title: Building, ignoring, testing
+    body: |
+      `scaffold` gives you `scripts/build_go.py`, a small cross-platform build
+      script. It's a good example of `subprocess`, `sysconfig` and `pathlib`
+      replacing a PowerShell or bash script:
+
+      ```bash
+      !uv run python scripts/build_go.py rewards
+      ```
+
+      Built binaries are artifacts. Add them to `.gitignore` (`*.so`,
+      `*.dylib`, `*.dll`, `*.pyd`).
+
+      Tests should **skip**, not fail, when the library isn't built, for
+      example in a CI job without Go:
+
+      ```python
+      pytestmark = pytest.mark.skipif(not native.available(),
+                                      reason="run scripts/build_go.py first")
+      ```
+
+      To run them in CI, add `actions/setup-go@v5` and a
+      `uv run python scripts/build_go.py` step before `pytest`.
+quest:
+  title: Forge the Go Ingot
+  brief: |
+    1. `scaffold` (writes `goext/`, `scripts/build_go.py`, a starter
+       `questboard/native.py` and tests)
+    2. Finish **`goext/rewards.go`** exporting:
+       * `CalculateBonus(base, rank)`: `S`=×3, `A`=×2, `B`=×1.5 (integer maths:
+         `base*3/2`), `C`=×1, anything else returns `-1`
+       * `GuildMotto(name)`: returns `"For <name> and the Guild!"` as a C string
+       * `FreeString(p)`: frees strings returned by `GuildMotto`
+    3. Finish **`questboard/native.py`**: `calculate_bonus(base: int, rank: str) -> int`
+       (raises `ValueError` for unknown ranks) and `guild_motto(name: str) -> str`
+       (frees the C string)
+    4. Build: `!uv run python scripts/build_go.py rewards`, and **gitignore** the
+       built library
+    5. `tests/test_native.py` passes (and isn't skipped)
+  check: gopher_forge
+  scaffold:
+    goext/go.mod: go.mod
+    goext/rewards.go: rewards.go
+    scripts/build_go.py: build_go.py
+    questboard/native.py: native.py
+    tests/test_native.py: test_native.py
+  hints:
+    - "`go: command not found` or `cgo: C compiler \"gcc\" not found`? `ask gwen about install`."
+    - "In Go, `C.longlong` arithmetic works directly: `return base * 3`. For B-rank: `return base * 3 / 2`."
+    - "Ranks may arrive lower-case: `strings.ToUpper(C.GoString(rank))` (add `\"strings\"` to the imports)."
+    - "In Python, `restype = ctypes.c_void_p` for GuildMotto, then `ctypes.string_at(ptr).decode()` and finally `lib.FreeString(ptr)`."
+  solution:
+    files:
+      goext/go.mod: go.mod
+      goext/rewards.go: rewards.go
+      scripts/build_go.py: build_go.py
+      questboard/native.py: native.py
+      tests/test_native.py: test_native.py
+      .gitignore: .gitignore
+    commands:
+      - uv run python scripts/build_go.py rewards
+  commit_message: "Add a Go reward library called through ctypes"
+  reward:
+    xp: 350
+    item:
+      name: Gopher's Ingot
+      aliases: [ingot]
+      text: |
+        ```go
+        package main
+        // #include <stdlib.h>
+        import "C"
+        //export Add
+        func Add(a, b C.longlong) C.longlong { return a + b }
+        //export Hello
+        func Hello(n *C.char) *C.char { return C.CString("hi " + C.GoString(n)) }
+        //export Free
+        func Free(p *C.char) { C.free(unsafe.Pointer(p)) }
+        func main() {}
+        ```
+        `go build -buildmode=c-shared -o libx.so .`
+
+        ```python
+        lib = ctypes.CDLL(path)
+        lib.Add.argtypes = [c_longlong, c_longlong]; lib.Add.restype = c_longlong
+        lib.Hello.restype = c_void_p          # keep the pointer
+        s = ctypes.string_at(p).decode(); lib.Free(p)
+        ```

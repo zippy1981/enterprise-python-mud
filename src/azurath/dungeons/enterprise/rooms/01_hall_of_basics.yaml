@@ -1,0 +1,231 @@
+id: hall_of_basics
+name: Hall of Basics
+order: 1
+zone: Python Fundamentals
+description: |
+  A long hall lined with lecterns. Each one holds a slate where a line of C#
+  slowly rewrites itself into Python: braces dissolve, semicolons evaporate,
+  `foreach` softens into `for`. At the far end a magister in an
+  impeccably-indented robe taps a pointer against a chalkboard.
+exits:
+  south: gatehouse
+  north: venv_crypt
+npc:
+  name: Magister Indent
+  aliases: [magister, indent]
+  greeting: |
+    "Four spaces. Not two, not a tab. *Four*. Remember that and we'll get along.
+
+    You already know how to program, so I won't teach you what a loop is.
+    I'll teach you what a loop *looks like here*, and which C# habits will bite
+    you. Read the tome, then implement four small functions in `basics.py`.
+    We'll reuse them for the rest of your journey."
+  topics:
+    linq: |
+      "LINQ → Python, roughly:
+
+      | LINQ | Python |
+      |---|---|
+      | `xs.Select(x => x * 2)` | `[x * 2 for x in xs]` |
+      | `xs.Where(x => x > 0)` | `[x for x in xs if x > 0]` |
+      | `xs.OrderBy(x => x.Name)` | `sorted(xs, key=lambda x: x.name)` |
+      | `.OrderByDescending(a).ThenBy(b)` | `sorted(xs, key=lambda x: (-x.a, x.b))` |
+      | `xs.Any(p)` / `xs.All(p)` | `any(p(x) for x in xs)` / `all(...)` |
+      | `xs.Sum()` / `Count()` | `sum(xs)` / `len(xs)` |
+      | `xs.Take(3)` | `xs[:3]` |
+      | `xs.ToDictionary(k, v)` | `{k(x): v(x) for x in xs}` |
+      | `IEnumerable` + `yield return` | generator function with `yield` |"
+    nulls: |
+      "`None` is Python's `null`, and there's only one of it, so compare with
+      `is None`, never `== None`. Type hints spell nullable as `str | None`
+      (like `string?`). There is no null-conditional `?.`; you'll write
+      `x.name if x is not None else None`, or use `getattr(x, "name", None)`."
+    equality: |
+      "`==` calls `__eq__` (like `Equals`). `is` checks identity (like
+      `ReferenceEquals`). Use `is` only for `None`, `True`/`False` and sentinels."
+    mutable defaults: |
+      "The classic trap: `def add(item, bucket=[])`. The default list is created
+      **once**, when the function is defined, and shared by every call. Use
+      `bucket: list | None = None` and create the list inside the function."
+    gil: |
+      "CPython has a Global Interpreter Lock: only one thread runs Python bytecode
+      at a time. Threads still help for I/O. For CPU-bound work use processes,
+      native extensions (see the Gopher Forge!) or the new free-threaded 3.13+
+      builds. For I/O concurrency, `asyncio` is the `async`/`await` you know."
+pages:
+  - title: "Syntax: C# → Python"
+    body: |
+      | C# | Python |
+      |---|---|
+      | `{ ... }` blocks | indentation (4 spaces) after a `:` |
+      | `var x = 1;` | `x = 1` |
+      | `null`, `true`, `false` | `None`, `True`, `False` |
+      | `&&`, `\|\|`, `!` | `and`, `or`, `not` |
+      | `c ? a : b` | `a if c else b` |
+      | `foreach (var x in xs)` | `for x in xs:` |
+      | `for (int i = 0; i < n; i++)` | `for i in range(n):` |
+      | `$"Hi {name}"` | `f"Hi {name}"` |
+      | `// comment`, `/// <summary>` | `# comment`, `"""docstring"""` |
+      | `switch` expression | `match` statement (3.10+) |
+      | `throw new X()` / `catch (X e)` | `raise X()` / `except X as e:` |
+      | `using (var f = ...)` | `with open(...) as f:` |
+
+      ```python
+      def describe(rank: str) -> str:
+          match rank:
+              case "S" | "A":
+                  return "legendary"
+              case "B":
+                  return "respectable"
+              case _:
+                  return "humble"
+      ```
+  - title: Types and type hints
+    body: |
+      Python is **dynamically** typed (variables don't have types, values do)
+      but **strongly** typed (`1 + "1"` raises `TypeError`, no implicit
+      conversion).
+
+      Type hints are **not enforced at runtime**. They're for your IDE
+      (Pylance), and for type checkers like `mypy`/`pyright`, which act as the
+      compiler you're used to. Treat them like TypeScript annotations.
+
+      ```python
+      names: list[str] = ["ada", "grace"]          # List<string>
+      scores: dict[str, int] = {"ada": 10}         # Dictionary<string,int>
+      point: tuple[int, int] = (3, 4)              # ValueTuple<int,int>
+      tags: set[str] = {"urgent"}                  # HashSet<string>
+      maybe: str | None = None                     # string?
+      ```
+
+      **Truthiness:** empty containers, `0`, `""` and `None` are falsy, so
+      `if items:` means "if not empty". It's idiomatic, and terse.
+
+      **Mutability:** `list`, `dict` and `set` are mutable; `str`, `int`,
+      `tuple` and `frozenset` are immutable. Strings are immutable, just like
+      .NET.
+  - title: Collections and comprehensions (LINQ in disguise)
+    body: |
+      ```python
+      rewards = {"dragon": 500, "rats": 5, "lich": 500}
+
+      big = [name for name, gold in rewards.items() if gold > 100]   # Where+Select
+      by_gold = sorted(rewards, key=lambda n: (-rewards[n], n))      # OrderByDesc.ThenBy
+      lookup = {name.upper(): gold for name, gold in rewards.items()} # ToDictionary
+      total = sum(rewards.values())
+
+      for i, name in enumerate(by_gold, start=1):   # index + item
+          print(i, name)
+
+      first_two = by_gold[:2]       # slicing: [start:stop:step], negative = from end
+      last = by_gold[-1]
+      ```
+
+      **Generators** are `IEnumerable` with `yield return`. They're lazy, and
+      remember this one: Durable Functions orchestrators are generators.
+
+      ```python
+      def countdown(n: int):
+          while n > 0:
+              yield n
+              n -= 1
+
+      squares = (x * x for x in range(10))   # generator expression: lazy
+      ```
+  - title: Functions, arguments and exceptions
+    body: |
+      ```python
+      def bounty(name: str, gold: int = 0, *, currency: str = "gold") -> str:
+          return f"{name}: {gold} {currency}"
+
+      bounty("rats")                         # default args
+      bounty("rats", 5, currency="copper")   # keyword args (after * = keyword-only)
+
+      def log(*args, **kwargs): ...          # like `params object[]` + named bag
+      ```
+
+      Exceptions are idiomatic for control flow, more than in C#. "Easier to
+      ask forgiveness than permission" (EAFP):
+
+      ```python
+      class QuestError(Exception):
+          """Custom exceptions subclass Exception."""
+
+      try:
+          gold = int(text)
+      except ValueError as exc:
+          raise QuestError(f"bad gold amount: {text!r}") from exc   # inner exception
+      else:
+          print("parsed fine")        # runs only if no exception
+      finally:
+          print("always runs")
+      ```
+
+      `ValueError` ≈ `ArgumentException`, `KeyError` ≈ `KeyNotFoundException`,
+      `TypeError` ≈ `InvalidCastException`-ish, `NotImplementedError` ≈
+      `NotImplementedException`.
+  - title: Strings and the standard library
+    body: |
+      f-strings take .NET-like format specs after a colon:
+
+      ```python
+      f"{1500:,}"        # '1,500'      ({0:N0})
+      f"{3.14159:.2f}"   # '3.14'       ({0:F2})
+      f"{name!r}"        # repr(), shows quotes: "'ada'"
+      f"{gold=}"         # 'gold=1500', handy for debugging
+      ```
+
+      "Batteries included": the stdlib is large. A few you'll use constantly:
+
+      * `re`: regexes (`re.sub(r"[^a-z0-9]+", "-", text)`)
+      * `pathlib.Path`: `System.IO.Path`/`FileInfo` as one object (`Path("a") / "b.txt"`)
+      * `json`, `tomllib`, `datetime`, `uuid`, `logging`, `itertools`,
+        `functools`, `collections` (`Counter`, `defaultdict`, `deque`)
+
+      String methods: `s.strip()` (Trim), `s.lower()`, `s.split()`,
+      `"-".join(parts)` (string.Join, note it's called on the separator),
+      `s.startswith()`, `s.replace()`.
+quest:
+  title: Four Little Functions
+  brief: |
+    Create **`basics.py`** with these four **type-hinted** functions:
+
+    | Function | Behaviour |
+    |---|---|
+    | `slugify(title: str) -> str` | lowercase; every run of characters that aren't `a-z`/`0-9` becomes one `-`; no leading/trailing `-`. `"  Slay the Dragon! "` → `"slay-the-dragon"` |
+    | `parse_rank(text: str) -> str` | trims and upper-cases; must be one of `S A B C`, otherwise **raise `ValueError`**. `" a "` → `"A"` |
+    | `top_quests(rewards: dict[str, int], n: int = 3) -> list[str]` | quest names sorted by reward **descending**, ties **alphabetically**, first `n` |
+    | `format_bounty(name: str, reward: int) -> str` | `"Dragon: 1,500 gold"` (thousands separator) |
+
+    `scaffold` gives you stubs with doctest examples. Try them in the REPL:
+    `!python -c "from basics import slugify; print(slugify('Hi There'))"`
+  check: hall_of_basics
+  scaffold: [basics.py]
+  hints:
+    - "slugify: `re.sub(r\"[^a-z0-9]+\", \"-\", title.lower()).strip(\"-\")`. Don't forget `import re` at the top."
+    - "parse_rank: normalise first (`rank = text.strip().upper()`), then `if rank not in {\"S\", \"A\", \"B\", \"C\"}: raise ValueError(...)`."
+    - "top_quests: `sorted(rewards, key=lambda name: (-rewards[name], name))[:n]`. Negating the reward sorts it descending while the name still sorts ascending."
+    - "format_bounty: `f\"{name}: {reward:,} gold\"`."
+  solution:
+    files: [basics.py]
+  commit_message: "Add basics.py: slugify, parse_rank, top_quests, format_bounty"
+  reward:
+    xp: 150
+    item:
+      name: Rosetta Slate
+      aliases: [slate, rosetta]
+      text: |
+        | C# | Python |
+        |---|---|
+        | `null` / `true` | `None` / `True` |
+        | `&&` `\|\|` `!` | `and` `or` `not` |
+        | `c ? a : b` | `a if c else b` |
+        | `$"{x:N0}"` | `f"{x:,}"` |
+        | `xs.Where(p).Select(f)` | `[f(x) for x in xs if p(x)]` |
+        | `OrderByDescending(a).ThenBy(b)` | `sorted(xs, key=lambda x: (-x.a, x.b))` |
+        | `string.Join(",", xs)` | `",".join(xs)` |
+        | `throw new ArgumentException()` | `raise ValueError()` |
+        | `using (...) {}` | `with ...:` |
+        | `yield return x` | `yield x` |
+
+        Mutable default args are shared between calls. Use `None` and create inside.

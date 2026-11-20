@@ -1,0 +1,200 @@
+id: critter_arena
+name: The Critter Arena
+order: 8
+zone: Putting it all together
+description: |
+  At the top of the tower, under the open sky, is a round arena of soft
+  moss. Banners flutter with the symbols of every room you've visited. A fox
+  with a champion's ribbon stretches in the middle of the ring and grins at
+  you.
+exits:
+  south: robot_tower
+npc:
+  name: Champion Cinder
+  aliases: [cinder, fox, champion]
+  greeting: |
+    "So *you're* the coder everyone's talking about! Variables, functions,
+    tests, tidy folders, loops, a CI robot... You've got everything you need.
+
+    Time to build the actual game: **critters that battle!** You'll write the
+    battle rules as small, tested functions, then a `main.py` that brings it
+    all together and runs a real fight.
+
+    Remember what you've learned: **good names, one job per function, no
+    magic numbers, test first.** Let's see what you've got!"
+  topics:
+    while: |
+      "A `while` loop repeats **as long as** something is true, a lot like
+      Scratch's **repeat until** block, only backwards:
+      ```python
+      while first_health > 0 and second_health > 0:
+          ...   # keep fighting!
+      ```
+      Make sure something inside the loop changes, or it will run forever! (If
+      that happens, press Ctrl+C.)"
+    copies: |
+      "Careful! If your function changes a dictionary it was given, it changes
+      the **original** too, because both names point to the same dictionary.
+      Keep health in plain variables like `first_health` instead, and leave
+      the critters untouched. Your tests can check that!"
+    main: |
+      "`main.py` is the front door of your game. Put the steps in a function
+      called `main()`, and at the bottom write:
+      ```python
+      if __name__ == "__main__":
+          main()
+      ```
+      That means 'only start the game when this file is *run*, not when it's
+      imported'. Real Python programs do this everywhere."
+    what next: |
+      "Ideas for after the quest: let the player pick critters with `input()`,
+      add a `speed` that decides who attacks first, add healing snacks
+      mid-battle, keep a high-score list... Write a test first for each one!"
+pages:
+  - title: Planning the battle
+    body: |
+      Before coding, **plan** in plain words. Coders call this *pseudocode*:
+
+      > Two critters take turns. The **first** one attacks first. An attack
+      > takes away health equal to the attacker's **power**, but health never
+      > goes below 0. Keep taking turns until someone reaches 0. The other one
+      > wins!
+
+      Now split the plan into **small functions**, each with **one job**:
+
+      | Function | Its one job |
+      |---|---|
+      | `attack(attacker, defender)` | work out the defender's new health after one hit |
+      | `winner(first, second)` | run turns until someone is out, and return the winner's name |
+      | `main()` | set up two critters, run the battle and print the result |
+
+      Small functions are easy to **test** one at a time.
+
+      **Don't repeat yourself.** Both `attack` and `winner` need to "take power
+      away from health, but not below 0". Rather than writing that twice, write
+      a tiny helper, `hit(health, power)`, and use it in both places. If the
+      rule ever changes, you fix it once.
+  - title: Loops that wait with while
+    body: |
+      A `for` loop visits each item in a list. A `while` loop keeps going
+      **while** something is true:
+
+      ```python
+      first_health = first["health"]
+      second_health = second["health"]
+      while first_health > 0 and second_health > 0:
+          # first attacks...
+          # if second is out, first wins!
+          # second attacks back...
+          ...
+      ```
+
+      Use `return` to stop as soon as you know the answer. `return` leaves the
+      function straight away, even from inside a loop.
+
+      **Watch out for battles that never end!** What if both critters have 0
+      power? Nobody can ever win, so check for that **first** and return
+      `"draw"`.
+  - title: Your game's front door
+    body: |
+      `main.py` brings everything together:
+
+      ```python
+      from critters.battle import winner
+
+
+      def main():
+          sparky = {"name": "Sparky", "health": 30, "power": 12}
+          mossy = {"name": "Mossy", "health": 40, "power": 7}
+          print("Sparky vs Mossy!")
+          champion = winner(sparky, mossy)
+          print(f"{champion} wins!")
+
+
+      if __name__ == "__main__":
+          main()
+      ```
+
+      Run it with `python main.py`, and enjoy your very own game! 🎮
+
+      Look how short `main()` is. It doesn't do the maths itself; it **asks**
+      the functions you already wrote and tested. That's what tidy code looks
+      like: every piece is small, named, tested and in the right drawer.
+quest:
+  title: Battle in the Arena
+  brief: |
+    Critters now have a `"power"`, like `{"name": "Sparky", "health": 30, "power": 12}`.
+
+    **1. `critters/battle.py`** (tests first, in `tests/test_battle.py`! 🔴🟢🧹)
+
+    | Function | Returns |
+    |---|---|
+    | `attack(attacker, defender)` | the defender's health minus the attacker's power, **never below 0** |
+    | `winner(first, second)` | the **name** of the winner. They take turns, **first attacks first**, until one reaches 0. If **both** have 0 power, return `"draw"` |
+
+    Neither function may **change** the critters it's given.
+
+    **2. `main.py`** with a `main()` function (and the `if __name__ == "__main__":`
+    line) that runs a battle and prints `"<name> wins!"`
+
+    **Tidy-code rules the champion will check:**
+
+    * every function in `critters/` has a **docstring**
+    * no function is longer than **25 lines** (split big ones up!)
+    * **all** your tests pass, and Grizzle can't sneak a broken `attack` past them
+  check: critter_arena
+  scaffold:
+    critters/battle.py: battle.py
+    tests/test_battle.py: test_battle.py
+    main.py: main.py
+  hints:
+    - "`attack` is one line: `return max(defender[\"health\"] - attacker[\"power\"], 0)`. The `max` with 0 stops it going negative."
+    - "In `winner`, keep the health in two variables (`first_health`, `second_health`) so you don't change the dictionaries. A helper `hit(health, power)` that returns `max(health - power, 0)` saves repeating yourself."
+    - "Inside the `while` loop: first attacks second. If `second_health == 0`, return the first critter's name. Then second attacks first, and check the same way."
+    - "Test idea: `{\"name\": \"A\", \"health\": 10, \"power\": 5}` vs an identical `B`. Whoever goes first should win."
+  solution:
+    files:
+      critters/battle.py: battle.py
+      tests/test_battle.py: test_battle.py
+      main.py: main.py
+  commit_message: "Critters can battle in the arena!"
+  epilogue: |
+    The crowd of critters goes wild! 🎉 Champion Cinder bows and ties her
+    ribbon around your wrist.
+
+    *"Not bad for someone who walked in saying `print("Hello")`! You've built a
+    real Python project, and it's tidy, tested and checked by a robot. That's
+    exactly how professional coders work."*
+
+    Look back at your journey: type `log` to see every save point.
+
+    **What you learned:** variables and good names · functions that return ·
+    testing, and red-green-tidy · organizing code into packages · no magic
+    numbers · lists, dictionaries and loops · git commits · a CI robot.
+
+    **Keep going!** Add `input()` so players pick their critters, a `speed`
+    stat, or healing snacks mid-battle. Write a test first for each one. And
+    when you're ready for a bigger adventure, there's a whole other dungeon in
+    Azurath. 🌲
+
+    Thanks for playing **the Pythonwood**!
+  reward:
+    xp: 400
+    item:
+      name: Cinder's Champion Ribbon
+      aliases: [ribbon]
+      text: |
+        ```python
+        while first_health > 0 and second_health > 0:   # repeat while true
+            ...
+            return winner_name                          # leaves the function at once
+
+        def main():
+            ...
+
+        if __name__ == "__main__":                      # only when the file is run
+            main()
+        ```
+
+        **Tidy code checklist:** good names · one job per function · short functions ·
+        docstrings · no magic numbers · tests first · CI robot green ✅

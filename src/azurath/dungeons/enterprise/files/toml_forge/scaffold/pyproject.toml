@@ -1,0 +1,9 @@
+# pyproject.toml: the Python equivalent of a .csproj
+
+[project]
+name = "questboard"
+# TODO: version, description, requires-python, dependencies
+
+# TODO: [build-system] using hatchling
+
+# TODO: [tool.pytest.ini_options] with testpaths

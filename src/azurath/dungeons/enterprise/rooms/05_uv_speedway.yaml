@@ -1,0 +1,167 @@
+id: uv_speedway
+name: The uv Speedway
+order: 5
+zone: uv, the modern toolchain
+description: |
+  A racetrack of polished violet stone. Old carts labelled `pip`, `virtualenv`,
+  `pip-tools`, `pipx`, `pyenv` and `poetry` sit in the pit lane gathering dust.
+  On the track a single sleek machine marked **uv** laps them all before the
+  dust has even settled.
+exits:
+  south: toml_forge
+  east: testing_grounds
+npc:
+  name: Astral the Swift
+  aliases: [astral, swift]
+  greeting: |
+    "You've done it the old way: `venv`, `pip`, `freeze`. Good. Now forget most
+    of it. **uv** is one fast binary (written in Rust) that manages Python
+    versions, virtual environments, dependencies, lock files, tools and
+    scripts. It's the closest thing Python has to the `dotnet` CLI.
+
+    It reads the `pyproject.toml` you just forged, creates `.venv` for you,
+    and writes a cross-platform `uv.lock`. Let's add your real dependencies."
+  topics:
+    install: |
+      "* Windows: `winget install --id=astral-sh.uv -e` or
+        `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
+      * macOS: `brew install uv`
+      * Linux/macOS: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+      * Anywhere with Python: `pipx install uv`
+
+      `uv self update` keeps it fresh."
+    tools: |
+      "`uv tool install ruff` installs a CLI globally in its own isolated venv,
+      like `dotnet tool install -g`. `uvx ruff check` (`uv tool run`) runs one
+      without installing, like `npx` or `dnx`."
+    scripts: |
+      "Single-file scripts can declare their own dependencies inline (PEP 723):
+
+      ```python
+      # /// script
+      # dependencies = ["httpx"]
+      # ///
+      import httpx
+      ```
+
+      `uv run script.py` builds a throwaway env with `httpx` and runs it. Great
+      for ops scripts you'd otherwise write in PowerShell."
+    ci: |
+      "In CI, use `uv sync --locked`: it fails if `uv.lock` is out of date with
+      `pyproject.toml`, just like NuGet's `--locked-mode`. Then `uv run pytest`."
+    workspaces: |
+      "Big repo with several packages? `[tool.uv.workspace] members = [...]`
+      gives you one lock file across many projects, roughly a `.sln` with central
+      package management."
+pages:
+  - title: "uv is your dotnet CLI"
+    body: |
+      | dotnet | uv |
+      |---|---|
+      | `dotnet new console` | `uv init` (we already have a pyproject, so skip it) |
+      | `dotnet add package X` | `uv add x` |
+      | `dotnet remove package X` | `uv remove x` |
+      | `dotnet restore` | `uv sync` |
+      | `dotnet run` | `uv run python -m questboard` |
+      | `dotnet test` | `uv run pytest` |
+      | `dotnet tool install -g X` | `uv tool install x` |
+      | `dnx X` / `npx` | `uvx x` |
+      | `global.json` (SDK pin) | `.python-version` (`uv python pin 3.12`) |
+      | installing an SDK | `uv python install 3.12` |
+      | `packages.lock.json` | `uv.lock` |
+
+      `uv run <cmd>` makes sure `.venv` exists and matches the lock **first**,
+      then runs the command inside it. No activation required.
+  - title: Lock files and sync
+    body: |
+      ```bash
+      uv add pydantic pydantic-settings pyyaml   # runtime deps → [project].dependencies
+      uv add --dev pytest ruff                   # dev deps → [dependency-groups].dev
+      uv lock                                    # (re)resolve, write uv.lock
+      uv sync                                    # make .venv match uv.lock exactly
+      uv lock --upgrade-package pydantic         # bump one dependency
+      uv tree                                    # dependency graph
+      ```
+
+      * `uv add` edits `pyproject.toml` **and** updates `uv.lock` **and** syncs
+        `.venv`.
+      * `uv.lock` is **universal**: one file resolves for Windows, macOS and
+        Linux and every supported Python version. **Commit it.**
+      * `[dependency-groups]` (PEP 735) are for local and CI use only, and
+        never shipped. `uv sync` includes `dev` by default. `uv sync --no-dev`
+        is what production gets.
+      * Your project itself is installed into `.venv` in **editable** mode, so
+        `import questboard` works from anywhere, tests included.
+  - title: Migrating off requirements.txt
+    body: |
+      You have a hand-made venv and a `requirements.txt`. uv adopts both:
+
+      ```bash
+      uv add -r requirements.txt     # import pins into pyproject + lock
+      ```
+
+      uv reuses `.venv` if its interpreter satisfies `requires-python`, or
+      recreates it if not. Then **delete `requirements.txt`**: `pyproject.toml`
+      + `uv.lock` are now the single source of truth. (In the Throne Room
+      you'll *generate* a fresh one for Azure with `uv export`.)
+
+      There's also `uv pip install ...`, a drop-in pip replacement for legacy
+      workflows. Handy, but `uv add` is the modern way.
+  - title: Pinning a Python version
+    body: |
+      ```bash
+      uv python list            # what's installed / available
+      uv python install 3.12    # download a managed CPython
+      uv python pin 3.12        # writes .python-version (commit it)
+      ```
+
+      Azure Functions only supports specific Python versions on its workers.
+      Check the "Supported languages" page in the Azure Functions docs and pin
+      a version that's GA there, so `local == CI == Azure`. Otherwise you get
+      the Python version of "works on my machine".
+
+      uv-managed interpreters also ship the C headers, which the Gopher rooms
+      later will thank you for.
+quest:
+  title: Lap the Speedway
+  brief: |
+    Hand your project over to uv:
+
+    1. `!uv add pydantic pydantic-settings pyyaml`
+       (or `!uv add -r requirements.txt` first, then add the other two)
+    2. `!uv add --dev pytest ruff`
+    3. Delete the hand-made pins: `!git rm requirements.txt`
+    4. Look at what changed: `cat pyproject.toml`, `!git status`, `!uv tree`
+
+    The runes check `pyproject.toml` declares the runtime and dev
+    dependencies, that `uv.lock` exists, and that `.venv` really has them all.
+    Optional: pin your Python with `!uv python pin 3.12` (or your version).
+  check: uv_speedway
+  hints:
+    - "`!uv --version` first. If uv isn't installed, `ask astral about install`."
+    - "If `uv add` complains about `requires-python`, it means `.venv`'s Python is older than your pyproject allows. `!uv venv --clear` (or delete .venv) and retry."
+    - "Dev dependencies end up under `[dependency-groups]` → `dev = [...]` in pyproject.toml. If you added them without `--dev`, `!uv remove pytest ruff` and add them again with `--dev`."
+  solution:
+    commands:
+      - uv add pydantic pydantic-settings pyyaml
+      - uv add --dev pytest ruff
+      - git rm -q requirements.txt
+    notes: "Then `cat pyproject.toml` to see what uv wrote for you."
+  commit_message: "Manage dependencies with uv"
+  reward:
+    xp: 200
+    item:
+      name: Astral Spurs
+      aliases: [spurs]
+      text: |
+        ```
+        uv add pkg                  uv remove pkg          uv add --dev pytest
+        uv sync                     uv sync --locked       uv sync --no-dev
+        uv lock                     uv lock --upgrade-package pkg
+        uv run pytest               uv run python -m questboard
+        uv tree                     uv python pin 3.12     uv python install 3.12
+        uv tool install ruff        uvx ruff check         uv export -o requirements.txt
+        uv add -r requirements.txt  uv pip install ...     uv self update
+        ```
+
+        Commit `pyproject.toml`, `uv.lock` and `.python-version`. Never commit `.venv`.

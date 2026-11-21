@@ -66,7 +66,7 @@ def test_auto_commit_can_be_disabled(make_player) -> None:
     solve_gatehouse(player.game.ws)
     player("check")
     assert len(player.game.ws.git("log", "--oneline").stdout.splitlines()) == 1
-    assert "committed" in player("commit my message")
+    assert 'git commit -m "my message"' in player("commit my message")
     assert "my message" in player.game.ws.git("log", "--oneline").stdout
 
 

@@ -139,6 +139,22 @@ Optional extras, for later rooms:
   app locally (the quests don't require them)
 * [Go](https://go.dev/dl/) and a C compiler (gcc / Xcode CLT / MinGW-w64) for the Gopher side quests
 
+
+### Play in your browser, with a map (preview)
+
+```bash
+uv run azurath web
+```
+
+This opens the game in your browser:
+- a **map** of the dungeon that fills in as you go;
+- tabs for the room's **story**, **lesson** pages, **quest** (with a live ✔/✘ checklist)
+  and **code**, a simple editor where Tab types 4 spaces.
+
+In a guided room, each STEP's choices appear as **cards**. Click one and it's
+uncommented in your file, keeping its indentation. The game runs on your computer, and
+the page is only reachable from it (127.0.0.1, with a secret token in the address).
+
 ## Playing in VS Code
 
 1. Open this folder in VS Code and install the recommended extensions when prompted.

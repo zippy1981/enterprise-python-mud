@@ -165,8 +165,8 @@ Rules:
 3. Use the **verify-room** skill: `uv run python .claude/skills/verify-room/verify_room.py my_room --dungeon <id>`
 4. Play it once: use the **playtest** skill, or delegate to the `playtester` agent.
 5. `uv run pytest -m slow -q` for the full walkthrough, then `uv run ruff check . && uv run ruff format --check .`
-7. Refresh the dungeon checksum: `uv run python -m azurath.checksums` (`tests/test_checksums.py` fails until you do).
-6. Add the room to the curriculum table in `README.md`.
+6. Refresh the dungeon checksum: `uv run python -m azurath.checksums` (`tests/test_checksums.py` fails until you do).
+7. Add the room to the curriculum table in `README.md`.
 
 ## Adding a whole dungeon
 

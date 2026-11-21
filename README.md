@@ -109,6 +109,12 @@ Both are ignored by this repo's git. Next time, `uv run azurath` finds your save
 on. Choose another location with `--workspace PATH` or `AZURATH_WORKSPACE`, and list the
 dungeons with `uv run azurath dungeons`.
 
+At startup the game checks that git is installed and working, and that `user.name` and
+`user.email` are set in your global git config. If they aren't, it explains why commits
+need them and offers to set them (`git config --global ...`) for you. If a commit fails
+later, it explains why (missing identity, not a repository, a stale lock file, git's
+"dubious ownership" check), offers a fix where one is safe, and retries.
+
 Optional extras, for later rooms:
 
 * [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local)

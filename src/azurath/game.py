@@ -90,6 +90,10 @@ class Game:
                 f"not {self.dungeon.id!r}. Pick a different --workspace."
             )
         self.state = saved or PlayerState.new(self.dungeon.id, self.dungeon.start)
+        # A front end other than the terminal (azurath.session) can open files itself:
+        # given the absolute path and the workspace-relative one, it returns True if it
+        # took care of it, so no terminal editor is launched.
+        self.open_file: Callable[[Path, str], bool] | None = None
 
     @property
     def title(self) -> str:
@@ -796,6 +800,9 @@ class Game:
             starter = self.dungeon.room_file(self.room.id, "scaffold", quest.scaffold[rel])
             self.ws.write(rel, starter.read_text(encoding="utf-8"))
             self.out.info(f"(created {rel} from the quest's starter template)")
+        if self.open_file is not None and self.open_file(path, rel):
+            self.out.ok(f"opened {rel}. Save it, then `check` here.")
+            return
         choice = choose_editor(path, self.settings.editor, force=force)
         if choice is None:
             self.out.error("No editor found. Set AZURATH_EDITOR (e.g. `vim`, `nano`, `code -r`).")
@@ -835,6 +842,9 @@ class Game:
     def cmd_code(self, arg: str) -> None:
         if arg:
             self._edit(arg, force="code")
+            return
+        if self.open_file is not None and self.open_file(self.ws.root, ""):
+            self.out.ok("opened your workspace")
             return
         cli = shutil.which("code") or shutil.which("code-insiders")
         if not cli:

@@ -1,0 +1,92 @@
+id: variable_grove_guided_strings
+name: The Word Weaver's Nook
+order: 4
+guided: true
+zone: "Variables: strings (text)"
+description: |
+  A cosy nook in the roots where a spider weaves words into her web. She
+  joins them, stretches them, shouts them in capitals, and counts every
+  letter twice.
+exits:
+  south: variable_grove_guided_math
+  east: variable_grove_guided_order
+npc:
+  name: Bramble the Squirrel
+  aliases: [bramble, squirrel]
+  greeting: |
+    "Text in Python is called a **string**, like letters strung on a thread. Let's
+    play with them: join them, shout them, measure them, and drop them into
+    sentences with f-strings."
+  topics:
+    f-strings: |
+      "In an f-string, the `{ }` hold a variable's **name**, never its value:
+      `f"{full_name} has {count} characters"`. Python looks inside those jars
+      and swaps in what it finds."
+    methods: |
+      "A **method** is a function that belongs to a value, written after a dot:
+      `full_name.upper()`, `full_name.lower()`, `full_name.title()`. Don't forget
+      the brackets!"
+pages:
+  - title: Playing with strings
+    body: |
+      ```python
+      first = "Pip"
+      last = "Acornsworth"
+
+      full = first + " " + last     # join with +   -> "Pip Acornsworth"
+      full.upper()                  # SHOUT         -> "PIP ACORNSWORTH"
+      full.lower()                  # whisper       -> "pip acornsworth"
+      len(full)                     # how long      -> 15 (the space counts!)
+      full[0]                       # first letter  -> "P" (positions start at 0)
+      "hip" * 3                     # repeat        -> "hiphiphip"
+      ```
+
+      **f-strings** put variables into a sentence. ⚠️ Inside the `{ }` goes the
+      variable's **name**, not its value:
+
+      ```python
+      count = len(full)
+      print(f"{full} has {count} characters")   # ✅ Pip Acornsworth has 15 characters
+      print(f"{Pip} has {15} characters")       # ❌ NameError: there's no jar called Pip
+      ```
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/words.py`**.
+
+      * **STEP 1:** a name with a space in it needs `" "` joined in the middle.
+      * **STEP 2:** `.upper()` goes *after* the string, with a dot.
+      * **STEP 3:** `len()` is a function: the string goes inside the brackets.
+      * **STEP 4:** positions start at **0**.
+      * **STEP 5:** `f` before the quotes, and **names** in the braces.
+      * **STEP 6:** you can't add a number to a string, but you *can* multiply one!
+
+      **How to do a guided path:** `scaffold` gives you the practice file. Each STEP
+      has a few choices with a `#` in front, and only one is right. Uncomment the
+      right one by deleting the `#` **and the space after it**. The quick way is to
+      click the line and press **Ctrl+/** (**Cmd+/** on a Mac). Then `python` the
+      file and `check`.
+quest:
+  title: "Practise at The Word Weaver's Nook"
+  brief: |
+    Uncomment the right line in each STEP of **`practice/words.py`**, so that it
+    prints:
+
+    ```
+    PIP ACORNSWORTH
+    P
+    Pip Acornsworth has 15 characters
+    hiphiphip
+    ```
+  check: variable_grove_guided_strings
+  scaffold:
+    practice/words.py: words.py
+  hints:
+    - "STEP 1 is `full_name = first + \" \" + last`."
+    - "STEP 4 uses `[0]`, because the first position is 0."
+    - "STEP 5 is the one with `f` before the quotes: `f\"{full_name} has {count} characters\"`."
+  solution:
+    files:
+      practice/words.py: words.py
+  commit_message: "Practise on the guided path: The Word Weaver's Nook"
+  reward:
+    xp: 50

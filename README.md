@@ -59,22 +59,39 @@ Short, friendly lessons with animal mentors and lots of Scratch comparisons. It 
 **variables, functions and organizing code well**, and teaches testing and CI at a
 grade-school level: write the test first and watch it go 🔴 red, make it 🟢 green, then 🧹
 tidy. When you `check`, *Grizzle the gnome* breaks your functions on purpose, and your
-tests have to catch him. For the first five rooms there's nothing to install: the game's
+tests have to catch him. Until the Backpack Burrow there's nothing to install: the game's
 `python` and `pytest` commands just work. Then the Backpack Burrow introduces **packages,
 virtual environments and uv**: the project gets its own `.venv` "backpack", and from then
 on the game's commands (and the CI robot) use it.
+
+**Every lesson has two rooms.** First a **guided path**: a practice file in `practice/`
+with numbered STEPs, each with a few commented-out choices, where the player uncomments the
+right line (Ctrl+/ in VS Code). Then the **lesson room** below, where they write the code
+themselves and it's checked with tests. Variables are the foundation, so Variable Grove has
+**five** guided paths before it: making variables and their types, maths and reassignment,
+strings, order of operations, and `+=`/`-=` (Python has no `++`). Later lessons build on
+them: `+=` in loops, `-=` in battles, brackets in function maths, `.upper()` on list items.
+After the variables come **decisions** (`if`/`elif`/`else`, where the spaces at the start
+of a line first matter), then **functions**, where every check measures indentation:
+exactly 4 spaces per block, never 2, 3 or a tab. Once players know both, the Shortcut Trail
+teaches returning a comparison directly (`return energy < 20`, `if is_sleepy:`), and later
+checks keep holding them to it. That makes 26 rooms in all. After every passed
+check, a "What next?" panel lists what's left to do in the room, suggests `read` if any
+pages are unread, and otherwise points the way forward.
 
 | # | Room | You learn | You build in critter-quest |
 |---|------|-----------|----------------------------|
 | 0 | The Trailhead | running a program, `print`, comments, reading errors | `hello.py` |
 | 1 | Variable Grove | variables as labelled jars, types, **good names**, f-strings | `critter.py` |
-| 2 | Function Falls | `def`, parameters, **return vs print**, `if`, one job per function | `actions.py` |
-| 3 | The Testing Meadow | tests with `assert` and pytest, **red → green → tidy**, edge cases | `tests/test_actions.py` + `rest()` written test-first |
-| 4 | The Tidy Treehouse | packages and imports, **named constants instead of magic numbers**, docstrings, refactoring safely | the `critters/` package |
-| 5 | The Backpack Burrow | **packages** (code you can borrow from PyPI), **virtual environments** as a project's own backpack, **uv** (`init`, `add`, `add --dev`, `run`, `sync`), the packing list and the receipt | `pyproject.toml`, `uv.lock`, `.venv`, `fun.py` |
-| 6 | The Looping Lagoon | lists, dictionaries, `for` loops, the empty-list edge case | `critters/team.py` |
-| 7 | The Robot Tower | git commits as save points, **CI as a robot that runs every test** (with uv) | `.github/workflows/tests.yml` |
-| 8 | The Critter Arena | planning, `while` loops, `main()`, all the tidy-code rules together | `critters/battle.py`, `main.py` |
+| 2 | The Crossroads | `if` / `elif` / `else`, comparisons, `=` vs `==`, **indentation**: 4 spaces per block | `mood.py` |
+| 3 | Function Falls | `def`, parameters, **return vs print**, `if` inside functions, **indentation enforced**, one job per function | `actions.py` |
+| 4 | The Shortcut Trail | **returning a True/False answer directly**, `if x:` not `if x == True:`, `not`, refactoring | `is_full()`, a tidier `mood.py` |
+| 5 | The Testing Meadow | tests with `assert` and pytest, **red → green → tidy**, edge cases | `tests/test_actions.py` + `rest()` written test-first |
+| 6 | The Tidy Treehouse | packages and imports, **named constants instead of magic numbers**, docstrings, refactoring safely | the `critters/` package |
+| 7 | The Backpack Burrow | **packages** (code you can borrow from PyPI), **virtual environments** as a project's own backpack, **uv** (`init`, `add`, `add --dev`, `run`, `sync`), the packing list and the receipt | `pyproject.toml`, `uv.lock`, `.venv`, `fun.py` |
+| 8 | The Looping Lagoon | lists, dictionaries, `for` loops, the empty-list edge case | `critters/team.py` |
+| 9 | The Robot Tower | git commits as save points, **CI as a robot that runs every test** (with uv) | `.github/workflows/tests.yml` |
+| 10 | The Critter Arena | planning, `while` loops, `main()`, all the tidy-code rules together | `critters/battle.py`, `main.py` |
 
 **For parents and teachers:** a grown-up may need to help install uv and git (see Quick
 start). After that, everything happens inside the game. The CI room's optional step of
@@ -147,6 +164,27 @@ Your `questboard/` folder shows up in the Explorer. When you reach the venv room
 `questboard/.venv` as the interpreter (**Python: Select Interpreter**) for IntelliSense on your
 dependencies. You can also run **Azurath: check current quest** from a second terminal
 without leaving your editor.azureath
+
+### VS Code for the Pythonwood (no AI helpers)
+
+Learners should write, and understand, their own code, so the Pythonwood switches AI
+assistants off while keeping VS Code's normal autocomplete:
+
+* **Settings in the project.** New and existing `critter-quest` projects get
+  `.vscode/settings.json` (never overwritten). It turns off Copilot completions, chat and
+  next-edit suggestions, VS Code's built-in AI features (`chat.disableAIFeatures`) and
+  inline "ghost text" from any extension (`editor.inlineSuggest.enabled`). Regular
+  IntelliSense, the list of names as you type, stays **on**. It also turns on auto-save
+  (so `check` always sees the latest code), bigger fonts and visible indentation.
+* **A clean profile.** The game's `code` command opens the project in a separate VS Code
+  profile called **Pythonwood**, and installs only the Python extension into it. A new
+  profile starts with no extensions, so Copilot, Claude and other assistants aren't even
+  loaded there. (There's also a VS Code task: *Azurath: open critter-quest for learning*.)
+* **Recommendations.** `.vscode/extensions.json` recommends the Python extension and lists
+  the common AI assistants as unwanted, so VS Code won't suggest installing them.
+
+Settings only apply when the `critter-quest` folder itself is the open folder, which is
+what `code` does. If you open this whole repo instead, the project's settings don't apply.
 
 ## Playing with vim (or anything else)
 

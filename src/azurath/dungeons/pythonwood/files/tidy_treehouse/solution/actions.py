@@ -18,6 +18,11 @@ def is_tired(energy):
     return energy < TIRED_BELOW
 
 
+def is_full(health):
+    """Return True if the critter's health is already at MAX_HEALTH."""
+    return health >= MAX_HEALTH
+
+
 def rest(energy, hours):
     """Sleep for some hours, gaining REST_PER_HOUR energy each hour, up to MAX_ENERGY."""
     return min(energy + hours * REST_PER_HOUR, MAX_ENERGY)

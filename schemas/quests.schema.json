@@ -1,0 +1,75 @@
+{
+  "$defs": {
+    "QuestSeed": {
+      "additionalProperties": false,
+      "properties": {
+        "guilds": {
+          "items": {
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "title": "Guilds",
+          "type": "array"
+        },
+        "rank": {
+          "default": "C",
+          "enum": [
+            "S",
+            "A",
+            "B",
+            "C"
+          ],
+          "title": "Rank",
+          "type": "string"
+        },
+        "reward": {
+          "minimum": 0,
+          "title": "Reward",
+          "type": "integer"
+        },
+        "title": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "reward"
+      ],
+      "title": "QuestSeed",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "defaults": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Defaults"
+    },
+    "quests": {
+      "items": {
+        "$ref": "#/$defs/QuestSeed"
+      },
+      "minItems": 1,
+      "title": "Quests",
+      "type": "array"
+    }
+  },
+  "required": [
+    "quests"
+  ],
+  "title": "YAML Scriptorium quest seed data",
+  "type": "object"
+}

@@ -1,7 +1,9 @@
 {
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv",
   "python.testing.pytestEnabled": true,
-  "python.testing.pytestArgs": ["tests"],
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.formatOnSave": true
@@ -10,5 +12,16 @@
     "**/__pycache__": true,
     "**/.pytest_cache": true,
     "**/.ruff_cache": true
+  },
+  "yaml.schemas": {
+    "./schemas/room.schema.json": [
+      "src/azurath/dungeons/*/rooms/*.yaml"
+    ],
+    "./schemas/dungeon.schema.json": [
+      "src/azurath/dungeons/*/dungeon.yaml"
+    ],
+    "./schemas/quests.schema.json": [
+      "src/azurath/dungeons/enterprise/files/yaml_scriptorium/*/quests.yaml"
+    ]
   }
 }

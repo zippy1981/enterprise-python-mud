@@ -107,7 +107,7 @@ def test_room_refs_parse_local_and_qualified_names() -> None:
 def test_cross_dungeon_exits_are_rejected_for_now() -> None:
     enterprise = ATLAS.get("enterprise")
     data = enterprise.model_dump()
-    data["rooms"]["gatehouse"]["exits"]["portal"] = "pythonwood:trailhead"
+    data["rooms"]["gatehouse"]["exits"]["up"] = "pythonwood:trailhead"
     with pytest.raises(ValidationError, match="cross-dungeon exits aren't supported yet"):
         Dungeon.model_validate(data)
 

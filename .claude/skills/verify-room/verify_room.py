@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -31,7 +30,7 @@ from pathlib import Path
 from azurath.checks import Report, run_check
 from azurath.content import Dungeon, Room, load_atlas
 from azurath.state import PlayerState
-from azurath.workspace import Workspace
+from azurath.workspace import Workspace, remove_tree, write_python_shim
 
 
 def print_report(label: str, report: Report, *, show_passes: bool = False) -> None:
@@ -82,9 +81,7 @@ def path_to(dungeon: Dungeon, target: Room) -> list[Room]:
 def prepare_environment(scratch: Path) -> None:
     """Make `python` resolvable and give git an identity, as the test suite does."""
     shim = scratch / "shim-bin"
-    shim.mkdir()
-    base = Path(getattr(sys, "_base_executable", sys.executable))
-    (shim / ("python.exe" if os.name == "nt" else "python")).symlink_to(base)
+    write_python_shim(shim, getattr(sys, "_base_executable", sys.executable))
     os.environ["PATH"] = f"{shim}{os.pathsep}{os.environ.get('PATH', '')}"
     for var, value in {
         "GIT_AUTHOR_NAME": "Azurath Verify",
@@ -192,9 +189,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.keep:
             print(f"\nWorkspace kept at {ws.root}")
         else:
-            shutil.rmtree(scratch, ignore_errors=True)
+            remove_tree(scratch)
         if args.setup_only:
-            shutil.rmtree(scratch / "shim-bin", ignore_errors=True)
+            remove_tree(scratch / "shim-bin")
 
     expectations = "empty fails, scaffold fails, solution passes"
     print(f"\n{'VERIFIED' if ok else 'BROKEN'}: {target.id} ({expectations})")

@@ -11,7 +11,7 @@ from azurath import gitcheck
 from azurath.content import load_dungeon
 from azurath.game import Game
 from azurath.settings import AzurathSettings
-from azurath.workspace import RunResult
+from azurath.workspace import RunResult, remove_tree
 
 GIT_ENV = ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL")
 
@@ -182,7 +182,7 @@ def test_commit_failures_are_classified(stderr: str, kind: str) -> None:
 def test_a_lost_git_repo_can_be_recreated(tmp_path: Path) -> None:
     session = Session(tmp_path, ["y", "Ada"])
     session.game.start()
-    shutil.rmtree(session.game.ws.root / ".git")
+    remove_tree(session.game.ws.root / ".git")  # git objects are read-only on Windows
     session.answers = ["y"]
     session.game.handle("commit after the accident")
     assert "isn't a git repository" in session.output

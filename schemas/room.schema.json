@@ -1,0 +1,336 @@
+{
+  "$defs": {
+    "Item": {
+      "additionalProperties": false,
+      "properties": {
+        "aliases": {
+          "items": {
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "name": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Name",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "text"
+      ],
+      "title": "Item",
+      "type": "object"
+    },
+    "Npc": {
+      "additionalProperties": false,
+      "properties": {
+        "aliases": {
+          "items": {
+            "pattern": "^[a-z][a-z0-9 _-]*$",
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "greeting": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Greeting",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Name",
+          "type": "string"
+        },
+        "topics": {
+          "patternProperties": {
+            "\\S": {
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "minLength": 1
+          },
+          "title": "Topics",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "greeting"
+      ],
+      "title": "Npc",
+      "type": "object"
+    },
+    "Page": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Body",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "body"
+      ],
+      "title": "Page",
+      "type": "object"
+    },
+    "Quest": {
+      "additionalProperties": false,
+      "properties": {
+        "brief": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Brief",
+          "type": "string"
+        },
+        "check": {
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Check",
+          "type": "string"
+        },
+        "commit_message": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commit Message"
+        },
+        "epilogue": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Epilogue"
+        },
+        "hints": {
+          "items": {
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "title": "Hints",
+          "type": "array"
+        },
+        "reward": {
+          "$ref": "#/$defs/Reward"
+        },
+        "scaffold": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Scaffold",
+          "type": "object"
+        },
+        "solution": {
+          "$ref": "#/$defs/Solution"
+        },
+        "title": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "brief",
+        "check"
+      ],
+      "title": "Quest",
+      "type": "object"
+    },
+    "Reward": {
+      "additionalProperties": false,
+      "properties": {
+        "item": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Item"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "xp": {
+          "default": 100,
+          "minimum": 0,
+          "title": "Xp",
+          "type": "integer"
+        }
+      },
+      "title": "Reward",
+      "type": "object"
+    },
+    "Solution": {
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "items": {
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "title": "Commands",
+          "type": "array"
+        },
+        "files": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Files",
+          "type": "object"
+        },
+        "notes": {
+          "default": "",
+          "title": "Notes",
+          "type": "string"
+        }
+      },
+      "title": "Solution",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Description",
+      "type": "string"
+    },
+    "exits": {
+      "additionalProperties": {
+        "pattern": "^([a-z][a-z0-9_]*:)?[a-z][a-z0-9_]*$",
+        "type": "string"
+      },
+      "propertyNames": {
+        "enum": [
+          "north",
+          "south",
+          "east",
+          "west",
+          "up",
+          "down",
+          "northeast",
+          "northwest",
+          "southeast",
+          "southwest"
+        ]
+      },
+      "title": "Exits",
+      "type": "object"
+    },
+    "guided": {
+      "default": false,
+      "title": "Guided",
+      "type": "boolean"
+    },
+    "id": {
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Name",
+      "type": "string"
+    },
+    "npc": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Npc"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "optional": {
+      "default": false,
+      "title": "Optional",
+      "type": "boolean"
+    },
+    "order": {
+      "minimum": 0,
+      "title": "Order",
+      "type": "integer"
+    },
+    "pages": {
+      "items": {
+        "$ref": "#/$defs/Page"
+      },
+      "title": "Pages",
+      "type": "array"
+    },
+    "quest": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Quest"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "zone": {
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Zone",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "order",
+    "zone",
+    "description"
+  ],
+  "title": "Azurath room",
+  "type": "object"
+}

@@ -28,6 +28,24 @@ dungeons/pythonwood/
 The game discovers dungeons by looking for `dungeons/*/dungeon.yaml`
 (`azurath.content.load_atlas()`). Nothing else needs registering.
 
+## YAML is strict
+
+All YAML is loaded with `azurath.yamlstrict` (a SafeLoader that **rejects duplicate keys**,
+since PyYAML silently keeps the last one) and validated against strict pydantic schemas:
+
+* **unknown keys are errors**, so a typo like `exit:` for `exits:` fails instead of being ignored
+* **no type coercion**: `xp: "100"` is an error, not 100
+* **string rules**: ids are `snake_case`, exits use real compass directions, visible text
+  can't be blank, and file paths must be relative with forward slashes and no `..`
+
+Room and dungeon files use the models in `azurath/content.py`; workflows and the YAML
+Scriptorium's seed data use `azurath/schemas.py`. `tests/test_yaml_schemas.py` validates
+**every** tracked `.yaml`/`.yml` file, and fails if a new one has no schema rule.
+
+For editors, `uv run python -m azurath.schemas` writes JSON Schemas to `schemas/`.
+`.vscode/settings.json` maps them for the YAML extension, so mistakes are underlined as
+you type. Regenerate them whenever a model changes (a test checks they're current).
+
 ## How a session picks its dungeon
 
 1. `--dungeon` / `AZURATH_DUNGEON` / `dungeon = "..."` in `azurath.toml`

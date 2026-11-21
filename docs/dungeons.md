@@ -31,20 +31,30 @@ The game discovers dungeons by looking for `dungeons/*/dungeon.yaml`
 ## YAML is strict
 
 All YAML is loaded with `azurath.yamlstrict` (a SafeLoader that **rejects duplicate keys**,
-since PyYAML silently keeps the last one) and validated against strict pydantic schemas:
+since PyYAML silently keeps the last one) and validated against **JSON Schema** files
+(draft 2020-12) in `src/azurath/schemas/`:
 
-* **unknown keys are errors**, so a typo like `exit:` for `exits:` fails instead of being ignored
+* **unknown keys are errors** (`additionalProperties: false`), so a typo like `exit:` for
+  `exits:` fails instead of being ignored
 * **no type coercion**: `xp: "100"` is an error, not 100
 * **string rules**: ids are `snake_case`, exits use real compass directions, visible text
   can't be blank, and file paths must be relative with forward slashes and no `..`
 
-Room and dungeon files use the models in `azurath/content.py`; workflows and the YAML
-Scriptorium's seed data use `azurath/schemas.py`. `tests/test_yaml_schemas.py` validates
-**every** tracked `.yaml`/`.yml` file, and fails if a new one has no schema rule.
+| Schema | For |
+|---|---|
+| `room.schema.json` | `dungeons/<id>/rooms/*.yaml` |
+| `dungeon.schema.json` | `dungeons/<id>/dungeon.yaml` |
+| `workflow.schema.json` | GitHub Actions workflows (this repo's and the ones players write) |
+| `quests.schema.json` | the YAML Scriptorium's quest seed data |
+| `common.schema.json` | shared `$defs` (identifier, text, relative path, file map) |
 
-For editors, `uv run python -m azurath.schemas` writes JSON Schemas to `schemas/`.
-`.vscode/settings.json` maps them for the YAML extension, so mistakes are underlined as
-you type. Regenerate them whenever a model changes (a test checks they're current).
+The JSON files are the single source of truth. `azurath.yamlschema` validates against them
+when the game loads its content (so a bad room stops the game with the file and the path to
+the problem), `tests/test_yaml_schemas.py` validates **every** tracked `.yaml`/`.yml` file
+and fails if a new one has no schema rule, and `.vscode/settings.json` points the YAML
+extension at the same files, so mistakes are underlined as you type. The pydantic models in
+`azurath/content.py` still hold the loaded data; a test checks the schemas cover every
+model field, so add a new field to both.
 
 ## How a session picks its dungeon
 

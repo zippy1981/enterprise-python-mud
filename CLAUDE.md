@@ -25,6 +25,11 @@ and Linux** (CI runs all three), so follow these rules.
 - **Paths:** use `pathlib`, always open text files with `encoding="utf-8"`, and never
   hard-code `/` or `\\` separators in paths you build.
 
+- **YAML schemas are JSON Schema**, in `src/azurath/schemas/*.schema.json`, not Python
+  code. Every tracked `.yaml`/`.yml` needs a rule in `tests/test_yaml_schemas.py`. Load
+  YAML with `azurath.yamlstrict` (rejects duplicate keys) and validate with
+  `azurath.yamlschema`.
+
 ## Checks before you finish
 
 ```bash

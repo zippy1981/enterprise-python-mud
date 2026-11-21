@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://azurath.invalid/schemas/room.schema.json",
+  "title": "An Azurath room (dungeons/<dungeon>/rooms/*.yaml)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "order", "zone", "description"],
+  "properties": {
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "name": { "$ref": "common.schema.json#/$defs/text" },
+    "order": { "type": "integer", "minimum": 0 },
+    "zone": { "$ref": "common.schema.json#/$defs/text" },
+    "description": { "$ref": "common.schema.json#/$defs/text" },
+    "optional": { "type": "boolean", "description": "A side quest, off the main path" },
+    "guided": { "type": "boolean", "description": "An 'uncomment the right answer' room" },
+    "exits": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "north", "south", "east", "west", "up", "down",
+          "northeast", "northwest", "southeast", "southwest",
+          "n", "s", "e", "w", "u", "d", "ne", "nw", "se", "sw"
+        ]
+      },
+      "additionalProperties": {
+        "description": "A room id, or dungeon_id:room_id (cross-dungeon exits are rejected for now)",
+        "type": "string",
+        "pattern": "^([a-z][a-z0-9_]*:)?[a-z][a-z0-9_]*$"
+      }
+    },
+    "npc": { "$ref": "#/$defs/npc" },
+    "pages": { "type": "array", "items": { "$ref": "#/$defs/page" } },
+    "quest": { "$ref": "#/$defs/quest" }
+  },
+  "$defs": {
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "body"],
+      "properties": {
+        "title": { "$ref": "common.schema.json#/$defs/text" },
+        "body": { "$ref": "common.schema.json#/$defs/text" }
+      }
+    },
+    "npc": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "greeting"],
+      "properties": {
+        "name": { "$ref": "common.schema.json#/$defs/text" },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9 _-]*$" }
+        },
+        "greeting": { "$ref": "common.schema.json#/$defs/text" },
+        "topics": {
+          "type": "object",
+          "propertyNames": { "$ref": "common.schema.json#/$defs/text" },
+          "additionalProperties": { "$ref": "common.schema.json#/$defs/text" }
+        }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "text"],
+      "properties": {
+        "name": { "$ref": "common.schema.json#/$defs/text" },
+        "aliases": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/text" } },
+        "text": { "$ref": "common.schema.json#/$defs/text" }
+      }
+    },
+    "quest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "brief", "check"],
+      "properties": {
+        "title": { "$ref": "common.schema.json#/$defs/text" },
+        "brief": { "$ref": "common.schema.json#/$defs/text" },
+        "check": { "$ref": "common.schema.json#/$defs/identifier" },
+        "hints": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/text" } },
+        "scaffold": { "$ref": "common.schema.json#/$defs/fileMap" },
+        "solution": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "files": { "$ref": "common.schema.json#/$defs/fileMap" },
+            "commands": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/text" } },
+            "notes": { "type": "string" }
+          }
+        },
+        "reward": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "xp": { "type": "integer", "minimum": 0 },
+            "item": { "$ref": "#/$defs/item" }
+          }
+        },
+        "commit_message": { "$ref": "common.schema.json#/$defs/text" },
+        "epilogue": { "$ref": "common.schema.json#/$defs/text" }
+      }
+    }
+  }
+}

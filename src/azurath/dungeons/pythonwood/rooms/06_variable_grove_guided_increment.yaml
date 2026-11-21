@@ -1,0 +1,82 @@
+id: variable_grove_guided_increment
+name: The Tally Tree
+order: 6
+guided: true
+zone: "Variables: += and -="
+description: |
+  An old tree covered in tally marks, four lines and a slash, over and
+  over. A squirrel adds a mark every time an acorn drops, and rubs one out
+  whenever she eats one.
+exits:
+  south: variable_grove_guided_order
+  north: variable_grove
+npc:
+  name: Bramble the Squirrel
+  aliases: [bramble, squirrel]
+  greeting: |
+    "Last path! Games change numbers *all the time*: score goes up, health goes
+    down, lives count down. Writing `score = score + 1` gets tiring, so Python
+    has a shortcut: `score += 1`."
+  topics:
+    plus plus: |
+      "Some languages (like JavaScript and C) have `score++` to add one. **Python
+      doesn't!** `score++` is a SyntaxError. Use `score += 1`."
+    sneaky: |
+      "`score =- 3` isn't the same as `score -= 3`! The first one means
+      `score = -3` (put minus three in the jar). The symbol order matters."
+pages:
+  - title: Shortcuts for changing a variable
+    body: |
+      | Shortcut | Means |
+      |---|---|
+      | `score += 1` | `score = score + 1` (**increment**: go up) |
+      | `score -= 3` | `score = score - 3` (**decrement**: go down) |
+      | `score *= 2` | `score = score * 2` |
+      | `score //= 2` | `score = score // 2` |
+
+      ```python
+      lives = 3
+      lives -= 1          # oops! now 2
+      score = 0
+      score += 10         # nice! now 10
+      ```
+
+      `+=` works on strings too: `greeting += "!"` sticks `"!"` on the end.
+
+      ⚠️ Python has **no** `++` or `--`. And watch the order of the symbols:
+      `-=` takes away, but `=-` stores a negative number!
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/tally.py`**. Score starts at 0:
+      add 1, add 10, take away 3, then double it.
+
+      * **STEP 1:** `++` isn't Python. And `score + 1` on its own throws the
+        answer away.
+      * **STEP 3:** `-=` (minus, then equals), not `=-`.
+      * **STEP 4:** doubling is `*= 2`.
+      * **STEP 5:** `+=` sticks text on the end of a string.
+
+      It should print `16 Hi!`.
+
+      **How to do a guided path:** `scaffold` gives you the practice file. Each STEP
+      has a few choices with a `#` in front, and only one is right. Uncomment the
+      right one by deleting the `#` **and the space after it**. The quick way is to
+      click the line and press **Ctrl+/** (**Cmd+/** on a Mac). Then `python` the
+      file and `check`.
+quest:
+  title: "Practise at The Tally Tree"
+  brief: |
+    Uncomment the right line in each STEP of **`practice/tally.py`** using `+=`,
+    `-=` and `*=`. It should print `16 Hi!`.
+  check: variable_grove_guided_increment
+  scaffold:
+    practice/tally.py: tally.py
+  hints:
+    - "Python has no `++`. Adding one is `score += 1`."
+    - "Losing 3 is `score -= 3`. (`=-` puts -3 in the jar instead!)"
+  solution:
+    files:
+      practice/tally.py: tally.py
+  commit_message: "Practise on the guided path: The Tally Tree"
+  reward:
+    xp: 50

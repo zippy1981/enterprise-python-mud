@@ -1,0 +1,141 @@
+id: crossroads_guided
+name: The Forked Path
+order: 8
+guided: true
+zone: "Decisions (guided)"
+description: |
+  Past the grove, the trail splits again and again, like the branches of a
+  tree. At every fork a little wooden sign asks a question: *More than 10
+  acorns?* *Is it sunny?* A fox in a ranger's hat leans on the first sign,
+  measuring the gaps between the stones with a ruler.
+exits:
+  west: variable_grove
+  east: crossroads
+npc:
+  name: Fern the Fox
+  aliases: [fern, fox]
+  greeting: |
+    "Ah, a traveller! Until now your programs did **every** line, top to
+    bottom. Today they learn to **choose**. That's what `if` does, just like
+    Scratch's **if then** block.
+
+    And see my ruler? 📏 In Python, the **spaces at the start of a line**
+    matter. The lines *inside* an `if` are pushed in by **exactly 4 spaces**.
+    That's how Python knows which lines belong to the `if`. Scratch had the
+    C-shaped block wrapped around them. Python has the spaces."
+  topics:
+    indentation: |
+      "**Indentation** means the spaces at the start of a line. Here's my rule:
+      **4 spaces, every time.** The line ending in `:` opens a block, and every
+      line in that block is pushed in 4 more spaces. The first line that isn't
+      pushed in is *after* the block, so it runs no matter what."
+    colon: |
+      "Every `if`, `elif` and `else` line ends with a colon `:`. The colon says
+      'the indented lines underneath belong to me'. Forget it, and Python gives
+      you a SyntaxError."
+    equals: |
+      "One `=` **puts** a value in a jar: `acorns = 12`. Two `==` **asks** a
+      question: `acorns == 12` is `True` or `False`. Mixing them up is the
+      most common mistake in all of Python. Don't feel bad when you do it!"
+    indentation errors: |
+      "`IndentationError: expected an indented block` means a line ending in
+      `:` has nothing pushed in under it. `unexpected indent` means a line is
+      pushed in when it shouldn't be. `unindent does not match` means the
+      spaces don't line up with anything above. Count your spaces!"
+pages:
+  - title: Making a choice
+    body: |
+      ```python
+      acorns = 12
+      if acorns > 10:
+          print("Lots of acorns!")     # pushed in 4 spaces: only runs if True
+          print("Time for a feast!")   # also inside the if
+      print("Off we go!")              # not pushed in: ALWAYS runs
+      ```
+
+      * `if`, then a question, then a **colon** `:`
+      * the lines **inside** are pushed in by **4 spaces**
+      * the first line that's back at the edge is **after** the `if`
+
+      The questions use **comparisons**, which are always `True` or `False`:
+
+      | Python | Means |
+      |---|---|
+      | `a < b` / `a > b` | less than / more than |
+      | `a <= b` / `a >= b` | less than or equal / more than or equal |
+      | `a == b` | is equal to (**two** equals signs!) |
+      | `a != b` | is not equal to |
+  - title: Indentation is the law
+    body: |
+      In Scratch, the C-shaped **if** block *wraps around* the blocks inside it.
+      Python has no C-shape. It uses **spaces at the start of the line**
+      instead, which is called **indentation**.
+
+      ```python
+      if weather == "sunny":
+          print("Picnic time!")    # 4 spaces: inside the if
+      print("Off we go!")          # 0 spaces: after the if
+      ```
+
+      Move one line in or out by 4 spaces and your program does something
+      different. So the Pythonwood's rule is: **always exactly 4 spaces**.
+      Never 2, never 3, never a tab.
+
+      > 💡 In VS Code, pressing **Tab** in a `.py` file types 4 spaces for you, and
+      > **Shift+Tab** takes 4 away. Select several lines to move them all at once.
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/fork.py`**.
+
+      * **STEP 1:** count the spaces in front of each choice. Only one has 4.
+        Uncomment one with the wrong spaces, run the file, and read the
+        `IndentationError`. Then put it back and try another!
+      * **STEP 2:** it's rainy, so "Picnic time!" doesn't print. But
+        "Off we go!" should print rain **or** shine. Inside the `if`, or after?
+      * **STEP 3:** one `=` stores, two `==` asks.
+      * **STEP 4:** `mood == "busy"` *asks* a question and throws the answer
+        away. It doesn't change `mood`!
+
+      `python practice/fork.py` should print:
+
+      ```
+      Lots of acorns!
+      Off we go!
+      A dozen acorns!
+      The squirrel is busy.
+      ```
+
+      **How to do a guided path:** `scaffold` gives you the practice file. Each STEP
+      has a few choices with a `#` in front, and only one is right. Uncomment the
+      right one by deleting the `#` **and the space after it**. The quick way is to
+      click the line and press **Ctrl+/** (**Cmd+/** on a Mac). Then `python` the
+      file and `check`.
+quest:
+  title: "Practise at The Forked Path"
+  brief: |
+    Uncomment the right line in each STEP of **`practice/fork.py`**, so that it
+    prints:
+
+    ```
+    Lots of acorns!
+    Off we go!
+    A dozen acorns!
+    The squirrel is busy.
+    ```
+
+    Watch the **spaces** at the start of each line. Inside an `if` means pushed
+    in by exactly 4.
+  check: crossroads_guided
+  scaffold:
+    practice/fork.py: fork.py
+  hints:
+    - "STEP 1: the right choice has 4 spaces between the `#` and `print`. When you delete `# `, four spaces are left."
+    - "STEP 2: \"Off we go!\" happens rain or shine, so it goes AFTER the `if`, not pushed in."
+    - "STEP 3 is `is_dozen = acorns == 12`."
+    - "STEP 4 is `mood = \"busy\"`: one `=` to store it, and quotes because it's text."
+  solution:
+    files:
+      practice/fork.py: fork.py
+  commit_message: "Practise on the guided path: The Forked Path"
+  reward:
+    xp: 50

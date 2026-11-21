@@ -1,0 +1,168 @@
+id: looping_lagoon
+name: The Looping Lagoon
+order: 21
+zone: Lists, dictionaries & loops
+description: |
+  A lagoon of lily pads, arranged in a long row. A frog hops from pad to pad,
+  counting out loud, and when it reaches the last one it starts all over
+  again. Each lily pad holds a little card describing a critter:
+  `{"name": "Mossy", "health": 80}`.
+exits:
+  south: looping_lagoon_guided
+  east: robot_tower_guided
+npc:
+  name: Loopy the Frog
+  aliases: [loopy, frog]
+  greeting: |
+    "Ribbit! One critter is fun, but a **team** of critters is better! To keep
+    lots of things together, Python has **lists**. To describe one critter
+    with several facts, it has **dictionaries**.
+
+    And to do something with **every** critter on the team, you **loop**:
+    hop, hop, hop, one lily pad at a time. Like Scratch's **repeat** block, but
+    it knows exactly how many pads there are.
+
+    You'll write functions that work on a whole team, test-first as always."
+  topics:
+    index: |
+      "Every item in a list has a position number, called its **index**, and
+      it starts at **0**! `team[0]` is the first critter and `team[1]` is the
+      second. `team[-1]` is the last. Asking for a position that doesn't exist
+      gives an `IndexError`."
+    empty lists: |
+      "Always ask: what if the team is **empty**? `[]` is a list with nothing
+      in it. Your functions should still work: the total health of no critters
+      is 0, and the strongest of nobody is `""` (an empty string). That's an
+      edge case worth a test!"
+    dictionaries: |
+      "A dictionary holds **pairs**: a key and its value.
+      `critter = {"name": "Mossy", "health": 80}`. Get a value with
+      `critter["health"]`, and change it with `critter["health"] = 70`.
+      Keys are usually strings."
+    accumulator: |
+      "To add things up in a loop, start a **total** at 0, then add to it on
+      every hop:
+      ```python
+      total = 0
+      for critter in team:
+          total += critter["health"]
+      ```
+      This is called the accumulator pattern. It's super common! (`+=` is the
+      Tally Tree shortcut for `total = total + ...`.)"
+pages:
+  - title: Lists keep things in order
+    body: |
+      A **list** holds several values in order, inside square brackets:
+
+      ```python
+      snacks = ["berry", "acorn", "mushroom"]
+      print(snacks[0])        # berry   (positions start at 0!)
+      print(len(snacks))      # 3       (how many items)
+      snacks.append("seed")   # add one to the end
+      ```
+
+      | Scratch | Python |
+      |---|---|
+      | **add** thing **to** list | `snacks.append("seed")` |
+      | **item** 1 **of** list | `snacks[0]` |
+      | **length of** list | `len(snacks)` |
+  - title: Dictionaries describe one thing
+    body: |
+      A **dictionary** stores labelled facts about one thing, in curly braces:
+
+      ```python
+      mossy = {"name": "Mossy", "health": 80}
+      print(mossy["name"])          # Mossy
+      mossy["health"] = 70          # change a fact
+      ```
+
+      Put dictionaries in a list, and you've got a team:
+
+      ```python
+      team = [
+          {"name": "Sparky", "health": 30},
+          {"name": "Mossy", "health": 80},
+      ]
+      print(team[1]["name"])        # Mossy
+      ```
+  - title: Loops visit every item
+    body: |
+      A `for` loop runs its indented steps **once for each item**:
+
+      ```python
+      for critter in team:
+          print(critter["name"])
+      ```
+
+      Read it as "for each critter in the team, print its name." The variable
+      `critter` holds a different item on each trip round the loop.
+
+      **Common loop recipes:**
+
+      ```python
+      total = 0                          # add things up
+      for critter in team:
+          total += critter["health"]     # the Tally Tree's +=
+
+      names = []                         # build a new list
+      for critter in team:
+          names.append(critter["name"])
+
+      best = None                        # find the biggest
+      for critter in team:
+          if best is None or critter["health"] > best["health"]:
+              best = critter
+      ```
+
+      Loops inside **functions** are where the magic happens: give the
+      function a team, and it does the hopping for you.
+quest:
+  title: Hop Across the Lagoon
+  brief: |
+    A **team** is a list of critter dictionaries, like
+    `[{"name": "Sparky", "health": 30}, {"name": "Mossy", "health": 80}]`.
+
+    Write tests **first** in **`tests/test_team.py`** (🔴), then make them pass
+    (🟢) in **`critters/team.py`**:
+
+    | Function | Returns | For the team above |
+    |---|---|---|
+    | `total_health(team)` | everyone's health added up | `110` |
+    | `strongest(team)` | the **name** of the critter with the most health (if two are tied, the first one in the list) | `"Mossy"` |
+    | `roll_call(team)` | a list of every critter's name, in order | `["Sparky", "Mossy"]` |
+
+    Each must use a **loop** and have a **docstring**, and none of them should
+    change the team they're given. An **empty team** `[]` gives `0`, `""` and
+    `[]`. Grizzle the gnome is back, so test carefully!
+  check: looping_lagoon
+  scaffold:
+    critters/team.py: team.py
+    tests/test_team.py: test_team.py
+  hints:
+    - "Make a little team at the top of your test file, `TEAM = [...]`, and use it in every test."
+    - "`total_health`: start `total = 0`, loop over the team with `total += critter[\"health\"]`, and return `total`."
+    - "`strongest`: remember the best critter so far. Only replace it when the new one is **strictly** bigger (`>`), so the first one wins ties."
+    - "Grizzle's favourite trick is a `strongest` that just returns the first critter's name. A test where the strongest isn't first will catch him."
+  solution:
+    files:
+      critters/team.py: team.py
+      tests/test_team.py: test_team.py
+  commit_message: "Add team functions with loops"
+  reward:
+    xp: 250
+    item:
+      name: Loopy's Lily Pad
+      aliases: [lily, pad]
+      text: |
+        ```python
+        team = [{"name": "Sparky", "health": 30}, {"name": "Mossy", "health": 80}]
+        team[0]["name"]          # "Sparky"   (index starts at 0)
+        len(team)                # 2
+        team.append({...})       # add to the end
+
+        total = 0
+        for critter in team:     # once per item
+            total += critter["health"]
+        ```
+
+        Remember the **empty list** `[]`. It's an edge case!

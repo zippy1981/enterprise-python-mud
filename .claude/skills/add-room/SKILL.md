@@ -38,6 +38,10 @@ and build on it; don't reinvent it.
 
 ## 2. Write the YAML
 
+YAML here is **strict**: unknown keys, duplicate keys, wrong types and blank text are all
+errors (see "YAML is strict" in `docs/dungeons.md`). If you add a field to a model, run
+`uv run python -m azurath.schemas` to refresh `schemas/`.
+
 Copy the shape of an existing room. `08_pydantic_citadel.yaml` is a good model. The
 schema is the pydantic models in `src/azurath/content.py`:
 

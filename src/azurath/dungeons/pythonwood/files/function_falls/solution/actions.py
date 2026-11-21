@@ -11,4 +11,7 @@ def describe(name, health):
 
 
 def is_tired(energy):
-    return energy < 20
+    if energy < 20:
+        return True
+    else:
+        return False

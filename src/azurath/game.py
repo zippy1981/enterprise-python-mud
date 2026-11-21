@@ -146,6 +146,7 @@ class Game:
             prompt = f"What should we call you?{f' [{suggested}]' if suggested else ''} "
             name = self.ask(prompt) or suggested or "Adventurer"
             self.state.name = name[:40]
+            self.install_workspace_files()  # before the first commit, so it includes them
             for note in self.ws.initialize(readme=self.dungeon.readme, commit=False):
                 self.out.info(f"  · {note}")
             self.state.dungeon_checksum = checksums.actual(self.dungeon.id)
@@ -156,10 +157,16 @@ class Game:
                 self.out.info(
                     "You're in a VS Code terminal: `edit <file>` opens files in the editor."
                 )
+            if self.dungeon.vscode_profile:
+                self.out.info(
+                    "Tip: type `code` to open your project in VS Code, set up for learning "
+                    "(no AI helpers)."
+                )
         else:
             name = escape(self.state.name)
             self.out.ok(f"Welcome back to {self.dungeon.name}, {name} the {self.title}.")
             self.notice_dungeon_changes()
+            self.install_workspace_files()
         self.cmd_look("")
         return True
 
@@ -513,6 +520,8 @@ class Game:
             name = f"[bold magenta]▶ {room.name}[/bold magenta]" if here else room.name
             if room.optional:
                 name += " [dim](side quest)[/dim]"
+            if room.guided:
+                name += " [dim](guided)[/dim]"
             table.add_row(str(room.order), name, room.zone, status)
         self.console.print(table)
         self.out.say("[dim]`goto <room>` jumps to any room you've visited.[/dim]")
@@ -554,7 +563,7 @@ class Game:
         self.out.panel(
             page.body, f"📖 {page.title}  ·  page {index}/{len(room.pages)}", style="cyan"
         )
-        self.state.pages[room.id] = index
+        self.state.mark_read(room.id, index)
         if index < len(room.pages):
             self.out.say("[dim]`read` for the next page · `read back` · `pages` for contents[/dim]")
         elif room.quest:
@@ -635,6 +644,7 @@ class Game:
         self.out.report(report, f"Check: {quest.title}")
         if report.passed:
             self._complete(room, report)
+            self.show_next_steps(room)
         return report
 
     def _complete(self, room: Room, report: Report) -> None:
@@ -662,6 +672,49 @@ class Game:
             )
         if quest.epilogue:
             self.out.panel(quest.epilogue, "🏆 Epilogue", style="bold yellow")
+
+    def forward_exits(self, room: Room) -> list[tuple[str, Room]]:
+        """Exits leading further on, main path first, then side quests."""
+        ahead = [
+            (direction, self.dungeon.rooms[target])
+            for direction, target in room.exits.items()
+            if self.dungeon.rooms[target].order > room.order
+        ]
+        return sorted(ahead, key=lambda pair: (pair[1].optional, pair[1].order))
+
+    def show_next_steps(self, room: Room) -> None:
+        """After a passing check: list what's left to do here, then suggest one thing."""
+        options: list[str] = []
+        unread = self.state.unread_pages(room.id, len(room.pages))
+        if unread:
+            total = len(room.pages)
+            options.append(
+                f"`read {unread[0]}`: you've read {total - len(unread)} of {total} pages here"
+            )
+        npc = room.npc
+        if npc and npc.topics:
+            topics = ", ".join(f"`{t}`" for t in npc.topics)
+            options.append(f"`ask {npc.handle} about ...` to learn more: {topics}")
+        item = room.quest.reward.item if room.quest else None
+        if item and item.name in self.state.inventory:
+            options.append(f"`examine {item.handle}`: your {item.name}, a cheat sheet to keep")
+        options.append("`log` to see your project's save points, `ls` to see its files")
+        ahead = self.forward_exits(room)
+        for direction, target in ahead:
+            side = " (side quest)" if target.optional else ""
+            options.append(f"`{direction}` to go on to **{target.name}**{side}")
+        if unread:
+            suggestion = (
+                f"You passed, but there's more to learn here. Try **`read {unread[0]}`** "
+                "before you move on."
+            )
+        elif ahead:
+            direction, target = ahead[0]
+            suggestion = f"You've read everything here. Head **`{direction}`** to {target.name}!"
+        else:
+            suggestion = "You've done everything here. Type `map` to see where you've been."
+        bullets = "\n".join(f"* {o}" for o in options)
+        self.out.panel(f"{bullets}\n\n👉 {suggestion}", "What next?", style="green")
 
     @command("hint", help="Reveal the next hint for this quest.")
     def cmd_hint(self, arg: str) -> None:
@@ -822,8 +875,54 @@ class Game:
             return
         import subprocess
 
-        subprocess.Popen([cli, str(self.ws.root)], env=self.ws.env())
-        self.out.ok("opened the workspace in VS Code")
+        argv = [cli, str(self.ws.root)]
+        profile = self.dungeon.vscode_profile
+        if profile:
+            self._prepare_vscode_profile(cli, profile)
+            argv = [cli, "--profile", profile, str(self.ws.root)]
+        subprocess.Popen(argv, env=self.ws.env())
+        where = f' in the "{profile}" profile (no AI helpers)' if profile else ""
+        self.out.ok(f"opened your project in VS Code{where}")
+
+    def _prepare_vscode_profile(self, cli: str, profile: str) -> None:
+        """Install the dungeon's extensions into its VS Code profile, once each."""
+        import subprocess
+
+        for extension in self.dungeon.vscode_extensions:
+            if extension in self.state.vscode_extensions_installed:
+                continue
+            self.out.info(f"Installing {extension} into the {profile} profile (just this once)…")
+            try:
+                proc = subprocess.run(
+                    [cli, "--profile", profile, "--install-extension", extension],
+                    capture_output=True,
+                    text=True,
+                    timeout=300,
+                    env=self.ws.env(),
+                )
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                self.out.warn(f"Couldn't install {extension}: {exc}")
+                continue
+            if proc.returncode == 0:
+                self.state.vscode_extensions_installed.append(extension)
+            else:
+                detail = (proc.stderr or proc.stdout).strip()[-300:]
+                self.out.warn(
+                    f"Couldn't install {extension} automatically. In VS Code, open the "
+                    f"Extensions view and install it there.\n{detail}"
+                )
+
+    def install_workspace_files(self) -> list[str]:
+        """Copy the dungeon's template files (e.g. VS Code settings) into the project."""
+        written = []
+        for target, source in self.dungeon.workspace_files.items():
+            if self.ws.exists(target):
+                continue  # never overwrite the player's own settings
+            self.ws.write(target, self.dungeon.template_text(source))
+            written.append(target)
+        if written:
+            self.out.info("  · wrote " + ", ".join(written))
+        return written
 
     @command("ls", "dir", usage="ls [folder]", help="List files in your workspace.")
     def cmd_ls(self, arg: str) -> None:

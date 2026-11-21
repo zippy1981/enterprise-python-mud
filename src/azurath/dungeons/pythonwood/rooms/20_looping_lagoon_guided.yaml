@@ -1,0 +1,80 @@
+id: looping_lagoon_guided
+name: The Lily Pad Steps
+order: 20
+guided: true
+zone: "Lists & loops (guided)"
+description: |
+  A short row of lily pads crosses a quiet corner of the lagoon. Each pad has
+  a snack on it. A small frog sits on the first pad, counting under its
+  breath: "zero... one... two..."
+exits:
+  south: backpack_burrow
+  north: looping_lagoon
+npc:
+  name: Loopy the Frog
+  aliases: [loopy, frog]
+  greeting: |
+    "Ribbit! Let's practise lists and loops on just a few lily pads before the
+    big lagoon. Watch the indents. The lines *inside* the loop are pushed in
+    further!"
+  topics:
+    zero: |
+      "The first item in a list is at position **0**, not 1. So `snacks[0]` is
+      the first snack."
+    indents in loops: |
+      "The lines that repeat are indented under the `for` line. When you uncomment
+      with Ctrl+/, the indent stays exactly right."
+pages:
+  - title: How a guided path works
+    body: |
+      In a **guided path** you don't write code from scratch. The practice file is
+      already full of code, but most of it is **switched off** with a `#` at the
+      start of the line. (Remember, Python skips anything after a `#`.)
+
+      Each **STEP** has a few choices. Only **one** is right. Your job:
+
+      1. `scaffold` to get the practice file, then `edit` it
+      2. read each STEP and decide which line is right
+      3. **uncomment** that line: delete the `#` **and the space after it**
+      4. `python` the file to see what it does, then `check`
+
+      > 💡 **The quick way to uncomment:** click on the line and press
+      > **Ctrl+/** (**Cmd+/** on a Mac). Press it again to comment the line back out.
+      > Select several lines first to do them all at once.
+
+      If you uncomment a wrong choice, Python will often tell you with an error.
+      That's fine! Comment it out again and try another. When you've finished, the
+      next room asks you to write the same kind of code yourself.
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/lily_pads.py`**.
+
+      * **STEP 1:** a list uses **square brackets**, and every snack is a string,
+        so each needs quotes.
+      * **STEP 2:** positions start at 0, and `.upper()` (from the **Word
+        Weaver's Nook**) goes on the single snack, not on the whole list.
+      * **STEP 3:** you need **two** lines: the `for` line, and the line that
+        adds up the letters. Read the `for` choices carefully: one of them
+        loops over the wrong thing. `len(word)` counts the letters in a word, and
+        `+=` (from the **Tally Tree**) adds them to the total.
+
+      `python practice/lily_pads.py` should print `BERRY` and then `14`.
+quest:
+  title: "Practise at The Lily Pad Steps"
+  brief: |
+    Uncomment the right lines in **`practice/lily_pads.py`**, so that it makes a
+    list, shows the first snack, and uses a loop to count every letter.
+    It should print `BERRY` and then `14`.
+  check: looping_lagoon_guided
+  scaffold:
+    practice/lily_pads.py: lily_pads.py
+  hints:
+    - "STEP 1 is `snacks = [\"berry\", \"acorn\", \"seed\"]`."
+    - "STEP 2 is `print(snacks[0].upper())`."
+    - "STEP 3's loop line is `for word in words:`, and the adding line is `total += len(word)`."
+  solution:
+    files:
+      practice/lily_pads.py: lily_pads.py
+  commit_message: "Practise on the guided path: The Lily Pad Steps"
+  reward:
+    xp: 50

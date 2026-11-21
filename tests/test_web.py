@@ -188,3 +188,36 @@ def test_static_files_are_served_without_a_token(server: str) -> None:
     assert "<title>Azurath</title>" in page and "Content-Security-Policy" in page
     with pytest.raises(urllib.error.HTTPError):
         opener.open(server + "/../pyproject.toml", timeout=10)
+
+
+def _guided_files():
+    for dungeon in load_atlas().ordered():
+        for room in dungeon.ordered():
+            if not getattr(room, "guided", False) or not room.quest:
+                continue
+            for rel, source in room.quest.scaffold.items():
+                if rel.endswith(".py") and source in room.quest.solution.files.values():
+                    yield pytest.param(dungeon, room.id, rel, source, id=f"{room.id}:{rel}")
+
+
+@pytest.mark.parametrize(("dungeon", "room", "rel", "source"), list(_guided_files()))
+def test_the_cards_can_build_every_reference_solution(dungeon, room, rel, source) -> None:
+    starter = dungeon.room_text(room, "scaffold", source)
+    solution = dungeon.room_text(room, "solution", source)
+    steps = guided.parse_steps(starter)
+    if not steps:
+        pytest.skip("no STEPs in this file")
+    wanted = solution.splitlines()
+    text = starter
+    for step in steps:
+        right = [
+            i
+            for i, c in enumerate(step.choices)
+            if all(
+                n < len(wanted) and wanted[n] == code
+                for n, code in zip(c.lines, c.code, strict=True)
+            )
+        ]
+        assert len(right) == 1, f"STEP {step.label}: {len(right)} cards match the solution"
+        text = guided.choose(starter, text, step.label, right[0])
+    assert text.strip() == solution.strip()

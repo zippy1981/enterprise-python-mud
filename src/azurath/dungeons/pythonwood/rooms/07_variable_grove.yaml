@@ -9,7 +9,7 @@ description: |
   labels.
 exits:
   south: variable_grove_guided_increment
-  east: function_falls_guided
+  east: crossroads_guided
 npc:
   name: Bramble the Squirrel
   aliases: [bramble, squirrel]

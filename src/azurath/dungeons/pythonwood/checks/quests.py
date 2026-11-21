@@ -55,7 +55,7 @@ def _enough_tests(r: Report, tree: ast.Module, rel: str, minimum: int) -> None:
     )
 
 
-# --- 0. Trailhead ----------------------------------------------------------------------
+# --- 0. Trailhead ---------------------------------------------------------------------
 
 
 @check("trailhead")
@@ -81,7 +81,7 @@ def trailhead(ws: Workspace, r: Report) -> None:
     )
 
 
-# --- 1. Variable Grove -----------------------------------------------------------------
+# --- 1. Variable Grove ----------------------------------------------------------------
 
 CRITTER_PROBE = """
 import contextlib, io
@@ -148,7 +148,96 @@ def variable_grove(ws: Workspace, r: Report) -> None:
     )
 
 
-# --- 2. Function Falls -----------------------------------------------------------------
+# --- 2. The Crossroads ----------------------------------------------------------------
+
+MOOD_PROBE = """
+import ast, contextlib, io, pathlib
+source = pathlib.Path("mood.py").read_text(encoding="utf-8")
+tree = ast.parse(source)
+
+def sets_input(node):
+    names = [t.id for t in getattr(node, "targets", []) if isinstance(t, ast.Name)]
+    return isinstance(node, ast.Assign) and set(names) & {"health", "is_sleepy"}
+
+tree.body = [node for node in tree.body if not sets_input(node)]  # we choose the values
+code = compile(tree, "mood.py", "exec")
+cases = [
+    (45, False, "I'm doing OK."), (10, False, "Ouch! I need a snack."),
+    (19, False, "Ouch! I need a snack."), (20, False, "I'm doing OK."),
+    (69, False, "I'm doing OK."), (70, False, "I feel GREAT!"), (100, False, "I feel GREAT!"),
+    (10, True, "Zzz..."), (90, True, "Zzz..."),
+]
+for health, is_sleepy, want in cases:
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        exec(code, {"health": health, "is_sleepy": is_sleepy, "__name__": "__main__"})
+    got = out.getvalue().strip().splitlines()
+    expect(
+        got == [want, "Mood check done!"],
+        f"with health = {health} and is_sleepy = {is_sleepy}, mood.py should print "
+        f"{want!r} and then 'Mood check done!', but it printed {got!r}",
+    )
+"""
+
+
+def indented_well(ws: Workspace, r: Report, rel: str) -> bool:
+    """Every block is pushed in by exactly 4 spaces (the Pythonwood's ruler)."""
+    return _no_problems(
+        r,
+        tidy.indentation_problems(ws.read(rel) or "", rel),
+        f"every block in `{rel}` is pushed in by exactly 4 spaces",
+        "Indentation changes what Python does, so it has to be exact: 4 spaces per block.",
+    )
+
+
+def python_file(ws: Workspace, r: Report, rel: str) -> ast.Module | None:
+    """Like ``r.python_file``, with help for indentation errors and the 4-space rule."""
+    if not r.file(ws, rel):
+        return None
+    tree, error = ws.parse(rel)
+    if tree is None:
+        detail = error or ""
+        if "indent" in detail:
+            detail += (
+                "\nThat's an indentation mistake. Count the spaces at the start of that "
+                "line: every line inside an `if`, `else` or `def` is pushed in by exactly "
+                "4 spaces more than the line with the colon."
+            )
+        r.require(False, f"`{rel}` is valid Python", detail)
+        return None
+    r.require(True, f"`{rel}` is valid Python")
+    indented_well(ws, r, rel)
+    return tree
+
+
+@check("crossroads")
+def crossroads(ws: Workspace, r: Report) -> None:
+    tree = python_file(ws, r, "mood.py")
+    if tree is None:
+        return
+    run = ws.run_python("mood.py")
+    if not r.require(run.ok, "`python mood.py` runs without errors", run.tail(8)):
+        return
+    ifs = [n for n in tree.body if isinstance(n, ast.If)]
+    chain = ifs[0] if ifs else None
+    branches, has_else = 0, False
+    while chain is not None:
+        branches += 1
+        nxt = chain.orelse
+        if len(nxt) == 1 and isinstance(nxt[0], ast.If):
+            chain = nxt[0]
+        else:
+            has_else = bool(nxt)
+            chain = None
+    r.require(
+        branches >= 3 and has_else,
+        "you used `if`, `elif` and `else`",
+        "Use one `if`, two `elif`s and an `else`, all lined up at the left edge.",
+    )
+    r.probe(ws.probe(MOOD_PROBE), "your critter picks the right mood every time")
+
+
+# --- 3. Function Falls ----------------------------------------------------------------
 
 ACTIONS_PROBE = """
 import contextlib, io, importlib
@@ -191,7 +280,7 @@ def actions_probe(module: str, with_rest: bool) -> str:
 
 @check("function_falls")
 def function_falls(ws: Workspace, r: Report) -> None:
-    tree = r.python_file(ws, "actions.py")
+    tree = python_file(ws, r, "actions.py")
     if tree is None:
         return
     r.probe(
@@ -210,19 +299,69 @@ def function_falls(ws: Workspace, r: Report) -> None:
     )
 
 
-# --- 3. Testing Meadow -----------------------------------------------------------------
+# --- 4. The Shortcut Trail ------------------------------------------------------------
+
+IS_FULL_CASES = '[("is_full", (100,), True), ("is_full", (150,), True), ("is_full", (99,), False), ("is_full", (0,), False)]'
+
+
+@check("shortcut_trail")
+def shortcut_trail(ws: Workspace, r: Report) -> None:
+    actions = python_file(ws, r, "actions.py")
+    mood = python_file(ws, r, "mood.py")
+    if actions is None or mood is None:
+        return
+    r.probe(
+        ws.probe(
+            ACTIONS_PROBE.format(
+                module="actions",
+                names=["feed", "describe", "is_tired", "is_full"],
+                extra=IS_FULL_CASES,
+            )
+        ),
+        "your actions (and the new `is_full`) still give the right answers",
+    )
+    r.probe(ws.probe(MOOD_PROBE), "mood.py still picks the right mood every time")
+    returns = {
+        fn.name: fn.body for fn in tidy.functions(actions) if fn.name in ("is_tired", "is_full")
+    }
+    one_line = [
+        name
+        for name, body in returns.items()
+        if [n for n in body if not (isinstance(n, ast.Expr) and isinstance(n.value, ast.Constant))]
+        and not (len(body) == 1 and isinstance(body[0], ast.Return))
+    ]
+    _no_problems(
+        r,
+        [f"`{name}` should be a single `return` line" for name in one_line],
+        "`is_tired` and `is_full` are each one `return` line",
+    )
+    _no_problems(
+        r,
+        tidy.bool_shortcut_problems(actions, "actions.py")
+        + tidy.bool_shortcut_problems(mood, "mood.py"),
+        "no long-way True/False answers left (no `== True`, no if that returns True/False)",
+    )
+
+
+# --- 5. Testing Meadow ----------------------------------------------------------------
 
 
 @check("testing_meadow")
 def testing_meadow(ws: Workspace, r: Report) -> None:
-    if r.python_file(ws, "actions.py") is None:
+    actions = python_file(ws, r, "actions.py")
+    if actions is None:
         return
+    _no_problems(
+        r,
+        tidy.bool_shortcut_problems(actions, "actions.py"),
+        "`actions.py` still takes the True/False shortcut",
+    )
     r.probe(
         ws.probe(actions_probe("actions", with_rest=True)),
         "`rest` (and the other actions) return the right answers",
     )
     rel = "tests/test_actions.py"
-    tree = r.python_file(ws, rel)
+    tree = python_file(ws, r, rel)
     if tree is None:
         return
     _enough_tests(r, tree, rel, 5)
@@ -258,7 +397,7 @@ def testing_meadow(ws: Workspace, r: Report) -> None:
     )
 
 
-# --- 4. Tidy Treehouse -----------------------------------------------------------------
+# --- 6. Tidy Treehouse ----------------------------------------------------------------
 
 RULES_PROBE = """
 from critters import rules
@@ -284,10 +423,10 @@ def tidy_treehouse(ws: Workspace, r: Report) -> None:
     )
     if not r.file(ws, "critters/__init__.py", "This empty file makes the folder a package."):
         return
-    if r.python_file(ws, "critters/rules.py") is not None:
+    if python_file(ws, r, "critters/rules.py") is not None:
         r.probe(ws.probe(RULES_PROBE), "`critters/rules.py` names the game's numbers")
     rel = "critters/actions.py"
-    tree = r.python_file(ws, rel)
+    tree = python_file(ws, r, rel)
     if tree is None:
         return
     r.require(
@@ -300,6 +439,11 @@ def tidy_treehouse(ws: Workspace, r: Report) -> None:
     )
     _no_problems(
         r,
+        tidy.bool_shortcut_problems(tree, rel),
+        "`critters/actions.py` still takes the True/False shortcut",
+    )
+    _no_problems(
+        r,
         tidy.missing_docstrings(tree, rel),
         "every function in `critters/actions.py` has a docstring",
     )
@@ -308,7 +452,7 @@ def tidy_treehouse(ws: Workspace, r: Report) -> None:
         "your actions still work after the move",
     )
     tests = "tests/test_actions.py"
-    if r.python_file(ws, tests) is None:
+    if python_file(ws, r, tests) is None:
         return
     r.require(
         "critters" in (ws.read(tests) or ""),
@@ -318,7 +462,7 @@ def tidy_treehouse(ws: Workspace, r: Report) -> None:
     run_pytest(ws, r, tests, "all your tests are still GREEN (you refactored safely!)")
 
 
-# --- 5. Backpack Burrow ----------------------------------------------------------------
+# --- 7. Backpack Burrow ---------------------------------------------------------------
 
 
 def _imported_top_modules(tree: ast.Module) -> set[str]:
@@ -367,7 +511,7 @@ def backpack_burrow(ws: Workspace, r: Report) -> None:
             found.ok, f"the backpack really contains {modules}", found.tail(4) + "\n`!uv sync`"
         )
 
-    tree = r.python_file(ws, "fun.py")
+    tree = python_file(ws, r, "fun.py")
     if tree is not None:
         local = {p.split("/")[0].removesuffix(".py") for p in ws.files()}
         outside = _imported_top_modules(tree) - set(sys.stdlib_module_names) - local
@@ -399,7 +543,7 @@ def backpack_burrow(ws: Workspace, r: Report) -> None:
         run_pytest(ws, r, "tests", "your tests are still GREEN, now running from the backpack")
 
 
-# --- 6. Looping Lagoon -----------------------------------------------------------------
+# --- 8. Looping Lagoon ----------------------------------------------------------------
 
 TEAM_PROBE = """
 import copy
@@ -426,7 +570,7 @@ expect(TEAM == original, "one of your functions changed the team it was given. D
 @check("looping_lagoon")
 def looping_lagoon(ws: Workspace, r: Report) -> None:
     rel = "critters/team.py"
-    tree = r.python_file(ws, rel)
+    tree = python_file(ws, r, rel)
     if tree is None:
         return
     r.probe(
@@ -445,7 +589,7 @@ def looping_lagoon(ws: Workspace, r: Report) -> None:
         r, tidy.missing_docstrings(tree, rel), f"every function in `{rel}` has a docstring"
     )
     tests = "tests/test_team.py"
-    test_tree = r.python_file(ws, tests)
+    test_tree = python_file(ws, r, tests)
     if test_tree is None:
         return
     _enough_tests(r, test_tree, tests, 3)
@@ -463,7 +607,7 @@ def looping_lagoon(ws: Workspace, r: Report) -> None:
     )
 
 
-# --- 7. Robot Tower --------------------------------------------------------------------
+# --- 9. Robot Tower -------------------------------------------------------------------
 
 
 def _workflow(ws: Workspace) -> str | None:
@@ -533,7 +677,7 @@ def robot_tower(ws: Workspace, r: Report) -> None:
         )
 
 
-# --- 8. Critter Arena ------------------------------------------------------------------
+# --- 10. Critter Arena ----------------------------------------------------------------
 
 BATTLE_PROBE = """
 import copy
@@ -562,7 +706,7 @@ expect([sparky, mossy] == before, "your battle functions changed the critters' d
 @check("critter_arena")
 def critter_arena(ws: Workspace, r: Report) -> None:
     rel = "critters/battle.py"
-    tree = r.python_file(ws, rel)
+    tree = python_file(ws, r, rel)
     if tree is None:
         return
     result = ws.probe(BATTLE_PROBE, timeout=20)
@@ -574,7 +718,7 @@ def critter_arena(ws: Workspace, r: Report) -> None:
         )
     else:
         r.probe(result, "`attack` and `winner` follow the battle rules")
-    main_tree = r.python_file(ws, "main.py")
+    main_tree = python_file(ws, r, "main.py")
     if main_tree is not None:
         r.require(
             "main" in {fn.name for fn in tidy.functions(main_tree)} and has_main_guard(main_tree),
@@ -601,7 +745,7 @@ def critter_arena(ws: Workspace, r: Report) -> None:
     _no_problems(r, problems, "every function in `critters/` has a docstring")
     _no_problems(r, long_ones, "no function is longer than 25 lines")
     tests = "tests/test_battle.py"
-    test_tree = r.python_file(ws, tests)
+    test_tree = python_file(ws, r, tests)
     if test_tree is None:
         return
     _enough_tests(r, test_tree, tests, 3)

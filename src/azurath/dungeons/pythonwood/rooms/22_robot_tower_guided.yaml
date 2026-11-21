@@ -1,6 +1,6 @@
 id: robot_tower_guided
 name: The Robot Workshop
-order: 18
+order: 22
 guided: true
 zone: "Git & CI (guided)"
 description: |

@@ -1,6 +1,6 @@
 id: looping_lagoon
 name: The Looping Lagoon
-order: 17
+order: 21
 zone: Lists, dictionaries & loops
 description: |
   A lagoon of lily pads, arranged in a long row. A frog hops from pad to pad,

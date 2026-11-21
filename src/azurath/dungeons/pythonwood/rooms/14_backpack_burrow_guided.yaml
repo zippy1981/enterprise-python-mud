@@ -1,6 +1,6 @@
 id: backpack_burrow_guided
 name: The Packing Porch
-order: 10
+order: 14
 guided: true
 zone: "Packages & uv (guided)"
 description: |

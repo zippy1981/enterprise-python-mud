@@ -1,6 +1,6 @@
 id: looping_lagoon_guided
 name: The Lily Pad Steps
-order: 12
+order: 16
 guided: true
 zone: "Lists & loops (guided)"
 description: |
@@ -51,24 +51,27 @@ pages:
 
       * **STEP 1:** a list uses **square brackets**, and every snack is a string,
         so each needs quotes.
-      * **STEP 2:** positions start at 0!
+      * **STEP 2:** positions start at 0, and `.upper()` (from the **Word
+        Weaver's Nook**) goes on the single snack, not on the whole list.
       * **STEP 3:** you need **two** lines: the `for` line, and the line that
         adds up the letters. Read the `for` choices carefully: one of them
-        loops over the wrong thing. And `len(word)` counts the letters in a word.
+        loops over the wrong thing. `len(word)` counts the letters in a word, and
+        `+=` (from the **Tally Tree**) adds them to the total.
 
-      `python practice/lily_pads.py` should print `berry` and then `14`.
+      `python practice/lily_pads.py` should print `BERRY` and then `14`.
 quest:
   title: "Practise at The Lily Pad Steps"
   brief: |
     Uncomment the right lines in **`practice/lily_pads.py`**, so that it makes a
     list, shows the first snack, and uses a loop to count every letter.
-    It should print `berry` and then `14`.
+    It should print `BERRY` and then `14`.
   check: looping_lagoon_guided
   scaffold:
     practice/lily_pads.py: lily_pads.py
   hints:
     - "STEP 1 is `snacks = [\"berry\", \"acorn\", \"seed\"]`."
-    - "STEP 3's loop line is `for word in words:`, and the adding line is `total = total + len(word)`."
+    - "STEP 2 is `print(snacks[0].upper())`."
+    - "STEP 3's loop line is `for word in words:`, and the adding line is `total += len(word)`."
   solution:
     files:
       practice/lily_pads.py: lily_pads.py

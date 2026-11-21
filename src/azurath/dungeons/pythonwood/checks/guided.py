@@ -94,10 +94,9 @@ def trailhead_guided(ws: Workspace, r: Report) -> None:
 @check("variable_grove_guided")
 def variable_grove_guided(ws: Workspace, r: Report) -> None:
     rel = "practice/acorns.py"
-    tree = guided_file(ws, r, "variable_grove_guided", rel, "acorns.py")
-    if tree is None:
+    if guided_file(ws, r, "variable_grove_guided", rel, "acorns.py") is None:
         return
-    if not output_is(ws, r, rel, ["Pip is 3 years old.", "Pip is now 4 years old."]):
+    if not output_is(ws, r, rel, ["<class 'float'>", "Pip 3 1.5 True"]):
         return
     r.probe(
         ws.probe("""
@@ -105,13 +104,83 @@ def variable_grove_guided(ws: Workspace, r: Report) -> None:
             with contextlib.redirect_stdout(io.StringIO()):
                 from practice import acorns
             expect(acorns.pet_name == "Pip", "STEP 1: pet_name should hold the text Pip")
-            expect(type(acorns.age) is int, "STEP 2: age should be the NUMBER 3, with no quotes")
-            expect(acorns.is_hungry is True, "STEP 3: is_hungry should be True (capital T, no quotes)")
+            expect(type(acorns.age) is int, "STEP 2: age should be the whole number 3 (an int), no quotes")
+            expect(type(acorns.height) is float, "STEP 3: height should be 1.5 with a DOT (a float), no quotes")
+            expect(acorns.is_hungry is True, "STEP 4: is_hungry should be True (capital T, no quotes)")
         """),
-        "each variable holds the right kind of value",
+        "each variable holds the right type of value",
+    )
+
+
+@check("variable_grove_guided_math")
+def variable_grove_guided_math(ws: Workspace, r: Report) -> None:
+    rel = "practice/abacus.py"
+    if guided_file(ws, r, "variable_grove_guided_math", rel, "abacus.py") is None:
+        return
+    if output_is(ws, r, rel, ["acorns=26 share=4 leftover=1"]):
+        return
+    r.probe(
+        ws.probe("""
+            import contextlib, io
+            with contextlib.redirect_stdout(io.StringIO()):
+                from practice import abacus
+            share = getattr(abacus, "each_share", None)
+            expect(type(share) is int, f"STEP 3: each_share should be a WHOLE number. `/` gives {13 / 3}, `//` gives {13 // 3}")
+            expect(getattr(abacus, "leftover", None) == 1, "STEP 4: the remainder of 13 shared by 3 is 1 (that's `%`)")
+        """),
+        "the sums use the right operators",
+    )
+
+
+@check("variable_grove_guided_strings")
+def variable_grove_guided_strings(ws: Workspace, r: Report) -> None:
+    rel = "practice/words.py"
+    tree = guided_file(ws, r, "variable_grove_guided_strings", rel, "words.py")
+    if tree is None:
+        return
+    output_is(
+        ws, r, rel, ["PIP ACORNSWORTH", "P", "Pip Acornsworth has 15 characters", "hiphiphip"]
     )
     problems = tidy.values_in_fstring_braces(tree)
-    r.require(not problems, "the f-string has variable NAMES in its { }", "\n".join(problems))
+    r.require(
+        not problems, "STEP 5: the f-string has variable NAMES in its { }", "\n".join(problems)
+    )
+
+
+@check("variable_grove_guided_order")
+def variable_grove_guided_order(ws: Workspace, r: Report) -> None:
+    rel = "practice/brackets.py"
+    if guided_file(ws, r, "variable_grove_guided_order", rel, "brackets.py") is None:
+        return
+    quiz(
+        ws,
+        r,
+        "practice.brackets",
+        {
+            "answer_one": (2 + 3 * 4, "STEP 1 (times happens before plus)"),
+            "answer_two": ((2 + 3) * 4, "STEP 2"),
+            "average": ((8 + 4) / 2, "STEP 3 (brackets first, then divide)"),
+            "answer_four": (2**3 * 2, "STEP 4 (powers happen before times)"),
+            "total": (3 * 2 + 1, "STEP 5"),
+        },
+    )
+    output_is(ws, r, rel, ["14 20 6.0 16 7"])
+
+
+@check("variable_grove_guided_increment")
+def variable_grove_guided_increment(ws: Workspace, r: Report) -> None:
+    rel = "practice/tally.py"
+    tree = guided_file(ws, r, "variable_grove_guided_increment", rel, "tally.py")
+    if tree is None:
+        return
+    if not output_is(ws, r, rel, ["16 Hi!"]):
+        return
+    operators = {type(n.op).__name__ for n in ast.walk(tree) if isinstance(n, ast.AugAssign)}
+    r.require(
+        {"Add", "Sub", "Mult"} <= operators,
+        "you used `+=`, `-=` and `*=`",
+        "Each STEP has a choice using one of them.",
+    )
 
 
 @check("function_falls_guided")
@@ -128,9 +197,11 @@ def function_falls_guided(ws: Workspace, r: Report) -> None:
             with contextlib.redirect_stdout(out):
                 from practice import stones
                 d, g, big, small = stones.double(4), stones.greet("Ada"), stones.is_big(11), stones.is_big(10)
+                b = stones.bonus(2)
             expect(d == 8, f"STEP 1: double(4) should return 8, but it returned {d!r}")
             expect(g == "Hi, Ada!", f"STEP 2: greet('Ada') should return 'Hi, Ada!', but it returned {g!r}")
             expect(big is True and small is False, "STEP 3: is_big should be True for 11 and False for 10")
+            expect(b == 30, f"STEP 4: bonus(2) should be (2 + 1) * 10 = 30, but it returned {b!r}. Brackets first!")
             expect(out.getvalue().strip() == "42", "the functions should RETURN their answers, not print them")
         """),
         "every function returns the right answer",
@@ -219,7 +290,7 @@ def looping_lagoon_guided(ws: Workspace, r: Report) -> None:
     rel = "practice/lily_pads.py"
     if guided_file(ws, r, "looping_lagoon_guided", rel, "lily_pads.py") is None:
         return
-    if not output_is(ws, r, rel, ["berry", "14"]):
+    if not output_is(ws, r, rel, ["BERRY", "14"]):
         return
     r.probe(
         ws.probe("""

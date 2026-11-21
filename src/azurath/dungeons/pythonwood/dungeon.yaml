@@ -15,9 +15,9 @@ ranks:
   - [100, Sprout]
   - [300, Sapling]
   - [700, Trail Coder]
-  - [1200, Forest Ranger]
-  - [1700, Code Druid]
-  - [2450, Guardian of the Pythonwood]
+  - [1300, Forest Ranger]
+  - [1900, Code Druid]
+  - [2650, Guardian of the Pythonwood]
 intro: |
   Welcome to **the Pythonwood**, a forest where code grows on trees. 🌲
 

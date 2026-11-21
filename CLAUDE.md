@@ -25,6 +25,10 @@ and Linux** (CI runs all three), so follow these rules.
 - **Paths:** use `pathlib`, always open text files with `encoding="utf-8"`, and never
   hard-code `/` or `\\` separators in paths you build.
 
+- **YAML schemas are JSON Schema**, in `src/azurath/schemas/*.schema.json`, not Python
+  code. Every tracked `.yaml`/`.yml` needs a rule in `tests/test_yaml_schemas.py`. Load
+  YAML with `azurath.yamlstrict` (rejects duplicate keys) and validate with
+  `azurath.yamlschema`.
 - **Refresh dungeon checksums after any dungeon change.** Each dungeon's checksum is
   stored in `src/azurath/dungeons/<id>/checksum.py`; the game warns players when the files
   don't match it, and `tests/test_checksums.py` fails. Run

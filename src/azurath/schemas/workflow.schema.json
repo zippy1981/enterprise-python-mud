@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://azurath.invalid/schemas/workflow.schema.json",
+  "title": "A GitHub Actions workflow (the subset this repo and its players use)",
+  "description": "Deliberately strict: unknown keys are errors, so typos like `runs_on` are caught. PyYAML reads the key `on` as the boolean True; azurath.yamlschema maps it back to \"on\" before validating.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["on", "jobs"],
+  "properties": {
+    "name": { "$ref": "common.schema.json#/$defs/text" },
+    "run-name": { "type": "string" },
+    "on": {
+      "oneOf": [
+        { "$ref": "#/$defs/event" },
+        { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/event" } },
+        { "type": "object", "propertyNames": { "$ref": "#/$defs/event" } }
+      ]
+    },
+    "permissions": { "$ref": "#/$defs/permissions" },
+    "env": { "$ref": "#/$defs/env" },
+    "defaults": { "type": "object" },
+    "concurrency": { "type": ["string", "object"] },
+    "jobs": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$" },
+      "additionalProperties": { "$ref": "#/$defs/job" }
+    }
+  },
+  "$defs": {
+    "event": {
+      "enum": [
+        "push", "pull_request", "pull_request_target", "workflow_dispatch", "workflow_call",
+        "schedule", "release", "merge_group", "workflow_run", "repository_dispatch", "issues",
+        "issue_comment", "create", "delete", "deployment", "page_build", "registry_package"
+      ]
+    },
+    "scalar": { "type": ["string", "number", "boolean"] },
+    "env": { "type": "object", "additionalProperties": { "$ref": "#/$defs/scalar" } },
+    "permissions": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "object", "additionalProperties": { "type": "string" } }
+      ]
+    },
+    "job": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runs-on", "steps"],
+      "properties": {
+        "name": { "$ref": "common.schema.json#/$defs/text" },
+        "runs-on": { "type": ["string", "array"], "items": { "type": "string" } },
+        "needs": { "type": ["string", "array"], "items": { "type": "string" } },
+        "if": { "type": ["string", "boolean"] },
+        "permissions": { "$ref": "#/$defs/permissions" },
+        "env": { "$ref": "#/$defs/env" },
+        "defaults": { "type": "object" },
+        "strategy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["matrix"],
+          "properties": {
+            "matrix": { "type": ["object", "string"] },
+            "fail-fast": { "type": "boolean" },
+            "max-parallel": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "environment": { "type": ["string", "object"] },
+        "concurrency": { "type": ["string", "object"] },
+        "outputs": { "type": "object", "additionalProperties": { "type": "string" } },
+        "services": { "type": "object" },
+        "container": { "type": ["string", "object"] },
+        "timeout-minutes": { "type": "integer", "minimum": 1 },
+        "continue-on-error": { "type": ["boolean", "string"] },
+        "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        { "required": ["uses"], "not": { "required": ["run"] } },
+        { "required": ["run"], "not": { "required": ["uses"] } }
+      ],
+      "properties": {
+        "name": { "$ref": "common.schema.json#/$defs/text" },
+        "id": { "type": "string" },
+        "uses": { "$ref": "common.schema.json#/$defs/text" },
+        "run": { "$ref": "common.schema.json#/$defs/text" },
+        "with": { "type": "object", "additionalProperties": { "$ref": "#/$defs/scalar" } },
+        "env": { "$ref": "#/$defs/env" },
+        "if": { "type": ["string", "boolean"] },
+        "shell": { "type": "string" },
+        "working-directory": { "type": "string" },
+        "continue-on-error": { "type": ["boolean", "string"] },
+        "timeout-minutes": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

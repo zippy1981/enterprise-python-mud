@@ -85,3 +85,15 @@ def prints_inside_functions(tree: ast.Module) -> list[str]:
 
 def has_loop(tree: ast.AST) -> bool:
     return any(isinstance(n, ast.For | ast.While | ast.comprehension) for n in ast.walk(tree))
+
+
+def values_in_fstring_braces(tree: ast.Module) -> list[str]:
+    """f-string ``{...}`` slots holding a plain value (``{30}``, ``{"Sparky"}``) instead of a name."""
+    found = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FormattedValue) and isinstance(node.value, ast.Constant):
+            found.append(
+                f"line {node.lineno}: `{{{node.value.value!r}}}` has a value in the braces. "
+                "Put the variable's NAME there instead, like `{health}`"
+            )
+    return found

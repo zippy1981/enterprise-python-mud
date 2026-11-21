@@ -1,0 +1,20 @@
+{
+  // The only extension the Pythonwood needs.
+  "recommendations": ["ms-python.python"],
+  // AI coding assistants: VS Code won't suggest these for this project.
+  "unwantedRecommendations": [
+    "GitHub.copilot",
+    "GitHub.copilot-chat",
+    "anthropic.claude-code",
+    "saoudrizwan.claude-dev",
+    "RooVeterinaryInc.roo-cline",
+    "Continue.continue",
+    "Codeium.codeium",
+    "TabNine.tabnine-vscode",
+    "Supermaven.supermaven",
+    "sourcegraph.cody-ai",
+    "AmazonWebServices.amazon-q-vscode",
+    "Google.geminicodeassist",
+    "VisualStudioExptTeam.vscodeintellicode"
+  ]
+}

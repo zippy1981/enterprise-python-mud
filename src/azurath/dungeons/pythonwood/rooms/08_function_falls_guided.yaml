@@ -1,0 +1,82 @@
+id: function_falls_guided
+name: The Stepping Stones
+order: 8
+guided: true
+zone: "Functions (guided)"
+description: |
+  Flat stones lead across the stream to the waterfall. Each stone has a
+  half-finished recipe card glued to it. An otter in a chef's hat hops
+  from stone to stone, waiting to see which recipes you'll complete.
+exits:
+  west: variable_grove
+  east: function_falls
+npc:
+  name: Otto the Otter
+  aliases: [otto, otter]
+  greeting: |
+    "Recipes! Every function here is nearly done. Just choose the right line to
+    finish each one. And remember my golden rule: recipes **return** the dish.
+    They don't shout about it!"
+  topics:
+    pass: |
+      "`pass` means 'do nothing'. It's a placeholder, because Python doesn't allow
+      an empty function. Once you uncomment a real line above it, you can leave
+      the `pass` there. It never runs after a `return`."
+    return vs print: |
+      "`print` shows a value on the screen. `return` hands it back so the rest of
+      your code can use it. Functions here must `return`!"
+pages:
+  - title: How a guided path works
+    body: |
+      In a **guided path** you don't write code from scratch. The practice file is
+      already full of code, but most of it is **switched off** with a `#` at the
+      start of the line. (Remember, Python skips anything after a `#`.)
+
+      Each **STEP** has a few choices. Only **one** is right. Your job:
+
+      1. `scaffold` to get the practice file, then `edit` it
+      2. read each STEP and decide which line is right
+      3. **uncomment** that line: delete the `#` **and the space after it**
+      4. `python` the file to see what it does, then `check`
+
+      > 💡 **The quick way to uncomment:** click on the line and press
+      > **Ctrl+/** (**Cmd+/** on a Mac). Press it again to comment the line back out.
+      > Select several lines first to do them all at once.
+
+      If you uncomment a wrong choice, Python will often tell you with an error.
+      That's fine! Comment it out again and try another. When you've finished, the
+      next room asks you to write the same kind of code yourself.
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/stones.py`**. Notice the uncommented lines
+      here are **indented** (pushed in) because they're inside a function. When
+      you uncomment, keep the indent. Ctrl+/ does this for you.
+
+      * **STEP 1:** times 2 is `* 2`, and it must be `return`, not `print`.
+      * **STEP 2:** without the `f`, the braces are just printed as `{name}`.
+        And Python cares about capital letters: `Name` isn't `name`.
+      * **STEP 3:** "more than 10" means 11, 12, 13... but not 10 itself.
+      * **STEP 4:** remember the **Bracket Bridge**: `level + 1 * 10` does the
+        times first! To add 1 *before* multiplying, use brackets.
+      * **STEP 5:** to *call* a function you need brackets with the input,
+        `double(21)`, and the variable goes on the left of `=`.
+quest:
+  title: "Practise at The Stepping Stones"
+  brief: |
+    Finish the three functions and the function call in **`practice/stones.py`**
+    by uncommenting the right line in each STEP. `python practice/stones.py`
+    should print `42`.
+  check: function_falls_guided
+  scaffold:
+    practice/stones.py: stones.py
+  hints:
+    - "Every function needs a `return` line, not a `print` line."
+    - "`>` means more than, `>=` means more than or equal to."
+    - "STEP 4 needs brackets: `return (level + 1) * 10`."
+    - "STEP 5 is `answer = double(21)`."
+  solution:
+    files:
+      practice/stones.py: stones.py
+  commit_message: "Practise on the guided path: The Stepping Stones"
+  reward:
+    xp: 50

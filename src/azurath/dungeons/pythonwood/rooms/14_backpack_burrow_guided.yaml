@@ -1,0 +1,76 @@
+id: backpack_burrow_guided
+name: The Packing Porch
+order: 14
+guided: true
+zone: "Packages & uv (guided)"
+description: |
+  A wide porch outside the burrow, covered in neatly labelled boxes and an
+  empty backpack. A chalkboard reads **PACKING QUIZ**. The badger hands you
+  a piece of chalk.
+exits:
+  south: tidy_treehouse
+  north: backpack_burrow
+npc:
+  name: Barnaby the Badger
+  aliases: [barnaby, badger]
+  greeting: |
+    "Before we pack a real backpack, a little quiz! Each STEP is a question with
+    a few answers. Uncomment the one you think is right. No uv commands needed
+    yet. This is about understanding the *ideas*."
+  topics:
+    backpack: |
+      "A virtual environment is your project's own backpack of packages, kept in a
+      hidden folder called `.venv`. Every project gets its own, so they never
+      get muddled."
+    packing list: |
+      "`pyproject.toml` is the packing list: what *should* be in the backpack.
+      `uv.lock` is the receipt: exactly which versions *are* in it. Save both in git!"
+pages:
+  - title: How a guided path works
+    body: |
+      In a **guided path** you don't write code from scratch. The practice file is
+      already full of code, but most of it is **switched off** with a `#` at the
+      start of the line. (Remember, Python skips anything after a `#`.)
+
+      Each **STEP** has a few choices. Only **one** is right. Your job:
+
+      1. `scaffold` to get the practice file, then `edit` it
+      2. read each STEP and decide which line is right
+      3. **uncomment** that line: delete the `#` **and the space after it**
+      4. `python` the file to see what it does, then `check`
+
+      > 💡 **The quick way to uncomment:** click on the line and press
+      > **Ctrl+/** (**Cmd+/** on a Mac). Press it again to comment the line back out.
+      > Select several lines first to do them all at once.
+
+      If you uncomment a wrong choice, Python will often tell you with an error.
+      That's fine! Comment it out again and try another. When you've finished, the
+      next room asks you to write the same kind of code yourself.
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/packing_quiz.py`**. Every answer is a
+      variable holding some text (or, in STEP 5, a list).
+
+      * **STEP 1:** think of Scratch extensions.
+      * **STEP 2:** it starts with a dot, which makes it a hidden folder.
+      * **STEPs 3 and 4:** uv commands start with `uv add`. The *dev pocket* is `--dev`.
+      * **STEP 5:** the backpack itself never goes in git. The packing list and
+        the receipt do.
+      * **STEP 6:** you'll need this one in the next room, so remember it!
+quest:
+  title: "Practise at The Packing Porch"
+  brief: |
+    Answer the 6 questions in **`practice/packing_quiz.py`** by uncommenting the
+    right answer in each STEP. The next room is where you really pack the backpack.
+  check: backpack_burrow_guided
+  scaffold:
+    practice/packing_quiz.py: packing_quiz.py
+  hints:
+    - "The backpack folder is `.venv`, and git saves `pyproject.toml` and `uv.lock`."
+    - "STEP 6 is the longer one, with `--bare --no-workspace`."
+  solution:
+    files:
+      practice/packing_quiz.py: packing_quiz.py
+  commit_message: "Practise on the guided path: The Packing Porch"
+  reward:
+    xp: 50

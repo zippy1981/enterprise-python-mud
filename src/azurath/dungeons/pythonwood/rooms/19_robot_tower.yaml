@@ -1,6 +1,6 @@
 id: robot_tower
 name: The Robot Tower
-order: 7
+order: 19
 zone: Save points & the CI robot
 description: |
   A tall tower of brass and moss rises above the treetops. Inside, a friendly
@@ -8,8 +8,8 @@ description: |
   lights. A conveyor belt brings it bundles of code, and every time one
   arrives, it runs every single test, beeps, and lights up a light.
 exits:
-  west: looping_lagoon
-  north: critter_arena
+  west: robot_tower_guided
+  north: critter_arena_guided
 npc:
   name: Bolt the Robot
   aliases: [bolt, robot]

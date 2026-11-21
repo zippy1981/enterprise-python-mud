@@ -100,13 +100,17 @@ expect(isinstance(name, str) and name.strip(), "`critter_name` should be some te
 expect(isinstance(species, str) and species.strip(), "`species` should be some text in quotes")
 expect(type(health) is int, f"`health` should be a whole number (no quotes!), but it's {health!r}")
 if type(health) is int:
-    expect(1 <= health <= 100, f"`health` should be from 1 to 100, but it's {health}")
+    expect(1 <= health <= 95, f"`health` should start between 6 and 100 (so it's 1 to 95 after the bonk), but it ends at {health}")
 expect(type(speed) is int and speed >= 0, f"`speed` should be a whole number, 0 or more, but it's {speed!r}")
 expect(type(sleepy) is bool, f"`is_sleepy` should be True or False (capital letters, no quotes), but it's {sleepy!r}")
 expect(printed.strip(), "critter.py should print a sentence about your critter")
-if printed.strip() and isinstance(name, str):
-    expect(name in printed, f"your sentence should include the critter's name ({name!r}). It printed: {printed.strip()!r}")
-    expect(str(health) in printed, f"your sentence should include its health ({health}). It printed: {printed.strip()!r}")
+lines = printed.strip().splitlines()
+if lines and isinstance(name, str):
+    expect(name in lines[0], f"your sentence should include the critter's name ({name!r}). It printed: {lines[0]!r}")
+    expect(len(lines) >= 2, "after the bonk, print the same sentence again (it should print two lines)")
+    if len(lines) >= 2 and type(health) is int:
+        expect(str(health + 5) in lines[0], f"the first sentence should show the starting health ({health + 5}). It printed: {lines[0]!r}")
+        expect(str(health) in lines[-1], f"the second sentence should show the health after the bonk ({health}). It printed: {lines[-1]!r}")
 """
 
 
@@ -123,6 +127,20 @@ def variable_grove(ws: Workspace, r: Report) -> None:
         any(isinstance(n, ast.JoinedStr) for n in ast.walk(tree)),
         'you used an f-string (`f"...{critter_name}..."`) for the sentence',
     )
+    _no_problems(
+        r,
+        tidy.values_in_fstring_braces(tree),
+        "your f-string has variable NAMES in its { }, not values",
+    )
+    bonks = [
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.AugAssign)
+        and isinstance(n.op, ast.Sub)
+        and isinstance(n.target, ast.Name)
+        and n.target.id == "health"
+    ]
+    r.require(bonks, "the bonk uses `-=` on `health`", "Take 5 away with `health -= 5`.")
     _no_problems(
         r,
         tidy.name_problems(tidy.top_level_names(tree)),

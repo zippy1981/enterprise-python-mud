@@ -1,0 +1,81 @@
+id: testing_meadow_guided
+name: The Practice Pen
+order: 10
+guided: true
+zone: "Testing (guided)"
+description: |
+  A little fenced pen in the corner of the meadow, full of baby test robots
+  holding blank signs. The tortoise is teaching them to glow RED and GREEN.
+  Grizzle the gnome watches from behind a fence post, taking notes.
+exits:
+  south: function_falls
+  north: testing_meadow
+npc:
+  name: Testudo the Tortoise
+  aliases: [testudo, tortoise]
+  greeting: |
+    "Sloooowly now. Here you'll feel the **red, green** rhythm for yourself. First
+    you switch on a test, and it goes **red**, because the code isn't finished.
+    Then you finish the code, and it goes **green**. That's test-driven
+    development!"
+  topics:
+    pytest practice: |
+      "`pytest practice` runs only the tests in the practice folder. Plain `pytest`
+      runs every test in your project."
+    red first: |
+      "Seeing a test go red *on purpose* proves it can catch a mistake. A test that
+      has never been red might not be testing anything at all!"
+pages:
+  - title: How a guided path works
+    body: |
+      In a **guided path** you don't write code from scratch. The practice file is
+      already full of code, but most of it is **switched off** with a `#` at the
+      start of the line. (Remember, Python skips anything after a `#`.)
+
+      Each **STEP** has a few choices. Only **one** is right. Your job:
+
+      1. `scaffold` to get the practice file, then `edit` it
+      2. read each STEP and decide which line is right
+      3. **uncomment** that line: delete the `#` **and the space after it**
+      4. `python` the file to see what it does, then `check`
+
+      > 💡 **The quick way to uncomment:** click on the line and press
+      > **Ctrl+/** (**Cmd+/** on a Mac). Press it again to comment the line back out.
+      > Select several lines first to do them all at once.
+
+      If you uncomment a wrong choice, Python will often tell you with an error.
+      That's fine! Comment it out again and try another. When you've finished, the
+      next room asks you to write the same kind of code yourself.
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/test_practice_pen.py`**. Do the STEPs
+      **in order**:
+
+      1. 🔴 **STEP 1:** uncomment the right test. Each test is **two** lines, so
+         select both and press Ctrl+/. 2 + 3 is 5! Now type
+         `pytest practice`. It's **RED**, because `add_berries` still returns 0.
+         That's supposed to happen.
+      2. 🟢 **STEP 2:** in `add_berries`, uncomment the line that really adds the
+         berries. Run `pytest practice` again: **GREEN**!
+      3. **STEP 3:** uncomment the right edge-case test (picking 0 berries
+         leaves the basket the same). Still green?
+quest:
+  title: "Practise at The Practice Pen"
+  brief: |
+    In **`practice/test_practice_pen.py`**, uncomment the right test (STEP 1) and
+    watch `pytest practice` go RED, then finish `add_berries` (STEP 2) to make it
+    GREEN, then add the edge-case test (STEP 3). When you `check`, Grizzle will
+    break `add_berries`, and your tests must catch him.
+  check: testing_meadow_guided
+  scaffold:
+    practice/test_practice_pen.py: test_practice_pen.py
+  hints:
+    - "A test is two lines: the `def test_...():` line and the `assert` line under it. Uncomment both."
+    - "2 + 3 is 5, and 4 + 0 is 4. Pick the tests that say that."
+    - "STEP 2 is `return basket + picked`."
+  solution:
+    files:
+      practice/test_practice_pen.py: test_practice_pen.py
+  commit_message: "Practise on the guided path: The Practice Pen"
+  reward:
+    xp: 50

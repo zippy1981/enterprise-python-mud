@@ -1,0 +1,88 @@
+id: tidy_treehouse_guided
+name: The Sorting Shed
+order: 12
+guided: true
+zone: "Organizing your code (guided)"
+description: |
+  A small shed at the foot of the treehouse ladder. Inside: two drawers,
+  one labelled **rules** and one labelled **shed**, and a jar of coins with
+  the number 50 scratched on the lid. A magpie taps the number disapprovingly.
+exits:
+  east: testing_meadow
+  west: tidy_treehouse
+npc:
+  name: Marigold the Magpie
+  aliases: [marigold, magpie]
+  greeting: |
+    "A mystery number! Scratched right on the lid! Let's tidy this little shed
+    together before you tidy your whole project: give the number a name, import
+    it, and leave a helpful note on the function."
+  topics:
+    folders: |
+      "`practice/sorting_shed/` is a **package**: a folder of code with an
+      `__init__.py` inside. That's why the import says
+      `from practice.sorting_shed.rules import ...`: folder, folder, file."
+    docstrings: |
+      "A docstring is the first line inside a function, in triple quotes. It says
+      what the function is *for*. 'Does stuff' doesn't help anyone!"
+pages:
+  - title: How a guided path works
+    body: |
+      In a **guided path** you don't write code from scratch. The practice file is
+      already full of code, but most of it is **switched off** with a `#` at the
+      start of the line. (Remember, Python skips anything after a `#`.)
+
+      Each **STEP** has a few choices. Only **one** is right. Your job:
+
+      1. `scaffold` to get the practice file, then `edit` it
+      2. read each STEP and decide which line is right
+      3. **uncomment** that line: delete the `#` **and the space after it**
+      4. `python` the file to see what it does, then `check`
+
+      > 💡 **The quick way to uncomment:** click on the line and press
+      > **Ctrl+/** (**Cmd+/** on a Mac). Press it again to comment the line back out.
+      > Select several lines first to do them all at once.
+
+      If you uncomment a wrong choice, Python will often tell you with an error.
+      That's fine! Comment it out again and try another. When you've finished, the
+      next room asks you to write the same kind of code yourself.
+  - title: Step by step
+    body: |
+      This time there are **two** practice files, in a little package:
+
+      * **`practice/sorting_shed/rules.py`**, STEP 1: settings are written in
+        CAPITALS, and the name goes on the left of `=`.
+      * **`practice/sorting_shed/shed.py`**:
+        * **STEP 2:** an import names the folders and the file, joined with dots,
+          without `.py`.
+        * **STEP 3:** choose the docstring that would actually help someone.
+        * **STEP 4:** use the *name* of the setting, not the number.
+
+      Try it: `python -c "from practice.sorting_shed.shed import add_coins; print(add_coins(45, 10))"`
+      should print `50`.
+quest:
+  title: "Practise at The Sorting Shed"
+  brief: |
+    Tidy the sorting shed. Uncomment the right line in each STEP of
+    **`practice/sorting_shed/rules.py`** (STEP 1) and
+    **`practice/sorting_shed/shed.py`** (STEPs 2-4), so `add_coins` adds coins
+    but never goes above `MAX_COINS`, with no magic number 50 in `shed.py`.
+  check: tidy_treehouse_guided
+  scaffold:
+    practice/__init__.py: __init__.py
+    practice/sorting_shed/__init__.py: sorting_shed__init__.py
+    practice/sorting_shed/rules.py: rules.py
+    practice/sorting_shed/shed.py: shed.py
+  hints:
+    - "STEP 1 is `MAX_COINS = 50`."
+    - "STEP 2 is `from practice.sorting_shed.rules import MAX_COINS`."
+    - "STEP 4 uses `MAX_COINS`, not `50`."
+  solution:
+    files:
+      practice/__init__.py: __init__.py
+      practice/sorting_shed/__init__.py: sorting_shed__init__.py
+      practice/sorting_shed/rules.py: rules.py
+      practice/sorting_shed/shed.py: shed.py
+  commit_message: "Practise on the guided path: The Sorting Shed"
+  reward:
+    xp: 50

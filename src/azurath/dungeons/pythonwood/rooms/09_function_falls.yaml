@@ -1,6 +1,6 @@
 id: function_falls
 name: Function Falls
-order: 2
+order: 9
 zone: Functions
 description: |
   A waterfall tumbles into a pool, turning a big wooden wheel. Every time a
@@ -8,8 +8,8 @@ description: |
   bottom: a berry, a pebble, a tiny boat. An otter in a chef's hat files
   recipe cards into a waterproof box.
 exits:
-  west: variable_grove
-  north: testing_meadow
+  west: function_falls_guided
+  north: testing_meadow_guided
 npc:
   name: Otto the Otter
   aliases: [otto, otter]
@@ -100,6 +100,10 @@ pages:
       very end, when you actually want to show something to the player.
   - title: Recipes that decide
     body: |
+      Everything from the Variable Grove paths works inside functions: maths
+      (`+ - * // %`), the **Bracket Bridge** order (`(level + 1) * 10` adds
+      first), string tricks like `name.upper()`, and `+=` / `-=`.
+
       Use `if` to make choices, and comparisons to ask questions:
 
       | Python | Means |

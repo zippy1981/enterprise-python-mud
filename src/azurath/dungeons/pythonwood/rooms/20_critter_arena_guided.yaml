@@ -1,0 +1,78 @@
+id: critter_arena_guided
+name: The Training Ring
+order: 20
+guided: true
+zone: "Putting it together (guided)"
+description: |
+  A small ring of soft moss beside the great arena, with a straw training
+  dummy in the middle. A fox with a champion's ribbon stretches and nods at
+  you: time to warm up before the real battle.
+exits:
+  south: robot_tower
+  north: critter_arena
+npc:
+  name: Champion Cinder
+  aliases: [cinder, fox, champion]
+  greeting: |
+    "Warm-up time! Before you build the real battle, let's practise the two new
+    tricks it needs: a `while` loop that keeps going until the fight's over, and
+    the `main()` front door. Uncomment carefully. Loops need their insides too!"
+  topics:
+    while: |
+      "`while health > 0:` repeats its indented lines as long as health is more
+      than 0. Something inside must change health, or it loops forever. (Ctrl+C
+      stops a runaway program.)"
+    main: |
+      "`if __name__ == "__main__":` means 'only do this when the file is run'.
+      When another file imports it, nothing runs by itself."
+pages:
+  - title: How a guided path works
+    body: |
+      In a **guided path** you don't write code from scratch. The practice file is
+      already full of code, but most of it is **switched off** with a `#` at the
+      start of the line. (Remember, Python skips anything after a `#`.)
+
+      Each **STEP** has a few choices. Only **one** is right. Your job:
+
+      1. `scaffold` to get the practice file, then `edit` it
+      2. read each STEP and decide which line is right
+      3. **uncomment** that line: delete the `#` **and the space after it**
+      4. `python` the file to see what it does, then `check`
+
+      > 💡 **The quick way to uncomment:** click on the line and press
+      > **Ctrl+/** (**Cmd+/** on a Mac). Press it again to comment the line back out.
+      > Select several lines first to do them all at once.
+
+      If you uncomment a wrong choice, Python will often tell you with an error.
+      That's fine! Comment it out again and try another. When you've finished, the
+      next room asks you to write the same kind of code yourself.
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/training_ring.py`**.
+
+      * **STEP 1:** which line is a real loop? Look for **while** *and* a
+        **colon** at the end. (An `if` would only hit once!)
+      * **STEP 2:** uncomment **both** body lines. One takes away health with
+        `-=` and the other counts the hit with `+=`, just like at the **Tally Tree**.
+      * **STEP 3:** the `__name__` line uses `==` (comparing), and two
+        underscores on each side. Uncomment the `main()` line under it too.
+
+      `python practice/training_ring.py` should print `It takes 4 hits to win.`
+quest:
+  title: "Practise at The Training Ring"
+  brief: |
+    Finish **`practice/training_ring.py`**: uncomment the right `while` line
+    (STEP 1), both lines of the loop body (STEP 2), and the right `__name__`
+    line plus `main()` (STEP 3). It should print `It takes 4 hits to win.`
+  check: critter_arena_guided
+  scaffold:
+    practice/training_ring.py: training_ring.py
+  hints:
+    - "STEP 1 is `while health > 0:` (with the colon)."
+    - "STEP 3 is `if __name__ == \"__main__\":` with two equals signs, and then `main()` under it."
+  solution:
+    files:
+      practice/training_ring.py: training_ring.py
+  commit_message: "Practise on the guided path: The Training Ring"
+  reward:
+    xp: 50

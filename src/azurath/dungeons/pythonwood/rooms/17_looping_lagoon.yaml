@@ -1,6 +1,6 @@
 id: looping_lagoon
 name: The Looping Lagoon
-order: 6
+order: 17
 zone: Lists, dictionaries & loops
 description: |
   A lagoon of lily pads, arranged in a long row. A frog hops from pad to pad,
@@ -8,8 +8,8 @@ description: |
   again. Each lily pad holds a little card describing a critter:
   `{"name": "Mossy", "health": 80}`.
 exits:
-  south: backpack_burrow
-  east: robot_tower
+  south: looping_lagoon_guided
+  east: robot_tower_guided
 npc:
   name: Loopy the Frog
   aliases: [loopy, frog]
@@ -45,9 +45,10 @@ npc:
       ```python
       total = 0
       for critter in team:
-          total = total + critter["health"]
+          total += critter["health"]
       ```
-      This is called the accumulator pattern. It's super common!"
+      This is called the accumulator pattern. It's super common! (`+=` is the
+      Tally Tree shortcut for `total = total + ...`.)"
 pages:
   - title: Lists keep things in order
     body: |
@@ -101,7 +102,7 @@ pages:
       ```python
       total = 0                          # add things up
       for critter in team:
-          total = total + critter["health"]
+          total += critter["health"]     # the Tally Tree's +=
 
       names = []                         # build a new list
       for critter in team:
@@ -139,7 +140,7 @@ quest:
     tests/test_team.py: test_team.py
   hints:
     - "Make a little team at the top of your test file, `TEAM = [...]`, and use it in every test."
-    - "`total_health`: start `total = 0`, loop over the team adding each `critter[\"health\"]`, and return `total`."
+    - "`total_health`: start `total = 0`, loop over the team with `total += critter[\"health\"]`, and return `total`."
     - "`strongest`: remember the best critter so far. Only replace it when the new one is **strictly** bigger (`>`), so the first one wins ties."
     - "Grizzle's favourite trick is a `strongest` that just returns the first critter's name. A test where the strongest isn't first will catch him."
   solution:
@@ -161,7 +162,7 @@ quest:
 
         total = 0
         for critter in team:     # once per item
-            total = total + critter["health"]
+            total += critter["health"]
         ```
 
         Remember the **empty list** `[]`. It's an edge case!

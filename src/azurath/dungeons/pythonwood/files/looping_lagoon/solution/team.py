@@ -9,7 +9,7 @@ def total_health(team):
     """Add up the health of every critter on the team."""
     total = 0
     for critter in team:
-        total = total + critter["health"]
+        total += critter["health"]
     return total
 
 

@@ -1,0 +1,81 @@
+id: variable_grove_guided_order
+name: The Bracket Bridge
+order: 5
+guided: true
+zone: "Variables: order of operations"
+description: |
+  A wobbly rope bridge whose planks are numbers and symbols. Brackets hang
+  at either end like handrails. A sign says: **WORK OUT THE BRACKETS FIRST,
+  OR YOU'LL FALL IN THE STREAM.**
+exits:
+  west: variable_grove_guided_strings
+  north: variable_grove_guided_increment
+npc:
+  name: Bramble the Squirrel
+  aliases: [bramble, squirrel]
+  greeting: |
+    "Careful on the bridge! When there's more than one operator, Python doesn't
+    just go left to right. It follows the same order as maths at school.
+    Brackets let *you* choose what happens first."
+  topics:
+    order: |
+      "First `( )` brackets, then `**` powers, then `*` `/` `//` `%`, and last
+      `+` `-`. Operators of the same rank go left to right."
+    when in doubt: |
+      "If you're not sure, add brackets! `(a * b) + c` means the same as
+      `a * b + c`, but it's easier for a human to read."
+pages:
+  - title: Which maths happens first?
+    body: |
+      Python works out maths in this order (it's the same as at school):
+
+      | First | Then | Then | Last |
+      |---|---|---|---|
+      | `( )` brackets | `**` powers | `*` `/` `//` `%` | `+` `-` |
+
+      ```python
+      2 + 3 * 4        # 14: times first, then plus
+      (2 + 3) * 4      # 20: brackets first
+      8 + 4 / 2        # 10.0: divide first
+      (8 + 4) / 2      # 6.0: the average of 8 and 4
+      2 ** 3 * 2       # 16: power first (8), then times 2
+      ```
+
+      **Brackets are your friend.** If you want something to happen first, put
+      it in brackets. If you're not sure, brackets make it clear to anyone
+      reading your code.
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/brackets.py`**. Work out each STEP in your
+      head, then check your answer with Python, for example
+      `python -c "print(2 + 3 * 4)"`.
+
+      * **STEPs 1 and 4** ask what Python *gets*, so choose the right number.
+      * **STEPs 2, 3 and 5** ask you to choose the line that gets the answer
+        you *want*. Does it need brackets?
+
+      It should print `14 20 6.0 16 7`.
+
+      **How to do a guided path:** `scaffold` gives you the practice file. Each STEP
+      has a few choices with a `#` in front, and only one is right. Uncomment the
+      right one by deleting the `#` **and the space after it**. The quick way is to
+      click the line and press **Ctrl+/** (**Cmd+/** on a Mac). Then `python` the
+      file and `check`.
+quest:
+  title: "Practise at The Bracket Bridge"
+  brief: |
+    Uncomment the right line in each STEP of **`practice/brackets.py`**. It
+    should print `14 20 6.0 16 7`.
+  check: variable_grove_guided_order
+  scaffold:
+    practice/brackets.py: brackets.py
+  hints:
+    - "Times happens before plus, so 2 + 3 * 4 is 2 + 12."
+    - "To add before you multiply or divide, put the adding in brackets."
+    - "2 ** 3 * 2 is (2 ** 3) * 2, which is 8 * 2."
+  solution:
+    files:
+      practice/brackets.py: brackets.py
+  commit_message: "Practise on the guided path: The Bracket Bridge"
+  reward:
+    xp: 50

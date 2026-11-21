@@ -1,6 +1,6 @@
 id: tidy_treehouse
 name: The Tidy Treehouse
-order: 4
+order: 13
 zone: Organizing your code
 description: |
   A rope ladder leads up to a treehouse with a place for everything: drawers
@@ -8,8 +8,8 @@ description: |
   pebbles, and a sign saying `MAX_SHINY = 100`. A magpie straightens a
   crooked label for the third time.
 exits:
-  east: testing_meadow
-  north: backpack_burrow
+  east: tidy_treehouse_guided
+  north: backpack_burrow_guided
 npc:
   name: Marigold the Magpie
   aliases: [marigold, magpie]

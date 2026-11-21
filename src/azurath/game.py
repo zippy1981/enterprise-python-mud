@@ -138,6 +138,7 @@ class Game:
                 return False
             name = self.ask("What should we call you? ") or "Adventurer"
             self.state.name = name[:40]
+            self.install_workspace_files()  # before initialize(), so the first commit has them
             for note in self.ws.initialize(readme=self.dungeon.readme):
                 self.out.info(f"  · {note}")
             if not self.ws.git_available():
@@ -147,9 +148,15 @@ class Game:
                 self.out.info(
                     "You're in a VS Code terminal: `edit <file>` opens files in the editor."
                 )
+            if self.dungeon.vscode_profile:
+                self.out.info(
+                    "Tip: type `code` to open your project in VS Code, set up for learning "
+                    "(no AI helpers)."
+                )
         else:
             name = escape(self.state.name)
             self.out.ok(f"Welcome back to {self.dungeon.name}, {name} the {self.title}.")
+            self.install_workspace_files()
         self.cmd_look("")
         return True
 
@@ -667,8 +674,54 @@ class Game:
             return
         import subprocess
 
-        subprocess.Popen([cli, str(self.ws.root)], env=self.ws.env())
-        self.out.ok("opened the workspace in VS Code")
+        argv = [cli, str(self.ws.root)]
+        profile = self.dungeon.vscode_profile
+        if profile:
+            self._prepare_vscode_profile(cli, profile)
+            argv = [cli, "--profile", profile, str(self.ws.root)]
+        subprocess.Popen(argv, env=self.ws.env())
+        where = f' in the "{profile}" profile (no AI helpers)' if profile else ""
+        self.out.ok(f"opened your project in VS Code{where}")
+
+    def _prepare_vscode_profile(self, cli: str, profile: str) -> None:
+        """Install the dungeon's extensions into its VS Code profile, once each."""
+        import subprocess
+
+        for extension in self.dungeon.vscode_extensions:
+            if extension in self.state.vscode_extensions_installed:
+                continue
+            self.out.info(f"Installing {extension} into the {profile} profile (just this once)…")
+            try:
+                proc = subprocess.run(
+                    [cli, "--profile", profile, "--install-extension", extension],
+                    capture_output=True,
+                    text=True,
+                    timeout=300,
+                    env=self.ws.env(),
+                )
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                self.out.warn(f"Couldn't install {extension}: {exc}")
+                continue
+            if proc.returncode == 0:
+                self.state.vscode_extensions_installed.append(extension)
+            else:
+                detail = (proc.stderr or proc.stdout).strip()[-300:]
+                self.out.warn(
+                    f"Couldn't install {extension} automatically. In VS Code, open the "
+                    f"Extensions view and install it there.\n{detail}"
+                )
+
+    def install_workspace_files(self) -> list[str]:
+        """Copy the dungeon's template files (e.g. VS Code settings) into the project."""
+        written = []
+        for target, source in self.dungeon.workspace_files.items():
+            if self.ws.exists(target):
+                continue  # never overwrite the player's own settings
+            self.ws.write(target, self.dungeon.template_text(source))
+            written.append(target)
+        if written:
+            self.out.info("  · wrote " + ", ".join(written))
+        return written
 
     @command("ls", "dir", usage="ls [folder]", help="List files in your workspace.")
     def cmd_ls(self, arg: str) -> None:

@@ -1,0 +1,48 @@
+{
+  // VS Code settings for the Pythonwood: no AI helpers, normal autocomplete on,
+  // and a few things that make learning easier. Written by the Azurath game.
+
+  // ---- AI assistants OFF: learners should write (and understand) their own code ----
+  "chat.disableAIFeatures": true,
+  "chat.commandCenter.enabled": false,
+  "chat.agent.enabled": false,
+  "github.copilot.enable": { "*": false },
+  "github.copilot.editor.enableAutoCompletions": false,
+  "github.copilot.nextEditSuggestions.enabled": false,
+  // Inline "ghost text" suggestions, from any extension (Copilot, Codeium, Tabnine...)
+  "editor.inlineSuggest.enabled": false,
+
+  // ---- Regular autocomplete stays ON (the list of names as you type) ----
+  "editor.quickSuggestions": { "other": "on", "comments": "off", "strings": "off" },
+  "editor.suggestOnTriggerCharacters": true,
+  "editor.wordBasedSuggestions": "matchingDocuments",
+  "editor.parameterHints.enabled": true,
+
+  // ---- Easier for learners ----
+  // Save automatically, so the game's `check` always sees your latest code.
+  "files.autoSave": "afterDelay",
+  "editor.fontSize": 16,
+  "terminal.integrated.fontSize": 15,
+  "editor.minimap.enabled": false,
+  "editor.stickyScroll.enabled": false,
+  "workbench.startupEditor": "none",
+  // Show indentation, because in Python indentation matters.
+  "editor.renderWhitespace": "boundary",
+  "editor.guides.indentation": true,
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  // Hide clutter (the game's save file, caches).
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    ".azurath": true
+  },
+
+  // ---- Python ----
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv",
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.typeCheckingMode": "off",
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["."]
+}

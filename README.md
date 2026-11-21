@@ -150,6 +150,11 @@ uses vim and shows a survival cheat sheet first. `:wq` returns you to the game. 
 | **Code** | `edit <file>` · `vim <file>` · `code [file]` · `ls` · `cat <file>` · `python <file>` · `pytest` · `!<shell command>` · `shell` · `commit` · `log` · `workspace` |
 | **You** | `inventory` · `examine <item>` · `status` · `save` · `quit` · `help [command]` |
 
+**Ctrl+C** never throws you out by accident. At the prompt, the first press warns you and a
+second press in a row quits. While a command or your own program is running, Ctrl+C stops
+just that and returns you to the game. **Ctrl+D** (Ctrl+Z then Enter on Windows) quits
+straight away. Your progress is saved either way.
+
 `!` commands run in your workspace with its `.venv` activated, so `!uv add pydantic`,
 `!python -m pytest -q` and `!git status` all do what you'd expect. The game removes its *own*
 virtualenv from `PATH` first, so nothing leaks between the two.

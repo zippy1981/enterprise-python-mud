@@ -26,6 +26,10 @@ from azurath.workspace import Workspace
 
 QUIT = object()
 
+# Exit codes a program reports when Ctrl+C stopped it: 130 (shells, and our own
+# KeyboardInterrupt handler), -2 (killed by SIGINT on POSIX), 0xC000013A (Windows).
+STOPPED_CODES = {130, -2, 3221225786}
+
 BANNER = r"""
 [bold cyan]    _                       _   _
    / \    _____   _ _ __ __ _| |_| |__
@@ -160,14 +164,35 @@ class Game:
         if not self.start():
             return
         self._setup_readline()
+        presses = 0  # Ctrl+C presses in a row at the prompt
         while True:
             try:
                 line = self._input(f"\n[bold magenta]{self.room.name}[/bold magenta] [dim]›[/dim] ")
-            except (EOFError, KeyboardInterrupt):
+            except EOFError:  # Ctrl+D (Ctrl+Z on Windows): the player meant to leave
                 self.console.print()
                 self.cmd_quit("")
                 break
-            if self.handle(line) is QUIT:
+            except KeyboardInterrupt:
+                self.console.print()
+                presses += 1
+                if presses >= 2:
+                    self.cmd_quit("")
+                    break
+                self.out.warn(
+                    "Press Ctrl+C again to quit, or type a command to keep playing. "
+                    "(Your progress is saved either way.)"
+                )
+                continue
+            presses = 0
+            try:
+                result = self.handle(line)
+            except KeyboardInterrupt:  # Ctrl+C while a command was running: stop just that
+                self.console.print()
+                self.out.warn(
+                    "Stopped. You're still in the game. (Ctrl+C twice at the prompt quits.)"
+                )
+                continue
+            if result is QUIT:
                 break
 
     def handle(self, line: str) -> object:
@@ -823,6 +848,8 @@ class Game:
         code = self.ws.interactive(argv)
         if code == 127:
             self.out.error("command not found")
+        elif code in STOPPED_CODES:
+            self.out.warn("Stopped with Ctrl+C. You're still in the game.")
         elif code:
             self.out.warn(f"exit code {code}")
 
@@ -866,7 +893,9 @@ class Game:
             return
         self.out.say(f"[dim]$ python {escape(arg)}   ({self._which_python()})[/dim]")
         code = self.ws.interactive([self.ws.python(), *args])
-        if code:
+        if code in STOPPED_CODES:
+            self.out.warn("You stopped your program with Ctrl+C. You're still in the game.")
+        elif code:
             self.out.warn(f"your program stopped with exit code {code} (read the error above)")
 
     @command(

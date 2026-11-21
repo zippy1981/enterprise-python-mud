@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+<title>Azurath</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">◆</span> <span id="dungeon-name">Azurath</span></div>
+  <div class="who"><span id="player"></span> <span class="xp"><span id="xp-bar"></span></span> <span id="xp-text"></span></div>
+</header>
+<main>
+  <section class="map-pane" aria-label="Map">
+    <svg id="map" role="img" aria-label="Map of the dungeon"></svg>
+    <p class="map-help">Click a room you've visited to travel there.</p>
+  </section>
+  <section class="room-pane">
+    <h1 id="room-name">…</h1>
+    <p id="room-zone" class="zone"></p>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="story" class="active">Story</button>
+      <button role="tab" data-tab="lesson">Lesson</button>
+      <button role="tab" data-tab="quest">Quest</button>
+      <button role="tab" data-tab="code">Code</button>
+    </nav>
+    <div class="tab" id="tab-story">
+      <div id="description" class="prose"></div>
+      <p id="npc"></p>
+      <div id="exits" class="buttons"></div>
+      <div id="story-out" class="out"></div>
+    </div>
+    <div class="tab" id="tab-lesson" hidden>
+      <div id="pages" class="buttons"></div>
+      <div id="lesson-out" class="out"></div>
+    </div>
+    <div class="tab" id="tab-quest" hidden>
+      <h2 id="quest-title"></h2>
+      <div id="quest-brief" class="prose"></div>
+      <div class="buttons">
+        <button data-run="scaffold">Get the starter file</button>
+        <button data-run="hint">Hint</button>
+        <button data-run="check" class="primary">✔ Check my work</button>
+      </div>
+      <ul id="checklist" class="checklist"></ul>
+      <div id="quest-out" class="out"></div>
+    </div>
+    <div class="tab" id="tab-code" hidden>
+      <div class="code-bar">
+        <select id="file" aria-label="File"></select>
+        <button id="save" class="primary" title="Ctrl+S">Save</button>
+        <button id="run-file">▶ Run</button>
+        <button data-run="check">✔ Check</button>
+        <span id="save-state" class="dim"></span>
+      </div>
+      <div id="steps"></div>
+      <textarea id="editor" spellcheck="false" aria-label="Code editor"></textarea>
+      <div id="code-out" class="out"></div>
+    </div>
+  </section>
+</main>
+<form id="command" class="command">
+  <input id="line" autocomplete="off" placeholder="Or type any command: look, read, talk, help…" aria-label="Command">
+  <button>Go</button>
+</form>
+<script src="app.js"></script>
+</body>
+</html>

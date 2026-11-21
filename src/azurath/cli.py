@@ -34,6 +34,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-color", action="store_true", help="Disable colors")
     sub = parser.add_subparsers(dest="command")
     sub.add_parser("play", help="Play the game (default)")
+    web = sub.add_parser("web", help="Play in your browser, with a map (on this computer only)")
+    web.add_argument(
+        "--port", type=int, default=0, help="Port to listen on (default: any free one)"
+    )
+    web.add_argument("--no-browser", action="store_true", help="Don't open a browser tab")
     check = sub.add_parser("check", help="Run the current room's quest check and exit")
     check.add_argument("room", nargs="?", help="Room id to check instead of the current one")
     sub.add_parser("status", help="Show progress and exit")
@@ -141,17 +146,27 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         dungeon = resolve_dungeon(
-            settings, atlas, ask=chooser(console) if command == "play" else None
+            settings, atlas, ask=chooser(console) if command in {"play", "web"} else None
         )
     except KeyError as exc:
         print(exc.args[0], file=sys.stderr)
         return 2
     if dungeon is None:
-        if command == "play":
+        if command in {"play", "web"}:
             return 1  # the player backed out of the menu
         names = ", ".join(atlas.dungeons)
         print(f"Which dungeon? Pass --dungeon ({names}).", file=sys.stderr)
         return 2
+
+    if command == "web":
+        from azurath.web.server import serve
+
+        try:
+            serve(settings, dungeon, port=args.port, open_browser=not args.no_browser)
+        except WrongDungeonError as exc:
+            print(exc, file=sys.stderr)
+            return 2
+        return 0
 
     try:
         game = Game(settings, console=console, dungeon=dungeon)

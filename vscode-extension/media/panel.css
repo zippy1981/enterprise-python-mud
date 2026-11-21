@@ -1,0 +1,27 @@
+body { padding: 0 8px 64px; font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); color: var(--vscode-foreground); }
+header { position: sticky; top: 0; padding: 6px 0; background: var(--vscode-sideBar-background); font-weight: 600; border-bottom: 1px solid var(--vscode-panel-border); z-index: 1; }
+h2 { margin: 10px 0 0; font-size: 1.2em; }
+h3 { margin: 8px 0 4px; font-size: 1.05em; }
+.zone, .dim { margin: 2px 0; opacity: 0.75; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+button { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border: none; padding: 4px 8px; border-radius: 2px; cursor: pointer; }
+button.primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.checklist { list-style: none; padding: 0; margin: 0; }
+.checklist li { margin: 2px 0; }
+.checklist .ok { color: var(--vscode-testing-iconPassed); }
+.checklist .bad { color: var(--vscode-testing-iconFailed); }
+.checklist .maybe { color: var(--vscode-editorWarning-foreground); }
+.checklist pre { margin: 2px 0 4px 16px; color: var(--vscode-foreground); opacity: 0.8; white-space: pre-wrap; }
+#map { padding-left: 0; list-style: none; margin: 4px 0; }
+#map li { padding: 1px 0; }
+#map .here { font-weight: 600; }
+#map .undiscovered { opacity: 0.5; }
+#map .link { cursor: pointer; text-decoration: underline dotted; }
+#log .entry { border-top: 1px solid var(--vscode-panel-border); padding-top: 4px; margin-top: 6px; }
+#log .cmd { color: var(--vscode-textLink-foreground); font-weight: 600; }
+#log pre { white-space: pre; overflow-x: auto; font-family: var(--vscode-editor-font-family); font-size: 0.92em; margin: 2px 0; }
+.fatal { color: var(--vscode-errorForeground); }
+#prompt { position: fixed; bottom: 0; left: 0; right: 0; padding: 6px 8px; background: var(--vscode-sideBar-background); }
+#line { width: 100%; box-sizing: border-box; padding: 4px 6px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, transparent); }
+body.busy #line { opacity: 0.6; }

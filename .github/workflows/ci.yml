@@ -38,3 +38,18 @@ jobs:
           enable-cache: true
       - run: uv sync --locked
       - run: uv run pytest -m slow -q
+
+  vscode:
+    name: VS Code extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: node --test test/*.test.js
+        working-directory: vscode-extension

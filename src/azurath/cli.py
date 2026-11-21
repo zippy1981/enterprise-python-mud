@@ -34,6 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-color", action="store_true", help="Disable colors")
     sub = parser.add_subparsers(dest="command")
     sub.add_parser("play", help="Play the game (default)")
+    sub.add_parser("tui", help="Play in a split-screen window (needs the `tui` extra)")
     check = sub.add_parser("check", help="Run the current room's quest check and exit")
     check.add_argument("room", nargs="?", help="Room id to check instead of the current one")
     sub.add_parser("status", help="Show progress and exit")
@@ -141,17 +142,34 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         dungeon = resolve_dungeon(
-            settings, atlas, ask=chooser(console) if command == "play" else None
+            settings, atlas, ask=chooser(console) if command in {"play", "tui"} else None
         )
     except KeyError as exc:
         print(exc.args[0], file=sys.stderr)
         return 2
     if dungeon is None:
-        if command == "play":
+        if command in {"play", "tui"}:
             return 1  # the player backed out of the menu
         names = ", ".join(atlas.dungeons)
         print(f"Which dungeon? Pass --dungeon ({names}).", file=sys.stderr)
         return 2
+
+    if command == "tui":
+        try:
+            from azurath.tui import run_tui
+        except ImportError:
+            print(
+                "The split-screen UI needs Textual: `uv sync --extra tui` "
+                "(or `pip install azurath[tui]`), then `azurath tui`.",
+                file=sys.stderr,
+            )
+            return 2
+        try:
+            run_tui(settings, dungeon)
+        except WrongDungeonError as exc:
+            print(exc, file=sys.stderr)
+            return 2
+        return 0
 
     try:
         game = Game(settings, console=console, dungeon=dungeon)

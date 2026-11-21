@@ -1,4 +1,4 @@
-# practice/acorns.py: practise making variables.
+# practice/acorns.py: the Acorn Path. Making variables, and their types.
 # Each STEP below has some choices. Only ONE is right.
 # Uncomment the right one: delete the "# " (the hash AND the space) at the
 # start of its line. Tip: click the line and press Ctrl+/ (Cmd+/ on a Mac).
@@ -8,25 +8,23 @@
 # "Pip" = pet_name
 # pet_name = "Pip"
 
-# STEP 2: Make a variable called age that holds the NUMBER 3 (not the text "3").
+# STEP 2: age holds the whole NUMBER 3 (an int), not the text "3".
 # age = "3"
 # age = 3
 
-# STEP 3: Make a variable called is_hungry that holds True.
+# STEP 3: height holds the decimal number 1.5 (a float). Decimals use a dot!
+# height = 1,5
+# height = "1.5"
+# height = 1.5
+
+# STEP 4: is_hungry holds True (a bool).
 # is_hungry = true
 # is_hungry = "True"
 # is_hungry = True
 
-# STEP 4: Print "Pip is 3 years old." with an f-string.
-#         Inside the { } goes the variable's NAME, not its value!
-# print(f"{Pip} is {3} years old.")
-# print("{pet_name} is {age} years old.")
-# print(f"{pet_name} is {age} years old.")
+# STEP 5: Which line asks Python what TYPE height is?
+# print(height.type)
+# print(type(height))
 
-# STEP 5: Pip has a birthday! Which line makes age one bigger?
-# age + 1
-# age = age + 1
-
-# This line is already done for you. Look: the same f-string now says 4,
-# because {age} means "whatever is in the age jar right now".
-print(f"{pet_name} is now {age} years old.")
+# Already done for you: print all four jars.
+print(pet_name, age, height, is_hungry)

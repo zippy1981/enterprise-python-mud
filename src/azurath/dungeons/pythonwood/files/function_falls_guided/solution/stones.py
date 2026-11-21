@@ -28,7 +28,15 @@ def is_big(number):
     pass
 
 
-# STEP 4: Call double with 21 and keep the answer in a variable.
+# STEP 4: bonus(level) is (level + 1) times 10, so bonus(2) is 30.
+#         Remember the Bracket Bridge: which part must happen first?
+def bonus(level):
+    # return level + 1 * 10
+    return (level + 1) * 10
+    pass
+
+
+# STEP 5: Call double with 21 and keep the answer in a variable.
 # answer = double
 # double(21) = answer
 answer = double(21)

@@ -1,6 +1,6 @@
 id: critter_arena_guided
 name: The Training Ring
-order: 16
+order: 20
 guided: true
 zone: "Putting it together (guided)"
 description: |
@@ -52,8 +52,8 @@ pages:
 
       * **STEP 1:** which line is a real loop? Look for **while** *and* a
         **colon** at the end. (An `if` would only hit once!)
-      * **STEP 2:** uncomment **both** body lines. One takes away health, the
-        other counts the hit.
+      * **STEP 2:** uncomment **both** body lines. One takes away health with
+        `-=` and the other counts the hit with `+=`, just like at the **Tally Tree**.
       * **STEP 3:** the `__name__` line uses `==` (comparing), and two
         underscores on each side. Uncomment the `main()` line under it too.
 

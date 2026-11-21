@@ -1,6 +1,6 @@
 id: testing_meadow
 name: The Testing Meadow
-order: 7
+order: 11
 zone: Testing (red, green, tidy)
 description: |
   A sunny meadow full of little stone robots, each holding up a sign that
@@ -141,7 +141,7 @@ quest:
     - "Each test is a function whose name starts with `test_`, with an `assert` inside: `assert feed(50, 10) == 60`."
     - "Grizzle breaks `feed` by removing the 100 limit, so you need a test like `assert feed(95, 10) == 100`."
     - "To test `describe`, compare the whole sentence: `assert describe(\"Sparky\", 7) == \"Sparky has 7 health.\"`"
-    - "`rest` looks a lot like `feed`: `return min(energy + hours * 10, 100)`."
+    - "`rest` looks a lot like `feed`: `return min(energy + hours * 10, 100)`. Remember the Bracket Bridge: `hours * 10` happens before the `+`, so no brackets needed!"
   solution:
     files:
       tests/test_actions.py: test_actions.py

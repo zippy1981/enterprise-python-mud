@@ -1,6 +1,6 @@
 id: variable_grove
 name: Variable Grove
-order: 3
+order: 7
 zone: Variables
 description: |
   Hundreds of glass jars hang from the branches, each with a neat paper label:
@@ -8,7 +8,7 @@ description: |
   scurries between them, swapping what's inside and carefully re-tying the
   labels.
 exits:
-  south: variable_grove_guided
+  south: variable_grove_guided_increment
   east: function_falls_guided
 npc:
   name: Bramble the Squirrel
@@ -137,13 +137,17 @@ quest:
     |---|---|---|
     | `critter_name` | string | `"Sparky"` |
     | `species` | string | `"lightning squirrel"` |
-    | `health` | whole number from 1 to 100 | `30` |
+    | `health` | whole number from 6 to 100 | `30` |
     | `speed` | whole number, 0 or more | `7` |
     | `is_sleepy` | `True` or `False` | `False` |
 
     Then use an **f-string** to `print` a sentence that includes your
     critter's name **and** its health. Inside the `{ }` put the variable
     **names** (`{critter_name}`, `{health}`), not the values (`{"Sparky"}`, `{30}`).
+
+    **Then your critter gets bonked!** Use `-=` (from the Tally Tree) to take 5
+    away from `health`, and `print` the **same** f-string sentence again. Watch
+    it show the new health all by itself.
 
     Every variable name must be **snake_case** and at least 3 letters long.
     No `x` or `n`!
@@ -153,6 +157,7 @@ quest:
     - "Each variable is one line: `name = value`. Text goes in quotes. Numbers and `True`/`False` don't."
     - "`True` and `False` need capital letters. `true` is a NameError."
     - "Inside the braces go variable NAMES, never the values: `{health}`, not `{30}`. Then the sentence updates itself when the variable changes."
+    - "The bonk is one line, `health -= 5`, and then the exact same `print(f\"...\")` line again."
     - "Your sentence could be: `print(f\"{critter_name} the {species} has {health} health!\")`"
   solution:
     files: [critter.py]
@@ -170,6 +175,7 @@ quest:
         is_sleepy = False          # bool: True or False
         health = health - 5        # change a variable (or: health -= 5)
         print(f"{critter_name} has {health} health")   # f-string: NAMES in the { }
+        health -= 5                # take 5 away (+= adds, -= takes away)
         print(type(health))        # what kind of value is it?
         ```
 

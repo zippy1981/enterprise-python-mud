@@ -1,6 +1,6 @@
 id: function_falls_guided
 name: The Stepping Stones
-order: 4
+order: 8
 guided: true
 zone: "Functions (guided)"
 description: |
@@ -56,7 +56,9 @@ pages:
       * **STEP 2:** without the `f`, the braces are just printed as `{name}`.
         And Python cares about capital letters: `Name` isn't `name`.
       * **STEP 3:** "more than 10" means 11, 12, 13... but not 10 itself.
-      * **STEP 4:** to *call* a function you need brackets with the input,
+      * **STEP 4:** remember the **Bracket Bridge**: `level + 1 * 10` does the
+        times first! To add 1 *before* multiplying, use brackets.
+      * **STEP 5:** to *call* a function you need brackets with the input,
         `double(21)`, and the variable goes on the left of `=`.
 quest:
   title: "Practise at The Stepping Stones"
@@ -70,7 +72,8 @@ quest:
   hints:
     - "Every function needs a `return` line, not a `print` line."
     - "`>` means more than, `>=` means more than or equal to."
-    - "STEP 4 is `answer = double(21)`."
+    - "STEP 4 needs brackets: `return (level + 1) * 10`."
+    - "STEP 5 is `answer = double(21)`."
   solution:
     files:
       practice/stones.py: stones.py

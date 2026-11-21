@@ -1,6 +1,6 @@
 id: testing_meadow_guided
 name: The Practice Pen
-order: 6
+order: 10
 guided: true
 zone: "Testing (guided)"
 description: |

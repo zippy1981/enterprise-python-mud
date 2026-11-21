@@ -67,7 +67,11 @@ on the game's commands (and the CI robot) use it.
 **Every lesson has two rooms.** First a **guided path**: a practice file in `practice/`
 with numbered STEPs, each with a few commented-out choices, where the player uncomments the
 right line (Ctrl+/ in VS Code). Then the **lesson room** below, where they write the code
-themselves and it's checked with tests. So the 9 lessons make 18 rooms. After every passed
+themselves and it's checked with tests. Variables are the foundation, so Variable Grove has
+**five** guided paths before it: making variables and their types, maths and reassignment,
+strings, order of operations, and `+=`/`-=` (Python has no `++`). Later lessons build on
+them: `+=` in loops, `-=` in battles, brackets in function maths, `.upper()` on list items.
+That makes 22 rooms in all. After every passed
 check, a "What next?" panel lists what's left to do in the room, suggests `read` if any
 pages are unread, and otherwise points the way forward.
 

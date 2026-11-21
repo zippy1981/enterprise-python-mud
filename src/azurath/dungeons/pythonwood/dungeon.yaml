@@ -8,16 +8,24 @@ audience: |
   and virtual environments with uv, and a CI robot, all in kid-sized steps. Each quest adds a piece to a small critter
   battle game.
 order: 1
-start: trailhead
+start: trailhead_guided
 workspace: critter-quest
+# Copied into the player's project (never overwriting) from this dungeon's template/ folder.
+workspace_files:
+  .vscode/settings.json: vscode-settings.json
+  .vscode/extensions.json: vscode-extensions.json
+# The game's `code` command opens the project in this VS Code profile. A new profile has
+# no extensions, so AI assistants aren't loaded; only these get installed into it.
+vscode_profile: Pythonwood
+vscode_extensions: [ms-python.python]
 ranks:
   - [0, Seedling]
   - [100, Sprout]
   - [300, Sapling]
-  - [600, Trail Coder]
-  - [1000, Forest Ranger]
-  - [1400, Code Druid]
-  - [2000, Guardian of the Pythonwood]
+  - [700, Trail Coder]
+  - [1300, Forest Ranger]
+  - [1900, Code Druid]
+  - [2650, Guardian of the Pythonwood]
 intro: |
   Welcome to **the Pythonwood**, a forest where code grows on trees. 🌲
 
@@ -28,6 +36,11 @@ intro: |
 
   Every room has a friendly mentor, a short lesson and a quest. Finish the
   quest and the path to the next room opens.
+
+  Each lesson comes in **two rooms**. First a **guided path**: the code is
+  already written but switched off, and you switch on (uncomment) the right
+  line in each step. Then the **lesson room**, where you write the code
+  yourself, and test it!
 
   The commands you'll use most:
 

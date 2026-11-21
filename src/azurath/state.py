@@ -24,12 +24,29 @@ class PlayerState(BaseModel):
     completed: dict[str, datetime] = Field(default_factory=dict)
     hints: dict[str, int] = Field(default_factory=dict)
     pages: dict[str, int] = Field(default_factory=dict)
+    # Every page the player has opened, per room (1-based), to know what's still unread.
+    seen_pages: dict[str, list[int]] = Field(default_factory=dict)
     inventory: list[str] = Field(default_factory=list)
     xp: int = 0
+    # Extensions already installed into the dungeon's VS Code profile.
+    vscode_extensions_installed: list[str] = Field(default_factory=list)
 
     @classmethod
     def new(cls, dungeon_id: str, start_room: str, name: str = "Adventurer") -> PlayerState:
         return cls(dungeon=dungeon_id, name=name, room=start_room, visited=[start_room])
+
+    def mark_read(self, room_id: str, page: int) -> None:
+        self.pages[room_id] = page
+        seen = self.seen_pages.setdefault(room_id, [])
+        if page not in seen:
+            seen.append(page)
+            seen.sort()
+
+    def unread_pages(self, room_id: str, total: int) -> list[int]:
+        seen = set(self.seen_pages.get(room_id, []))
+        if not seen and self.pages.get(room_id):  # saves from before seen_pages existed
+            seen = set(range(1, self.pages[room_id] + 1))
+        return [n for n in range(1, total + 1) if n not in seen]
 
     def visit(self, room_id: str) -> None:
         self.room = room_id

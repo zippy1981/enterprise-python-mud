@@ -151,6 +151,8 @@ class Room(BaseModel):
     pages: list[Page] = Field(default_factory=list)
     quest: Quest | None = None
     optional: bool = False
+    # A guided room teaches by "uncomment the right answer" before its lesson's main room.
+    guided: bool = False
 
     @field_validator("exits", mode="before")
     @classmethod
@@ -170,6 +172,16 @@ class Dungeon(BaseModel):
     workspace: str = Field(description="Default folder name for the project the player builds.")
     intro: str = ""
     readme: str | None = Field(default=None, description="README.md for a new workspace.")
+    workspace_files: dict[str, str] = Field(
+        default_factory=dict,
+        description="Files copied into the player's project: target path -> file in template/.",
+    )
+    vscode_profile: str | None = Field(
+        default=None, description="VS Code profile the `code` command opens the project in."
+    )
+    vscode_extensions: list[str] = Field(
+        default_factory=list, description="Extensions to install into that profile."
+    )
     ranks: list[tuple[int, str]] = Field(default_factory=lambda: [(0, "Adventurer")])
     rooms: dict[str, Room] = Field(default_factory=dict)
 
@@ -227,6 +239,9 @@ class Dungeon(BaseModel):
     def room_file(self, room_id: str, kind: str, name: str) -> Traversable:
         """Locate ``files/<room>/<kind>/<name>`` (kind is ``scaffold`` or ``solution``)."""
         return self.root() / "files" / room_id / kind / name
+
+    def template_text(self, name: str) -> str:
+        return (self.root() / "template" / name).read_text(encoding="utf-8")
 
     def room_text(self, room_id: str, kind: str, name: str) -> str:
         return self.room_file(room_id, kind, name).read_text(encoding="utf-8")

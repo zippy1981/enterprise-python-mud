@@ -18,7 +18,6 @@ def verify_room(monkeypatch: pytest.MonkeyPatch):
     return module
 
 
-@pytest.mark.skipif(os.name == "nt", reason="the script symlinks a python shim")
 def test_verify_room_passes_an_early_room(verify_room, capsys: pytest.CaptureFixture[str]) -> None:
     assert verify_room.main(["hall_of_basics"]) == 0
     out = capsys.readouterr().out
@@ -26,7 +25,6 @@ def test_verify_room_passes_an_early_room(verify_room, capsys: pytest.CaptureFix
     assert "VERIFIED: hall_of_basics" in out
 
 
-@pytest.mark.skipif(os.name == "nt", reason="the script symlinks a python shim")
 def test_setup_only_leaves_a_playable_workspace(verify_room, tmp_path: Path) -> None:
     from azurath.state import PlayerState
 

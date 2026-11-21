@@ -10,6 +10,7 @@ from rich.console import Console
 from azurath.content import load_dungeon
 from azurath.game import Game
 from azurath.settings import AzurathSettings
+from azurath.workspace import write_python_shim
 
 
 @pytest.fixture(autouse=True)
@@ -70,9 +71,6 @@ def make_player(tmp_path: Path) -> Iterator[Callable[..., Player]]:
 def python_on_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Make `python` resolve to a real interpreter (CI images often only have python3)."""
     shim = tmp_path / "shim-bin"
-    shim.mkdir()
-    base = Path(getattr(sys, "_base_executable", sys.executable))
-    target = shim / ("python.exe" if os.name == "nt" else "python")
-    target.symlink_to(base)
+    write_python_shim(shim, getattr(sys, "_base_executable", sys.executable))
     monkeypatch.setenv("PATH", f"{shim}{os.pathsep}{os.environ.get('PATH', '')}")
     return shim

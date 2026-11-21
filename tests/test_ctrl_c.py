@@ -8,6 +8,7 @@ import pytest
 from rich.console import Console
 
 from azurath import game as game_module
+from azurath import gitcheck
 from azurath.content import load_dungeon
 from azurath.game import Game
 from azurath.settings import AzurathSettings
@@ -31,6 +32,9 @@ class Keyboard:
 
 
 def play(tmp_path: Path, keys: list[object]) -> tuple[str, Keyboard]:
+    # Give git an identity first (in the isolated global config conftest sets up), so the
+    # startup git check doesn't stop to ask for one: these tests are about Ctrl+C.
+    assert gitcheck.set_global_identity("Ada Lovelace", "ada@example.com").ok
     buffer = io.StringIO()
     keyboard = Keyboard(["y", "Ada", *keys])  # create the workspace, name, then the keys
     game = Game(

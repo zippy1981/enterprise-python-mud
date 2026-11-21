@@ -262,6 +262,11 @@
       "title": "Exits",
       "type": "object"
     },
+    "guided": {
+      "default": false,
+      "title": "Guided",
+      "type": "boolean"
+    },
     "id": {
       "pattern": "^[a-z][a-z0-9_]*$",
       "title": "Id",

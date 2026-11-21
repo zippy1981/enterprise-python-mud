@@ -234,6 +234,11 @@
           "title": "Exits",
           "type": "object"
         },
+        "guided": {
+          "default": false,
+          "title": "Guided",
+          "type": "boolean"
+        },
         "id": {
           "pattern": "^[a-z][a-z0-9_]*$",
           "title": "Id",
@@ -371,8 +376,6 @@
             "type": "integer"
           },
           {
-            "minLength": 1,
-            "pattern": "\\S",
             "type": "string"
           }
         ],
@@ -405,11 +408,40 @@
       "title": "Tagline",
       "type": "string"
     },
+    "vscode_extensions": {
+      "description": "Extensions to install into that profile.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Vscode Extensions",
+      "type": "array"
+    },
+    "vscode_profile": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "VS Code profile the `code` command opens the project in.",
+      "title": "Vscode Profile"
+    },
     "workspace": {
       "description": "Default folder name for the project the player builds.",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
       "title": "Workspace",
       "type": "string"
+    },
+    "workspace_files": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Files copied into the player's project: target path -> file in template/.",
+      "title": "Workspace Files",
+      "type": "object"
     }
   },
   "required": [

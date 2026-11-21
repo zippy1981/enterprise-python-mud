@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://azurath.invalid/schemas/common.schema.json",
+  "title": "Shared definitions for Azurath's YAML schemas",
+  "$defs": {
+    "identifier": {
+      "description": "snake_case: room ids, dungeon ids, check names",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "text": {
+      "description": "Visible text: never empty or only whitespace",
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "relativePath": {
+      "description": "A file path inside the project: forward slashes, not absolute, no '..'",
+      "type": "string",
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!(.*/)?\\.\\.(/|$))[^\\\\]+$"
+    },
+    "fileMap": {
+      "description": "Target path -> source file, or a list as shorthand when the names match",
+      "oneOf": [
+        {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/relativePath" },
+          "additionalProperties": { "$ref": "#/$defs/relativePath" }
+        },
+        { "type": "array", "items": { "$ref": "#/$defs/relativePath" } }
+      ]
+    }
+  }
+}

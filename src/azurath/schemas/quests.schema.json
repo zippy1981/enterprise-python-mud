@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://azurath.invalid/schemas/quests.schema.json",
+  "title": "The YAML Scriptorium's quest seed data (data/quests.yaml)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["quests"],
+  "properties": {
+    "defaults": {
+      "description": "An anchor for `<<: *defaults` merges",
+      "type": "object"
+    },
+    "quests": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "reward"],
+        "properties": {
+          "title": { "$ref": "common.schema.json#/$defs/text" },
+          "reward": { "type": "integer", "minimum": 0 },
+          "rank": { "enum": ["S", "A", "B", "C"] },
+          "guilds": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/text" } }
+        }
+      }
+    }
+  }
+}

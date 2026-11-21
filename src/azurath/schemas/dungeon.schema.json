@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://azurath.invalid/schemas/dungeon.schema.json",
+  "title": "An Azurath dungeon (dungeons/<dungeon>/dungeon.yaml)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "tagline", "audience", "start", "workspace"],
+  "properties": {
+    "id": { "$ref": "common.schema.json#/$defs/identifier" },
+    "name": { "$ref": "common.schema.json#/$defs/text" },
+    "tagline": { "$ref": "common.schema.json#/$defs/text" },
+    "audience": { "$ref": "common.schema.json#/$defs/text" },
+    "order": { "type": "integer", "minimum": 0 },
+    "start": { "$ref": "common.schema.json#/$defs/identifier" },
+    "workspace": {
+      "description": "Default folder name for the project the player builds",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "intro": { "type": "string" },
+    "readme": { "$ref": "common.schema.json#/$defs/text" },
+    "ranks": {
+      "description": "[xp, title] pairs, starting at 0 XP",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          { "type": "integer", "minimum": 0 },
+          { "$ref": "common.schema.json#/$defs/text" }
+        ],
+        "items": false,
+        "minItems": 2
+      }
+    },
+    "workspace_files": {
+      "description": "Files copied into the player's project: target path -> file in template/",
+      "type": "object",
+      "propertyNames": { "$ref": "common.schema.json#/$defs/relativePath" },
+      "additionalProperties": { "$ref": "common.schema.json#/$defs/relativePath" }
+    },
+    "vscode_profile": { "$ref": "common.schema.json#/$defs/text" },
+    "vscode_extensions": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[A-Za-z0-9-]+\\.[A-Za-z0-9-]+$" }
+    }
+  }
+}

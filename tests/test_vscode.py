@@ -3,6 +3,7 @@
 import io
 import json
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -54,6 +55,10 @@ def test_ai_extensions_are_unwanted() -> None:
 
 
 def make_game(tmp_path: Path, dungeon: str = "pythonwood") -> tuple[Game, io.StringIO]:
+    # A git identity in the isolated global config, so a startup git check (if the game
+    # has one) doesn't stop to ask for it: these tests are about VS Code settings.
+    for key, value in (("user.name", "Ada Lovelace"), ("user.email", "ada@example.com")):
+        subprocess.run(["git", "config", "--global", key, value], check=True)
     buffer = io.StringIO()
     console = Console(file=buffer, width=140, color_system=None)
     answers = iter(["y", "Maya"])

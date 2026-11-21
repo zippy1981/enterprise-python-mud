@@ -18,6 +18,9 @@ class PlayerState(BaseModel):
     # Which dungeon this save (and its workspace) belongs to. Saves written before
     # there was more than one dungeon have no field, so they default to the first.
     dungeon: str = "enterprise"
+    # The dungeon's checksum (azurath.checksums) when this save was last written, so
+    # the game can tell the player when the dungeon changed between sessions.
+    dungeon_checksum: str | None = None
     name: str = "Adventurer"
     room: str = "gatehouse"
     visited: list[str] = Field(default_factory=lambda: ["gatehouse"])

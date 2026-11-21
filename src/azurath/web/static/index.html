@@ -14,7 +14,7 @@
 </header>
 <main>
   <section class="map-pane" aria-label="Map">
-    <svg id="map" role="img" aria-label="Map of the dungeon"></svg>
+    <div class="map-scroll"><svg id="map" role="img" aria-label="Map of the dungeon"></svg></div>
     <p class="map-help">Click a room you've visited to travel there.</p>
   </section>
   <section class="room-pane">
@@ -56,7 +56,7 @@
         <span id="save-state" class="dim"></span>
       </div>
       <div id="steps"></div>
-      <textarea id="editor" spellcheck="false" aria-label="Code editor"></textarea>
+      <textarea id="editor" wrap="off" spellcheck="false" aria-label="Code editor"></textarea>
       <div id="code-out" class="out"></div>
     </div>
   </section>

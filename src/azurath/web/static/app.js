@@ -155,6 +155,9 @@
     const ys = Object.values(layout).map((p) => p[1]);
     const w = (Math.max(...xs) + 1) * dx + pad, h = (Math.max(...ys) + 1) * dy + pad / 2;
     map.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    // Never shrink rooms below a readable size: big dungeons scroll instead.
+    map.style.minWidth = `${Math.round(w * 0.85)}px`;
+    map.style.minHeight = `${Math.round(h * 0.85)}px`;
     const at = (id) => [layout[id][0] * dx + pad, layout[id][1] * dy + pad / 1.4];
     const byId = Object.fromEntries(s.map.map((r) => [r.id, r]));
     const drawn = new Set();
@@ -180,6 +183,7 @@
       label.textContent = room.name.length > 22 ? room.name.slice(0, 21) + "…" : room.name;
       const title = svg("title", {}, g);
       title.textContent = `${room.name} · ${room.zone} · ${room.status}`;
+      if (room.here) requestAnimationFrame(() => g.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" }));
       if (reachable) {
         g.addEventListener("click", () => run(`goto ${room.id}`));
         g.addEventListener("keydown", (e) => { if (e.key === "Enter") run(`goto ${room.id}`); });

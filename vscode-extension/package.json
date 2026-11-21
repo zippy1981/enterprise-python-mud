@@ -1,0 +1,58 @@
+{
+  "name": "azurath",
+  "displayName": "Azurath",
+  "description": "Play the Azurath Python MUD in a VS Code side panel, next to the code you're writing.",
+  "version": "0.1.0",
+  "publisher": "azurath",
+  "license": "MIT",
+  "private": true,
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Education"],
+  "main": "./src/extension.js",
+  "activationEvents": ["onView:azurath.game", "workspaceContains:.azurath/save.json"],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "azurath", "title": "Azurath", "icon": "media/azurath.svg" }
+      ]
+    },
+    "views": {
+      "azurath": [
+        { "type": "webview", "id": "azurath.game", "name": "Game" }
+      ]
+    },
+    "commands": [
+      { "command": "azurath.check", "title": "Azurath: Check My Quest" },
+      { "command": "azurath.hint", "title": "Azurath: Show a Hint" },
+      { "command": "azurath.run", "title": "Azurath: Run a Game Command…" },
+      { "command": "azurath.restart", "title": "Azurath: Restart the Game" }
+    ],
+    "keybindings": [
+      { "command": "azurath.check", "key": "ctrl+alt+c", "mac": "cmd+alt+c" }
+    ],
+    "configuration": {
+      "title": "Azurath",
+      "properties": {
+        "azurath.command": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["python", "-m", "azurath.session"],
+          "description": "How to start the game's JSON API. If Azurath lives in a uv project, use [\"uv\", \"run\", \"--project\", \"/path/to/azurath\", \"python\", \"-m\", \"azurath.session\"]."
+        },
+        "azurath.dungeon": {
+          "type": "string",
+          "default": "",
+          "description": "Which dungeon to play (enterprise, pythonwood). Empty: the one this folder's save belongs to."
+        },
+        "azurath.checkOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run `check` whenever you save a file in your project."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}

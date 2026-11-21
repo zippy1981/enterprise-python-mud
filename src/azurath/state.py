@@ -28,6 +28,8 @@ class PlayerState(BaseModel):
     seen_pages: dict[str, list[int]] = Field(default_factory=dict)
     inventory: list[str] = Field(default_factory=list)
     xp: int = 0
+    # Extensions already installed into the dungeon's VS Code profile.
+    vscode_extensions_installed: list[str] = Field(default_factory=list)
 
     @classmethod
     def new(cls, dungeon_id: str, start_room: str, name: str = "Adventurer") -> PlayerState:

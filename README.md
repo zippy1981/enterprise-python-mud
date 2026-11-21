@@ -136,6 +136,27 @@ Your `questboard/` folder shows up in the Explorer. When you reach the venv room
 dependencies. You can also run **Azurath: check current quest** from a second terminal
 without leaving your editor.azureath
 
+### VS Code for the Pythonwood (no AI helpers)
+
+Learners should write, and understand, their own code, so the Pythonwood switches AI
+assistants off while keeping VS Code's normal autocomplete:
+
+* **Settings in the project.** New and existing `critter-quest` projects get
+  `.vscode/settings.json` (never overwritten). It turns off Copilot completions, chat and
+  next-edit suggestions, VS Code's built-in AI features (`chat.disableAIFeatures`) and
+  inline "ghost text" from any extension (`editor.inlineSuggest.enabled`). Regular
+  IntelliSense, the list of names as you type, stays **on**. It also turns on auto-save
+  (so `check` always sees the latest code), bigger fonts and visible indentation.
+* **A clean profile.** The game's `code` command opens the project in a separate VS Code
+  profile called **Pythonwood**, and installs only the Python extension into it. A new
+  profile starts with no extensions, so Copilot, Claude and other assistants aren't even
+  loaded there. (There's also a VS Code task: *Azurath: open critter-quest for learning*.)
+* **Recommendations.** `.vscode/extensions.json` recommends the Python extension and lists
+  the common AI assistants as unwanted, so VS Code won't suggest installing them.
+
+Settings only apply when the `critter-quest` folder itself is the open folder, which is
+what `code` does. If you open this whole repo instead, the project's settings don't apply.
+
 ## Playing with vim (or anything else)
 
 Outside VS Code, `edit <file>` uses `$VISUAL`/`$EDITOR`, falling back to vim. `vim <file>` always

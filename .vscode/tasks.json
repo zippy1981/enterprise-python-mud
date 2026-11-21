@@ -7,8 +7,15 @@
       "type": "shell",
       "command": "uv run azurath",
       "problemMatcher": [],
-      "presentation": { "panel": "dedicated", "focus": true, "reveal": "always" },
-      "group": { "kind": "build", "isDefault": true }
+      "presentation": {
+        "panel": "dedicated",
+        "focus": true,
+        "reveal": "always"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     },
     {
       "label": "Azurath: check current quest",
@@ -16,12 +23,22 @@
       "type": "shell",
       "command": "uv run azurath check",
       "problemMatcher": [],
-      "presentation": { "panel": "shared", "reveal": "always" }
+      "presentation": {
+        "panel": "shared",
+        "reveal": "always"
+      }
     },
     {
       "label": "Azurath: open my questboard repo in a new window",
       "type": "shell",
       "command": "code ${workspaceFolder}/questboard",
+      "problemMatcher": []
+    },
+    {
+      "label": "Azurath: open critter-quest for learning (Pythonwood profile, no AI)",
+      "detail": "Opens the Pythonwood project in a separate VS Code profile with no AI assistants.",
+      "type": "shell",
+      "command": "code --profile Pythonwood ${workspaceFolder}/critter-quest",
       "problemMatcher": []
     }
   ]

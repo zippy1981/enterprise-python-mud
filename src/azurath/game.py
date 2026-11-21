@@ -15,7 +15,7 @@ from rich.markup import escape
 from rich.table import Table
 from rich.tree import Tree
 
-from azurath import __version__, gitcheck
+from azurath import __version__, checksums, gitcheck
 from azurath.checks import Report, run_check
 from azurath.content import DIRECTIONS, Dungeon, Item, Room, load_dungeon
 from azurath.editor import VIM_CHEATSHEET, choose_editor, in_vscode_terminal
@@ -132,6 +132,7 @@ class Game:
     def start(self) -> bool:
         """Greet the player and make sure the workspace exists. False means abort."""
         self.out.say(BANNER.format(version=__version__))
+        self.check_dungeon_files()
         git = self.check_git()
         if not self.ws.root.exists() or not (self.ws.root / ".azurath").exists():
             if self.dungeon.intro:
@@ -147,6 +148,7 @@ class Game:
             self.state.name = name[:40]
             for note in self.ws.initialize(readme=self.dungeon.readme, commit=False):
                 self.out.info(f"  · {note}")
+            self.state.dungeon_checksum = checksums.actual(self.dungeon.id)
             self.save()
             if self.ws.is_git_repo():
                 self.commit_work(f"Begin {self.dungeon.workspace} in {self.dungeon.name}")
@@ -157,8 +159,37 @@ class Game:
         else:
             name = escape(self.state.name)
             self.out.ok(f"Welcome back to {self.dungeon.name}, {name} the {self.title}.")
+            self.notice_dungeon_changes()
         self.cmd_look("")
         return True
+
+    def check_dungeon_files(self) -> bool:
+        """Warn if the dungeon's files on disk don't match the checksum stored in the code."""
+        problem = checksums.mismatch(self.dungeon.id)
+        if problem is None:
+            return True
+        self.out.warn(
+            f"Heads up: {problem}. Some quests may not behave the way their lessons say.\n"
+            "  · If you installed Azurath, reinstall it to repair the files "
+            "(`uv tool install --reinstall azurath`, or `uv sync --reinstall` in a checkout).\n"
+            "  · If you're changing the dungeon yourself, refresh the stored checksum with "
+            "`uv run python -m azurath.checksums`."
+        )
+        return False
+
+    def notice_dungeon_changes(self) -> None:
+        """Tell a returning player when the dungeon changed since their last session."""
+        current = checksums.actual(self.dungeon.id)
+        previous = self.state.dungeon_checksum
+        if previous is not None and previous != current:
+            self.out.info(
+                f"{self.dungeon.name} has changed since you last played (Azurath was "
+                "updated). Your progress is kept. If a room you've finished looks different, "
+                "`check` it again."
+            )
+        if previous != current:
+            self.state.dungeon_checksum = current
+            self.save()
 
     def run(self) -> None:
         if not self.start():

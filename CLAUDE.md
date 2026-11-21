@@ -25,9 +25,16 @@ and Linux** (CI runs all three), so follow these rules.
 - **Paths:** use `pathlib`, always open text files with `encoding="utf-8"`, and never
   hard-code `/` or `\\` separators in paths you build.
 
+- **Refresh dungeon checksums after any dungeon change.** Each dungeon's checksum is
+  stored in `src/azurath/dungeons/<id>/checksum.py`; the game warns players when the files
+  don't match it, and `tests/test_checksums.py` fails. Run
+  `uv run python -m azurath.checksums` and commit the result. On a merge conflict in a
+  `checksum.py`, take either side and rerun the command.
+
 ## Checks before you finish
 
 ```bash
+uv run python -m azurath.checksums   # after changing any dungeon file
 uv run ruff check . && uv run ruff format --check .
 uv run pytest -q          # fast tests
 uv run pytest -m slow -q  # plays every dungeon with the reference solutions

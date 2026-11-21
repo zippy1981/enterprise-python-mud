@@ -46,6 +46,18 @@ For editors, `uv run python -m azurath.schemas` writes JSON Schemas to `schemas/
 `.vscode/settings.json` maps them for the YAML extension, so mistakes are underlined as
 you type. Regenerate them whenever a model changes (a test checks they're current).
 
+## Checksums
+
+A dungeon's YAML, files and checks only work as a set, so each dungeon's SHA-256
+checksum (every file's path and contents, line endings normalised, caches ignored) is
+stored in the code at `dungeons/<id>/checksum.py`. When the game starts it compares the
+files on disk with that checksum and warns if they differ: an unfinished upgrade, an
+edited install or the wrong branch. Saves also record the checksum, so a returning
+player is told when the dungeon changed since they last played.
+
+After changing anything in a dungeon run `uv run python -m azurath.checksums`;
+`tests/test_checksums.py` fails until you do.
+
 ## How a session picks its dungeon
 
 1. `--dungeon` / `AZURATH_DUNGEON` / `dungeon = "..."` in `azurath.toml`

@@ -65,7 +65,7 @@ def test_main_path_reaches_the_end_without_side_quests(dungeon: Dungeon) -> None
 
 @pytest.mark.parametrize("dungeon", DUNGEONS, ids=lambda d: d.id)
 def test_item_names_are_unique(dungeon: Dungeon) -> None:
-    names = [r.quest.reward.item.name for r in dungeon.ordered()]
+    names = [r.quest.reward.item.name for r in dungeon.ordered() if r.quest.reward.item]
     assert len(names) == len(set(names))
 
 
@@ -81,9 +81,12 @@ def test_room_files_exist(dungeon: Dungeon, room) -> None:
 
 @pytest.mark.parametrize(("dungeon", "room"), ROOMS, ids=ROOM_IDS)
 def test_room_teaches_something(dungeon: Dungeon, room) -> None:
-    assert len(room.pages) >= 3, "every room needs a real lesson"
     assert room.npc and room.npc.topics, "every room needs a mentor with topics"
     assert room.quest.hints, "every quest needs hints"
+    if room.guided:  # short warm-ups: the lesson's main room teaches in depth
+        assert len(room.pages) >= 2, "a guided room needs at least a how-to and a step page"
+        return
+    assert len(room.pages) >= 3, "every room needs a real lesson"
     assert room.quest.reward.item, "every quest rewards a cheat-sheet item"
 
 
@@ -118,3 +121,40 @@ def test_atlas_resolves_local_exits() -> None:
     assert dungeon is enterprise and room.id == "hall_of_basics"
     with pytest.raises(KeyError, match="unknown dungeon"):
         Atlas(dungeons={}).get("nope")
+
+
+def test_every_pythonwood_lesson_has_guided_rooms_first() -> None:
+    """Each lesson: one or more guided rooms (uncomment the answer), then its main room."""
+    pythonwood = ATLAS.get("pythonwood")
+    rooms = pythonwood.ordered()
+    assert rooms[0].guided and pythonwood.start == rooms[0].id
+    pending: list = []  # guided rooms waiting for their lesson's main room
+    for room in rooms:
+        if room.guided:
+            pending.append(room)
+            assert all(t.startswith("practice/") for t in room.quest.scaffold), (
+                "guided files live in practice/ so they never complete the main room"
+            )
+            continue
+        assert pending, f"{room.id} has no guided room before it"
+        assert all(g.id.startswith(f"{room.id}_guided") for g in pending), [g.id for g in pending]
+        chain = [*pending, room]
+        for here, there in zip(chain, chain[1:], strict=False):
+            assert there.id in here.exits.values() and here.id in there.exits.values()
+        pending = []
+    assert not pending, "guided rooms at the end with no lesson room after them"
+
+
+def test_variable_grove_has_a_path_for_each_topic() -> None:
+    names = [
+        r.name
+        for r in ATLAS.get("pythonwood").ordered()
+        if r.id.startswith("variable_grove_guided")
+    ]
+    assert names == [
+        "The Acorn Path",
+        "The Abacus Hollow",
+        "The Word Weaver's Nook",
+        "The Bracket Bridge",
+        "The Tally Tree",
+    ]

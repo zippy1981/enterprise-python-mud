@@ -320,7 +320,7 @@ def test_a_workspace_belongs_to_one_dungeon(
 
 def test_each_dungeon_has_its_own_start_intro_and_ranks(make_player) -> None:
     kid = make_player(dungeon="pythonwood")
-    assert kid.game.state.room == "trailhead"
+    assert kid.game.state.room == "trailhead_guided"
     assert kid.game.title == "Seedling"
     assert "Ranger Juniper" in kid("look")
     assert "critter-quest" in kid.game.ws.read("README.md")
@@ -360,3 +360,23 @@ def test_check_explains_a_project_joined_to_an_outer_workspace(make_player, tmp_
     report = run_check(player.game.dungeon, "backpack_burrow", player.game.ws)
     assert not report.passed
     assert str(outer) in report.items[0].detail
+
+
+def test_after_a_pass_the_game_suggests_reading_then_moving_on(make_player) -> None:
+    player = make_player()
+    solve_gatehouse(player.game.ws)
+    out = player("check")
+    assert "What next?" in out and "read 1" in out and "you've read 0 of 4 pages" in out
+    assert "north" in out  # the way forward is listed too
+    assert "there's more to learn here" in out
+    for _ in player.game.room.pages:
+        player("read")
+    out = player("check")
+    assert "You've read everything here. Head north" in out
+
+
+def test_side_quests_come_after_the_main_path_in_suggestions(make_player) -> None:
+    player = make_player()
+    room = player.game.dungeon.rooms["durable_sanctum"]
+    ahead = player.game.forward_exits(room)
+    assert [target.id for _, target in ahead] == ["throne_room", "gopher_forge"]

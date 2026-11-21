@@ -1,0 +1,189 @@
+id: function_falls
+name: Function Falls
+order: 11
+zone: Functions
+description: |
+  A waterfall tumbles into a pool, turning a big wooden wheel. Every time a
+  leaf drops into the top of the machine, something new pops out of the
+  bottom: a berry, a pebble, a tiny boat. An otter in a chef's hat files
+  recipe cards into a waterproof box.
+exits:
+  west: function_falls_guided
+  north: shortcut_trail_guided
+npc:
+  name: Otto the Otter
+  aliases: [otto, otter]
+  greeting: |
+    "Welcome to my kitchen! A **function** is a recipe. You write the steps
+    once, give the recipe a name, and then you can use it again and again
+    just by saying its name.
+
+    In Scratch you made these with **Make a Block**. In Python you use the word
+    `def`, short for *define*.
+
+    The best recipes take **ingredients in** (parameters) and hand **a dish
+    out** (a return value). Today you'll write the first moves for your
+    critter: eating, describing itself, and noticing when it's tired."
+  topics:
+    return vs print: |
+      "This is the BIG one, so listen up! 🦦
+
+      * `print` shows something on the screen, for a **human** to read.
+      * `return` hands a value back, for the **rest of your code** to use.
+
+      If `feed` only *prints* the new health, the rest of your game can't use
+      that number. It just flashes on the screen and is gone. **Recipes should
+      return the dish, not shout about it.**"
+    parameters: |
+      "Parameters are the ingredient slots in the recipe: `def feed(health, snack):`
+      has two slots. When you call `feed(30, 10)`, `health` holds 30 and `snack`
+      holds 10, but **only inside the function**. They're like a mixing bowl
+      that's washed out when the recipe's finished."
+    min and max: |
+      "Python has handy built-in functions: `min(a, b)` gives the smaller
+      number and `max(a, b)` the bigger one. So `min(health, 100)` is a neat way
+      to say 'never more than 100'."
+    if: |
+      "You learned `if` at the Crossroads. It works inside a function too, so
+      a recipe can decide what to hand back:
+      ```python
+      def is_tired(energy):
+          if energy < 20:
+              return True
+          else:
+              return False
+      ```
+      Count the spaces: `if` is pushed in 4 (it's inside the `def`), and the
+      `return`s are pushed in 8 (they're inside the `if`, inside the `def`)."
+    indentation: |
+      "The lines *inside* a function are pushed in by **4 spaces**. That's how
+      Python knows where the recipe starts and stops, like the C-shaped Scratch
+      blocks that wrap around other blocks. Every block inside adds 4 more:
+      4, 8, 12... I check every single line with Fern's ruler, so no 2s, no 3s,
+      and no tabs!"
+pages:
+  - title: Writing a recipe
+    body: |
+      ```python
+      def greet(name):
+          message = f"Hi, {name}!"
+          return message
+      ```
+
+      * `def` starts a function, then comes its **name** and its
+        **parameters** in brackets, and a colon `:` at the end.
+      * The steps inside are **indented by 4 spaces**.
+      * `return` hands the answer back.
+
+      Writing a function doesn't run it. It just saves the recipe. To
+      **use** (call) it, write its name with brackets:
+
+      ```python
+      words = greet("Sparky")    # words is now "Hi, Sparky!"
+      print(words)
+      print(greet("Mossy"))      # Hi, Mossy!
+      ```
+  - title: Return, don't print
+    body: |
+      Compare these two:
+
+      ```python
+      def double_print(number):
+          print(number * 2)        # shows it... and then it's gone
+
+      def double(number):
+          return number * 2        # hands it back to whoever asked
+
+      answer = double(21)          # answer is 42, so we can keep using it!
+      bigger = double(answer)      # 84
+      ```
+
+      `double_print` is like a chef who shouts "IT'S PANCAKES!" but never
+      gives you a plate. `double` gives you the plate.
+
+      Most of your functions should **return** values. Save `print` for the
+      very end, when you actually want to show something to the player.
+  - title: Indentation is the law
+    body: |
+      A function's steps are the lines pushed in under its `def` line. The
+      first line back at the edge isn't part of the function any more:
+
+      ```python
+      def greet(name):
+          message = f"Hi, {name}!"     # 4 spaces: inside greet
+          return message               # 4 spaces: inside greet
+
+      print(greet("Sparky"))           # 0 spaces: NOT inside, runs straight away
+      ```
+
+      Blocks inside blocks add **4 more spaces each time**:
+
+      ```python
+      def feed(health, snack):
+          new_health = health + snack  # 4: inside the def
+          if new_health > 100:         # 4: inside the def
+              new_health = 100         # 8: inside the if, inside the def
+          return new_health            # 4: back in the def, after the if
+      ```
+
+      Push that `return` in to 8 spaces and it's inside the `if`: now `feed`
+      only returns when the critter is overfed, and hands back `None` the rest
+      of the time. **One block of spaces changes what your program does.**
+
+      So the check measures every block with Fern's ruler: **exactly 4 more
+      spaces** than the line with the colon. Not 2, not 3, not a tab. If Python
+      says `IndentationError`, count the spaces on that line.
+  - title: Recipes that decide
+    body: |
+      Everything from the Variable Grove paths works inside functions: maths
+      (`+ - * // %`), the **Bracket Bridge** order (`(level + 1) * 10` adds
+      first), string tricks like `name.upper()`, and `+=` / `-=`. So does
+      everything from the Crossroads: `if`, `elif`, `else`, and comparisons
+      like `<`, `>=` and `==`.
+
+      **One job per function.** `feed` feeds. It doesn't also print, or play a
+      sound, or check whether the critter is tired. Small functions with
+      clear names are easy to understand, test and fix.
+quest:
+  title: Teach Your Critter Some Moves
+  brief: |
+    Make **`actions.py`** with three functions. Each one must **return** its
+    answer (no printing inside!):
+
+    | Function | What it returns | Examples |
+    |---|---|---|
+    | `feed(health, snack)` | `health + snack`, but **never more than 100** | `feed(50, 10)` → `60`, `feed(95, 10)` → `100` |
+    | `describe(name, health)` | a sentence: `"<name> has <health> health."` | `describe("Sparky", 7)` → `"Sparky has 7 health."` |
+    | `is_tired(energy)` | `True` if energy is **below 20**, otherwise `False` | `is_tired(10)` → `True`, `is_tired(20)` → `False` |
+
+    Every block must be pushed in by **exactly 4 spaces** (so a line inside an
+    `if` inside a function is pushed in 8).
+
+    Try them out: `python -c "from actions import feed; print(feed(95, 10))"`
+  check: function_falls
+  scaffold: [actions.py]
+  hints:
+    - "Start each one with `def`, the name, the parameters in brackets, and a colon. The steps go underneath, pushed in exactly 4 spaces."
+    - "`feed`: work out `health + snack`, and if that's more than 100, use 100 instead. `min(health + snack, 100)` does it in one go!"
+    - "`describe` returns an f-string: `return f\"{name} has {health} health.\"`. Don't forget the full stop at the end."
+    - "`is_tired` uses an `if`: `if energy < 20:` then `return True` (pushed in 8 spaces), then `else:` and `return False`."
+  solution:
+    files: [actions.py]
+  commit_message: "Teach my critter to eat, describe itself and get tired"
+  reward:
+    xp: 200
+    item:
+      name: Otto's Recipe Card
+      aliases: [recipe, card]
+      text: |
+        ```python
+        def feed(health, snack):          # def name(parameters):
+            new_health = health + snack   #     steps, indented 4 spaces
+            return min(new_health, 100)   #     return hands the answer back
+
+        result = feed(30, 10)             # call it: result is 40
+        ```
+
+        * **return** gives a value to your code · **print** shows it to a human
+        * One job per function, with a name that says what it does
+        * Inside a `def`: 4 spaces · inside an `if` inside a `def`: 8 spaces

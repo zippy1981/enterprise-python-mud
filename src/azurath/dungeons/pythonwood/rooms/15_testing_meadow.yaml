@@ -1,0 +1,170 @@
+id: testing_meadow
+name: The Testing Meadow
+order: 15
+zone: Testing (red, green, tidy)
+description: |
+  A sunny meadow full of little stone robots, each holding up a sign that
+  glows **GREEN** or **RED**. An old tortoise walks slowly from robot to robot,
+  checking every sign twice. Somewhere in the long grass, a mischievous gnome
+  giggles.
+exits:
+  south: testing_meadow_guided
+  west: tidy_treehouse_guided
+npc:
+  name: Testudo the Tortoise
+  aliases: [testudo, tortoise]
+  greeting: |
+    "Sloooow and steady, young coder. How do you *know* your functions work?
+    You could try them by hand every time... but that gets boring fast, and
+    you'll forget one.
+
+    Instead, we write **tests**: tiny programs that check your code for you.
+    Each of those robots is a test. Green means *it works*. Red means
+    *something's wrong*.
+
+    And watch out for **Grizzle the gnome**. When you `check`, Grizzle sneaks
+    in and breaks your functions on purpose. If your tests are any good, they'll
+    turn **red** and catch him!"
+  topics:
+    grizzle: |
+      "Grizzle the gnome replaces your functions with broken ones, like a `feed`
+      that forgets the 100 limit, and then runs your tests. If your tests still
+      say green, they weren't really checking! Real programmers call this
+      **mutation testing**. Tests that can catch a sneaky gnome are good tests."
+    why test: |
+      "Tests are like a safety net for a trapeze artist. Once you have them, you
+      can change your code bravely. If you break something, a test turns red and
+      tells you right away, instead of your friend finding the bug when they play
+      your game."
+    pytest: |
+      "`pytest` is the tool that finds and runs your tests. It looks for files
+      named `test_something.py` and functions named `test_something()`. Type
+      `pytest` in the game to run them. `pytest -v` shows every test's name."
+    assert: |
+      "`assert` means 'this had better be true!'. `assert feed(50, 10) == 60`
+      checks the answer. If it's wrong, the test goes red and pytest shows you
+      what it got, compared with what you expected."
+    edge cases: |
+      "An **edge case** is a value right at the edge: exactly 20 energy,
+      exactly 100 health, zero hours. Bugs love to hide at the edges! Test them."
+pages:
+  - title: Tests check your code for you
+    body: |
+      A **test** is a function that uses your code and checks the answer with
+      `assert`:
+
+      ```python
+      # tests/test_actions.py
+      from actions import feed
+
+
+      def test_feed_adds_the_snack():
+          assert feed(50, 10) == 60
+
+
+      def test_feed_never_goes_over_100():
+          assert feed(95, 10) == 100
+      ```
+
+      Run them with the game's **`pytest`** command:
+
+      ```
+      pytest
+      ```
+
+      * **Green** ✅ means every `assert` was true.
+      * **Red** ❌ means one wasn't, and pytest shows what went wrong:
+        `assert 105 == 100` tells you `feed` returned 105.
+
+      Test names should say what they check, so you know what broke when one
+      goes red.
+  - title: Red, green, tidy
+    body: |
+      Here's a surprise: good coders often write the test **before** the code!
+      It goes in three steps:
+
+      1. 🔴 **Red.** Write a test for something that doesn't exist yet. Run
+         `pytest`. It fails. Good! That proves the test can catch a problem.
+      2. 🟢 **Green.** Write *just enough* code to make the test pass. Run
+         `pytest` again.
+      3. 🧹 **Tidy.** Clean up your code (better names, simpler steps) and run
+         the tests again to make sure it's still green.
+
+      Then repeat with the next test. This is called **Test-Driven
+      Development** (TDD).
+
+      Why test first? It makes you decide **exactly what the code should do**
+      before you write it. And a test you've seen go red is a test you can trust.
+  - title: Good tests
+    body: |
+      **Test the edges.** `is_tired` says "below 20". So what about exactly 20?
+      Test 19, 20 and 21, because the edges are where bugs hide.
+
+      ```python
+      def test_19_energy_is_tired():
+          assert is_tired(19) == True
+
+      def test_20_energy_is_not_tired():
+          assert is_tired(20) == False
+      ```
+
+      **One idea per test.** Small tests with clear names tell you exactly what
+      broke.
+
+      **Tests live in their own folder.** Put them in `tests/`, in files named
+      `test_<thing>.py`. Your code stays in one place and your checks in another.
+      That's the first step to a tidy project (more on that in the next room!).
+quest:
+  title: Catch the Gnome
+  brief: |
+    Two parts. **Do them in order!**
+
+    **Part 1: test what you've got.** In **`tests/test_actions.py`**, write
+    tests for `feed`, `describe` and `is_tired`. Include the edges: `feed`
+    hitting the 100 limit, and `is_tired` at exactly 20.
+
+    **Part 2: TDD a new move.** Your critter needs to sleep:
+
+    > `rest(energy, hours)` returns `energy + 10` for each hour slept, but
+    > **never more than 100**. So `rest(50, 2)` → `70`, and `rest(95, 1)` → `100`.
+
+    1. 🔴 Write tests for `rest` **first**, and run `pytest`. It goes red!
+    2. 🟢 Add `rest` to `actions.py`. Run `pytest` until it's green.
+    3. 🧹 Tidy up, and check it's still green.
+
+    You need at least **5 tests** in total. Then `check`, and Grizzle the gnome
+    will try to break each function. Your tests must catch him every time.
+  check: testing_meadow
+  scaffold:
+    tests/test_actions.py: test_actions.py
+  hints:
+    - "Each test is a function whose name starts with `test_`, with an `assert` inside: `assert feed(50, 10) == 60`."
+    - "Grizzle breaks `feed` by removing the 100 limit, so you need a test like `assert feed(95, 10) == 100`."
+    - "To test `describe`, compare the whole sentence: `assert describe(\"Sparky\", 7) == \"Sparky has 7 health.\"`"
+    - "`rest` looks a lot like `feed`: `return min(energy + hours * 10, 100)`. Remember the Bracket Bridge: `hours * 10` happens before the `+`, so no brackets needed!"
+  solution:
+    files:
+      tests/test_actions.py: test_actions.py
+      actions.py: actions.py
+  commit_message: "Test my critter's actions and add rest() with TDD"
+  reward:
+    xp: 250
+    item:
+      name: Testudo's Shell
+      aliases: [shell]
+      text: |
+        ```python
+        # tests/test_actions.py
+        from actions import feed
+
+        def test_feed_never_goes_over_100():
+            assert feed(95, 10) == 100
+        ```
+
+        Run: **`pytest`** (or `pytest -v` to see every test's name)
+
+        1. 🔴 **Red:** write the test first, and watch it fail
+        2. 🟢 **Green:** write just enough code to pass
+        3. 🧹 **Tidy:** clean up, and stay green
+
+        Test the **edges** (exactly 20, exactly 100). One idea per test.

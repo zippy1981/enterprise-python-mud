@@ -15,7 +15,7 @@ dependencies = [
     # The YAML schemas are JSON Schema files in src/azurath/schemas/.
     "jsonschema>=4.18",
     # The game runs players' tests (and the `pytest` command) with its own interpreter
-    # until their project has a virtualenv (the Pythonwood's first five rooms).
+    # until their project has a virtualenv (in the Pythonwood, until the Backpack Burrow).
     "pytest>=8.0",
 ]
 

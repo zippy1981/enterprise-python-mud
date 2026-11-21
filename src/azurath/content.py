@@ -24,20 +24,10 @@ from dataclasses import dataclass
 from functools import cache
 from importlib import resources
 from importlib.resources.abc import Traversable
-from typing import Annotated, Literal
 
-from pydantic import (
-    AfterValidator,
-    BaseModel,
-    ConfigDict,
-    Field,
-    StringConstraints,
-    ValidationError,
-    field_validator,
-    model_validator,
-)
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from azurath import yamlstrict
+from azurath import yamlschema, yamlstrict
 
 DIRECTIONS = {
     "n": "north",
@@ -53,48 +43,6 @@ DIRECTIONS = {
 }
 
 DEFAULT_DUNGEON = "enterprise"
-
-Direction = Literal[
-    "north",
-    "south",
-    "east",
-    "west",
-    "up",
-    "down",
-    "northeast",
-    "northwest",
-    "southeast",
-    "southwest",
-]
-# snake_case identifiers: room ids, dungeon ids, check names
-Identifier = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*$")]
-# a room reference in an exit: `room_id`, or `dungeon_id:room_id` (rejected for now)
-RoomTarget = Annotated[str, StringConstraints(pattern=r"^([a-z][a-z0-9_]*:)?[a-z][a-z0-9_]*$")]
-# visible text: never empty or only whitespace
-Text = Annotated[str, StringConstraints(min_length=1, pattern=r"\S")]
-
-
-def _relative_path(value: str) -> str:
-    """A forward-slash path inside the project: not absolute, no `..`, no backslashes."""
-    if not value or value.startswith("/") or ":" in value[:2] or "\\" in value:
-        raise ValueError(f"{value!r} must be a relative path using forward slashes")
-    if ".." in value.split("/"):
-        raise ValueError(f"{value!r} must not climb out of its folder with '..'")
-    return value
-
-
-# a relative file path inside a workspace or a dungeon's files/ folder
-RelPath = Annotated[str, AfterValidator(_relative_path)]
-
-
-class StrictModel(BaseModel):
-    """Base for everything loaded from YAML: unknown keys and type coercion are errors.
-
-    A typo like `exit:` instead of `exits:` would otherwise be silently ignored, and
-    `xp: "100"` silently turned into a number.
-    """
-
-    model_config = ConfigDict(extra="forbid", strict=True)
 
 
 @dataclass(frozen=True)
@@ -114,18 +62,16 @@ class RoomRef:
         return self.dungeon is None
 
 
-class Page(StrictModel):
-    title: Text
-    body: Text
+class Page(BaseModel):
+    title: str
+    body: str
 
 
-class Npc(StrictModel):
-    name: Text
-    aliases: list[Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9 _-]*$")]] = Field(
-        default_factory=list
-    )
-    greeting: Text
-    topics: dict[Text, Text] = Field(default_factory=dict)
+class Npc(BaseModel):
+    name: str
+    aliases: list[str] = Field(default_factory=list)
+    greeting: str
+    topics: dict[str, str] = Field(default_factory=dict)
 
     @property
     def handle(self) -> str:
@@ -138,10 +84,10 @@ class Npc(StrictModel):
         return any(text == n or text in n.split() for n in names)
 
 
-class Item(StrictModel):
-    name: Text
-    aliases: list[Text] = Field(default_factory=list)
-    text: Text
+class Item(BaseModel):
+    name: str
+    aliases: list[str] = Field(default_factory=list)
+    text: str
 
     @property
     def handle(self) -> str:
@@ -154,8 +100,8 @@ class Item(StrictModel):
         )
 
 
-class Reward(StrictModel):
-    xp: int = Field(default=100, ge=0)
+class Reward(BaseModel):
+    xp: int = 100
     item: Item | None = None
 
 
@@ -166,9 +112,9 @@ def _as_mapping(value: object) -> object:
     return value
 
 
-class Solution(StrictModel):
-    files: dict[RelPath, RelPath] = Field(default_factory=dict)
-    commands: list[Text] = Field(default_factory=list)
+class Solution(BaseModel):
+    files: dict[str, str] = Field(default_factory=dict)
+    commands: list[str] = Field(default_factory=list)
     notes: str = ""
 
     @field_validator("files", mode="before")
@@ -177,16 +123,16 @@ class Solution(StrictModel):
         return _as_mapping(value)
 
 
-class Quest(StrictModel):
-    title: Text
-    brief: Text
-    check: Identifier
-    hints: list[Text] = Field(default_factory=list)
-    scaffold: dict[RelPath, RelPath] = Field(default_factory=dict)
+class Quest(BaseModel):
+    title: str
+    brief: str
+    check: str
+    hints: list[str] = Field(default_factory=list)
+    scaffold: dict[str, str] = Field(default_factory=dict)
     solution: Solution = Field(default_factory=Solution)
     reward: Reward = Field(default_factory=Reward)
-    commit_message: Text | None = None
-    epilogue: Text | None = None
+    commit_message: str | None = None
+    epilogue: str | None = None
 
     @field_validator("scaffold", mode="before")
     @classmethod
@@ -194,13 +140,13 @@ class Quest(StrictModel):
         return _as_mapping(value)
 
 
-class Room(StrictModel):
-    id: Identifier
-    name: Text
-    order: int = Field(ge=0)
-    zone: Text
-    description: Text
-    exits: dict[Direction, RoomTarget] = Field(default_factory=dict)
+class Room(BaseModel):
+    id: str
+    name: str
+    order: int
+    zone: str
+    description: str
+    exits: dict[str, str] = Field(default_factory=dict)
     npc: Npc | None = None
     pages: list[Page] = Field(default_factory=list)
     quest: Quest | None = None
@@ -212,30 +158,20 @@ class Room(StrictModel):
         return {DIRECTIONS.get(k, k): v for k, v in (value or {}).items()}
 
 
-class Dungeon(StrictModel):
+class Dungeon(BaseModel):
     """One self-contained curriculum: its rooms, audience and progression."""
 
-    id: Identifier
-    name: Text
-    tagline: Text
-    audience: Text = Field(description="Who this dungeon is written for (shown when choosing).")
-    order: int = Field(default=0, ge=0)
-    start: Identifier
-    workspace: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$")] = Field(
-        description="Default folder name for the project the player builds."
-    )
+    id: str
+    name: str
+    tagline: str
+    audience: str = Field(description="Who this dungeon is written for (shown when choosing).")
+    order: int = 0
+    start: str
+    workspace: str = Field(description="Default folder name for the project the player builds.")
     intro: str = ""
     readme: str | None = Field(default=None, description="README.md for a new workspace.")
-    ranks: list[tuple[int, Text]] = Field(default_factory=lambda: [(0, "Adventurer")])
+    ranks: list[tuple[int, str]] = Field(default_factory=lambda: [(0, "Adventurer")])
     rooms: dict[str, Room] = Field(default_factory=dict)
-
-    @field_validator("ranks", mode="before")
-    @classmethod
-    def _ranks_as_pairs(cls, value: object) -> object:
-        """YAML has no tuples: accept `[[0, Seedling], ...]` as (xp, title) pairs."""
-        if isinstance(value, list):
-            return [tuple(v) if isinstance(v, list) else v for v in value]
-        return value
 
     @model_validator(mode="after")
     def _check_links(self) -> Dungeon:
@@ -328,38 +264,32 @@ def _dungeons_dir() -> Traversable:
 
 
 class ContentError(ValueError):
-    """A dungeon's YAML is invalid. The message names the file."""
+    """A dungeon's YAML is invalid. The message names the file and every problem."""
 
 
-def _read_yaml(entry: Traversable, where: str) -> object:
+def _load_yaml(entry: Traversable, where: str, schema: str) -> dict:
+    """Parse strictly (no duplicate keys), then check against a JSON Schema in schemas/."""
     try:
-        return yamlstrict.load(entry.read_text(encoding="utf-8"), source=where)
-    except yamlstrict.StrictYAMLError as exc:
+        data = yamlstrict.load(entry.read_text(encoding="utf-8"), source=where)
+        yamlschema.validate(data, schema, source=where)
+    except (yamlstrict.StrictYAMLError, yamlschema.SchemaError) as exc:
         raise ContentError(str(exc)) from exc
-
-
-def _validate(model: type[StrictModel], data: object, where: str):  # noqa: ANN202
-    try:
-        return model.model_validate(data)
-    except ValidationError as exc:
-        raise ContentError(f"{where} is invalid:\n{exc}") from exc
+    return data
 
 
 def _load_dungeon(folder: Traversable) -> Dungeon:
     where = f"dungeons/{folder.name}/dungeon.yaml"
-    meta = _read_yaml(folder / "dungeon.yaml", where)
-    if not isinstance(meta, dict):
-        raise ContentError(f"{where} must be a mapping")
+    meta = _load_yaml(folder / "dungeon.yaml", where, "dungeon.schema.json")
     rooms: dict[str, Room] = {}
     for entry in sorted((folder / "rooms").iterdir(), key=lambda t: t.name):
         if not entry.name.endswith((".yaml", ".yml")):
             continue
         room_where = f"dungeons/{folder.name}/rooms/{entry.name}"
-        room = _validate(Room, _read_yaml(entry, room_where), room_where)
+        room = Room.model_validate(_load_yaml(entry, room_where, "room.schema.json"))
         if room.id in rooms:
             raise ContentError(f"{room_where}: duplicate room id {room.id}")
         rooms[room.id] = room
-    dungeon = _validate(Dungeon, {**meta, "rooms": rooms}, where)
+    dungeon = Dungeon.model_validate({**meta, "rooms": rooms})
     if dungeon.id != folder.name:
         raise ContentError(f"dungeon folder {folder.name!r} declares id {dungeon.id!r}")
     return dungeon

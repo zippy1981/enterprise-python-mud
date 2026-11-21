@@ -1,0 +1,83 @@
+id: variable_grove_guided_math
+name: The Abacus Hollow
+order: 3
+guided: true
+zone: "Variables: maths and changing them"
+description: |
+  A hollow tree trunk with a giant wooden abacus inside, its beads made of
+  acorns. Every time a bead slides, a number painted on the bark changes.
+exits:
+  west: variable_grove_guided
+  north: variable_grove_guided_strings
+npc:
+  name: Bramble the Squirrel
+  aliases: [bramble, squirrel]
+  greeting: |
+    "Variables are great for maths! And here's the clever bit: you can do maths
+    with a variable and put the answer *back in the same jar*. That's how a
+    game keeps score."
+  topics:
+    division: |
+      "`/` always gives a decimal (`13 / 3` is 4.333...). `//` divides and rounds
+      down to a whole number (`13 // 3` is 4). `%` gives the **remainder** (`13 % 3` is 1)."
+    equals: |
+      "`=` doesn't mean 'is equal to'. It means 'put the answer on the right into
+      the jar on the left'. So `acorns = acorns + 5` is fine: work out acorns + 5,
+      then store it back in acorns."
+pages:
+  - title: Maths with variables
+    body: |
+      | Python | Means | `13 ? 3` gives |
+      |---|---|---|
+      | `+` | plus | `16` |
+      | `-` | minus | `10` |
+      | `*` | times | `39` |
+      | `/` | divide (always a decimal) | `4.333...` |
+      | `//` | divide, whole number | `4` |
+      | `%` | remainder | `1` |
+      | `**` | power | `2197` |
+
+      **Reassigning** means putting a new value in a jar that already exists:
+
+      ```python
+      acorns = 10
+      acorns = acorns + 5    # work out 10 + 5, then put 15 back in acorns
+      print(acorns)          # 15
+      ```
+
+      Just writing `acorns + 5` on its own line works out 15 and then throws it
+      away. To keep the answer, you need the `acorns =` part.
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/abacus.py`**. Follow the acorns:
+      10, then +5, then -2, then shared between 3 friends, then doubled.
+
+      * **STEPs 1 and 2:** keep the answer with `acorns = ...`.
+      * **STEP 3:** each share is a *whole* number of acorns.
+      * **STEP 4:** the leftovers are the *remainder*.
+      * **STEP 5:** doubling is times 2, not "to the power of" 2.
+
+      It should print `acorns=26 share=4 leftover=1`.
+
+      **How to do a guided path:** `scaffold` gives you the practice file. Each STEP
+      has a few choices with a `#` in front, and only one is right. Uncomment the
+      right one by deleting the `#` **and the space after it**. The quick way is to
+      click the line and press **Ctrl+/** (**Cmd+/** on a Mac). Then `python` the
+      file and `check`.
+quest:
+  title: "Practise at The Abacus Hollow"
+  brief: |
+    Uncomment the right line in each STEP of **`practice/abacus.py`** to keep
+    count of Bramble's acorns. It should print `acorns=26 share=4 leftover=1`.
+  check: variable_grove_guided_math
+  scaffold:
+    practice/abacus.py: abacus.py
+  hints:
+    - "To change a variable, the variable goes on BOTH sides: `acorns = acorns + 5`."
+    - "`//` divides into whole numbers, and `%` gives what's left over."
+  solution:
+    files:
+      practice/abacus.py: abacus.py
+  commit_message: "Practise on the guided path: The Abacus Hollow"
+  reward:
+    xp: 50

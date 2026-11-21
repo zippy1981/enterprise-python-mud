@@ -123,15 +123,38 @@ def test_atlas_resolves_local_exits() -> None:
         Atlas(dungeons={}).get("nope")
 
 
-def test_every_pythonwood_lesson_has_a_guided_room_first() -> None:
-    """Each lesson: a guided room (uncomment the answer), then its main room (write it)."""
+def test_every_pythonwood_lesson_has_guided_rooms_first() -> None:
+    """Each lesson: one or more guided rooms (uncomment the answer), then its main room."""
     pythonwood = ATLAS.get("pythonwood")
     rooms = pythonwood.ordered()
     assert rooms[0].guided and pythonwood.start == rooms[0].id
-    for guided, main in zip(rooms[::2], rooms[1::2], strict=True):
-        assert guided.guided and not main.guided
-        assert guided.id == f"{main.id}_guided"
-        assert main.id in guided.exits.values() and guided.id in main.exits.values()
-        assert all(target.startswith("practice/") for target in guided.quest.scaffold), (
-            "guided files live in practice/ so they never complete the main room"
-        )
+    pending: list = []  # guided rooms waiting for their lesson's main room
+    for room in rooms:
+        if room.guided:
+            pending.append(room)
+            assert all(t.startswith("practice/") for t in room.quest.scaffold), (
+                "guided files live in practice/ so they never complete the main room"
+            )
+            continue
+        assert pending, f"{room.id} has no guided room before it"
+        assert all(g.id.startswith(f"{room.id}_guided") for g in pending), [g.id for g in pending]
+        chain = [*pending, room]
+        for here, there in zip(chain, chain[1:], strict=False):
+            assert there.id in here.exits.values() and here.id in there.exits.values()
+        pending = []
+    assert not pending, "guided rooms at the end with no lesson room after them"
+
+
+def test_variable_grove_has_a_path_for_each_topic() -> None:
+    names = [
+        r.name
+        for r in ATLAS.get("pythonwood").ordered()
+        if r.id.startswith("variable_grove_guided")
+    ]
+    assert names == [
+        "The Acorn Path",
+        "The Abacus Hollow",
+        "The Word Weaver's Nook",
+        "The Bracket Bridge",
+        "The Tally Tree",
+    ]

@@ -11,9 +11,10 @@ def rounds_to_win(health, power):
     # if health > 0:
     # while health > 0
     # while health > 0:
-    # STEP 2: Uncomment BOTH of these lines too. They're the loop's body.
-    #     health = health - power
-    #     rounds = rounds + 1
+    # STEP 2: Uncomment BOTH of these lines too. They're the loop's body:
+    #         take power away from health (-=), and count one more round (+=).
+    #     health -= power
+    #     rounds += 1
     return rounds
 
 

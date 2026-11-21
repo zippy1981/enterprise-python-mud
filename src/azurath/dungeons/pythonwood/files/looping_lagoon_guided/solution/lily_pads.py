@@ -8,9 +8,11 @@
 # snacks = [berry, acorn, seed]
 snacks = ["berry", "acorn", "seed"]
 
-# STEP 2: Which line shows the FIRST snack? (Positions start at 0!)
-# print(snacks[1])
-print(snacks[0])
+# STEP 2: Show the FIRST snack, SHOUTED. (Positions start at 0, and remember
+#         .upper() from the Word Weaver's Nook!)
+# print(snacks.upper())
+# print(snacks[1].upper())
+print(snacks[0].upper())
 
 
 def count_letters(words):
@@ -19,9 +21,9 @@ def count_letters(words):
     # STEP 3: Uncomment the loop line that visits every word...
     # for words in word:
     for word in words:
-    # ...and the line that adds this word's letters to the total.
+    # ...and the line that ADDS this word's letters to the total (the Tally Tree's +=).
     #     total = len(word)
-        total = total + len(word)
+        total += len(word)
     return total
 
 

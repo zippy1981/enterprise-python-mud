@@ -1,6 +1,6 @@
 id: testing_meadow
 name: The Testing Meadow
-order: 3
+order: 7
 zone: Testing (red, green, tidy)
 description: |
   A sunny meadow full of little stone robots, each holding up a sign that
@@ -8,8 +8,8 @@ description: |
   checking every sign twice. Somewhere in the long grass, a mischievous gnome
   giggles.
 exits:
-  south: function_falls
-  west: tidy_treehouse
+  south: testing_meadow_guided
+  west: tidy_treehouse_guided
 npc:
   name: Testudo the Tortoise
   aliases: [testudo, tortoise]

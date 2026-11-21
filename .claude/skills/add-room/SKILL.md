@@ -163,6 +163,17 @@ Rules:
 5. `uv run pytest -m slow -q` for the full walkthrough, then `uv run ruff check . && uv run ruff format --check .`
 6. Add the room to the curriculum table in `README.md`.
 
+## Pythonwood: every lesson is two rooms
+
+Each Pythonwood lesson has a **guided room** (`<id>_guided`, `guided: true`) right before
+its main room, wired between the previous main room and this one. The guided room's
+scaffold is a file in `practice/` with numbered `# STEP n:` blocks, each offering a few
+commented-out choices, and the solution is the scaffold with the right lines uncommented.
+Keep practice files in `practice/` so they can never complete the main room's quest. Its
+check lives in `checks/guided.py` (use `guided_file()`, `output_is()` and `quiz()`) and
+judges behaviour, so uncommenting a wrong choice fails with a message about that STEP.
+Guided rooms need two pages (a how-to and a step-by-step), award 50 XP, and have no item.
+
 ## Adding a whole dungeon
 
 1. Create `src/azurath/dungeons/<id>/` with an `__init__.py`, and copy the layout of an

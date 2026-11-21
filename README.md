@@ -64,6 +64,13 @@ tests have to catch him. For the first five rooms there's nothing to install: th
 virtual environments and uv**: the project gets its own `.venv` "backpack", and from then
 on the game's commands (and the CI robot) use it.
 
+**Every lesson has two rooms.** First a **guided path**: a practice file in `practice/`
+with numbered STEPs, each with a few commented-out choices, where the player uncomments the
+right line (Ctrl+/ in VS Code). Then the **lesson room** below, where they write the code
+themselves and it's checked with tests. So the 9 lessons make 18 rooms. After every passed
+check, a "What next?" panel lists what's left to do in the room, suggests `read` if any
+pages are unread, and otherwise points the way forward.
+
 | # | Room | You learn | You build in critter-quest |
 |---|------|-----------|----------------------------|
 | 0 | The Trailhead | running a program, `print`, comments, reading errors | `hello.py` |

@@ -1,13 +1,14 @@
 id: trailhead
 name: The Trailhead
-order: 0
+order: 1
 zone: Your first program
 description: |
   A wooden signpost marks the start of a winding path into a forest of tall,
   glowing trees. Fireflies spell out `print("hi")` in the air. On a low branch
   sits an owl wearing a tiny ranger's hat, holding a clipboard.
 exits:
-  north: variable_grove
+  north: variable_grove_guided
+  south: trailhead_guided
 npc:
   name: Ranger Juniper
   aliases: [juniper, ranger, owl]

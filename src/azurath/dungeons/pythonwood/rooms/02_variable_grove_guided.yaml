@@ -1,0 +1,88 @@
+id: variable_grove_guided
+name: The Acorn Path
+order: 2
+guided: true
+zone: "Variables (guided)"
+description: |
+  A narrow path winds between rows of jars. Some have labels, some have
+  acorns, and some have labels stuck on upside down. A squirrel waves a
+  paw and points at a row of practice jars waiting to be filled.
+exits:
+  south: trailhead
+  north: variable_grove
+npc:
+  name: Bramble the Squirrel
+  aliases: [bramble, squirrel]
+  greeting: |
+    "Quick, quick! Let's practise filling jars before you make your own critter.
+    Each STEP gives you some lines that make a variable. Only one does it
+    properly. Pick it and switch it on!"
+  topics:
+    names in braces: |
+      "In an f-string, the `{ }` hold a variable's **name**, like `{pet_name}`.
+      Python opens that jar and puts its value in the sentence. If you write
+      `{Pip}`, Python looks for a jar *labelled* Pip, and there isn't one!"
+    true and false: |
+      "`True` and `False` always start with a capital letter, and they don't
+      have quotes. `"True"` with quotes is just text that looks like True."
+pages:
+  - title: How a guided path works
+    body: |
+      In a **guided path** you don't write code from scratch. The practice file is
+      already full of code, but most of it is **switched off** with a `#` at the
+      start of the line. (Remember, Python skips anything after a `#`.)
+
+      Each **STEP** has a few choices. Only **one** is right. Your job:
+
+      1. `scaffold` to get the practice file, then `edit` it
+      2. read each STEP and decide which line is right
+      3. **uncomment** that line: delete the `#` **and the space after it**
+      4. `python` the file to see what it does, then `check`
+
+      > 💡 **The quick way to uncomment:** click on the line and press
+      > **Ctrl+/** (**Cmd+/** on a Mac). Press it again to comment the line back out.
+      > Select several lines first to do them all at once.
+
+      If you uncomment a wrong choice, Python will often tell you with an error.
+      That's fine! Comment it out again and try another. When you've finished, the
+      next room asks you to write the same kind of code yourself.
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/acorns.py`**.
+
+      * **STEP 1:** a variable name can't have a space in it, and the name goes
+        on the **left** of the `=`.
+      * **STEP 2:** `3` is a number. `"3"` is text that *looks* like a number.
+      * **STEP 3:** capital `T`, no quotes.
+      * **STEP 4:** you need the **f** before the quotes, **and** variable
+        **names** inside the `{ }`. Not the values!
+      * **STEP 5:** `age + 1` works out the answer but throws it away. To keep
+        it, put it back in the jar with `=`.
+
+      The last line is already switched on. Watch it say **4** once your
+      STEP 5 is right: the f-string always uses what's in the jar *right now*.
+quest:
+  title: "Practise at The Acorn Path"
+  brief: |
+    Uncomment the right line in each of the 5 STEPs in **`practice/acorns.py`**,
+    so that `python practice/acorns.py` prints:
+
+    ```
+    Pip is 3 years old.
+    Pip is now 4 years old.
+    ```
+
+    Remember: in an f-string, variable **names** go in the `{ }`, not values.
+  check: variable_grove_guided
+  scaffold:
+    practice/acorns.py: acorns.py
+  hints:
+    - "Variable names have no spaces (use `_`), and the name goes on the left of `=`."
+    - "STEP 4 is the one with an `f` before the quotes and `{pet_name}` and `{age}` inside."
+    - "STEP 5 is `age = age + 1`."
+  solution:
+    files:
+      practice/acorns.py: acorns.py
+  commit_message: "Practise on the guided path: The Acorn Path"
+  reward:
+    xp: 50

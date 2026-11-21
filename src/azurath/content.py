@@ -150,6 +150,8 @@ class Room(BaseModel):
     pages: list[Page] = Field(default_factory=list)
     quest: Quest | None = None
     optional: bool = False
+    # A guided room teaches by "uncomment the right answer" before its lesson's main room.
+    guided: bool = False
 
     @field_validator("exits", mode="before")
     @classmethod

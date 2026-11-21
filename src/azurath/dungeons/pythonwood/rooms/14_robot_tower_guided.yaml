@@ -1,0 +1,72 @@
+id: robot_tower_guided
+name: The Robot Workshop
+order: 14
+guided: true
+zone: "Git & CI (guided)"
+description: |
+  The ground floor of the Robot Tower is a workshop full of spare parts,
+  blinking lights and a quiz machine with two big buttons. A robot with a
+  lantern for a head is polishing it.
+exits:
+  west: looping_lagoon
+  east: robot_tower
+npc:
+  name: Bolt the Robot
+  aliases: [bolt, robot]
+  greeting: |
+    "BEEP. BEFORE YOU PROGRAM ME, A QUIZ. ...Sorry, inside voice. Let's check you
+    understand save points and CI robots, then you can write my instructions
+    upstairs."
+  topics:
+    commits: |
+      "A commit is a save point of your whole project. The game has been making
+      one every time you finish a quest. Type `log` to see them all!"
+    ci: |
+      "CI means a robot runs all your tests every time you push your code, so
+      nobody can forget."
+pages:
+  - title: How a guided path works
+    body: |
+      In a **guided path** you don't write code from scratch. The practice file is
+      already full of code, but most of it is **switched off** with a `#` at the
+      start of the line. (Remember, Python skips anything after a `#`.)
+
+      Each **STEP** has a few choices. Only **one** is right. Your job:
+
+      1. `scaffold` to get the practice file, then `edit` it
+      2. read each STEP and decide which line is right
+      3. **uncomment** that line: delete the `#` **and the space after it**
+      4. `python` the file to see what it does, then `check`
+
+      > 💡 **The quick way to uncomment:** click on the line and press
+      > **Ctrl+/** (**Cmd+/** on a Mac). Press it again to comment the line back out.
+      > Select several lines first to do them all at once.
+
+      If you uncomment a wrong choice, Python will often tell you with an error.
+      That's fine! Comment it out again and try another. When you've finished, the
+      next room asks you to write the same kind of code yourself.
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/robot_quiz.py`**. Read each question
+      and uncomment the answer you believe. Some of the wrong answers are silly,
+      but some are sneaky!
+
+      When you're done, `check`. If any answer's wrong, the check tells you
+      which STEP to look at again.
+quest:
+  title: "Practise at The Robot Workshop"
+  brief: |
+    Answer the 5 questions in **`practice/robot_quiz.py`** about commits and the
+    CI robot by uncommenting the right answer in each STEP.
+  check: robot_tower_guided
+  scaffold:
+    practice/robot_quiz.py: robot_quiz.py
+  hints:
+    - "CI is Continuous Integration, and its instructions live in `.github/workflows`."
+    - "When the robot says red, you fix it first."
+  solution:
+    files:
+      practice/robot_quiz.py: robot_quiz.py
+  commit_message: "Practise on the guided path: The Robot Workshop"
+  reward:
+    xp: 50

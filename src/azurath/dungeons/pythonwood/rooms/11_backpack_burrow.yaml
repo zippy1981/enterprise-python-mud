@@ -1,6 +1,6 @@
 id: backpack_burrow
 name: The Backpack Burrow
-order: 5
+order: 11
 zone: Packages, virtual environments & uv
 description: |
   A cosy burrow under the roots of an enormous oak. Rows of little backpacks
@@ -8,8 +8,8 @@ description: |
   belt packs them at lightning speed, ticking items off a long packing list,
   while a tiny violet sprite zips about fetching tools from the shelves.
 exits:
-  south: tidy_treehouse
-  north: looping_lagoon
+  south: backpack_burrow_guided
+  north: looping_lagoon_guided
 npc:
   name: Barnaby the Badger
   aliases: [barnaby, badger]

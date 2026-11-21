@@ -299,6 +299,8 @@ class Game:
             name = f"[bold magenta]▶ {room.name}[/bold magenta]" if here else room.name
             if room.optional:
                 name += " [dim](side quest)[/dim]"
+            if room.guided:
+                name += " [dim](guided)[/dim]"
             table.add_row(str(room.order), name, room.zone, status)
         self.console.print(table)
         self.out.say("[dim]`goto <room>` jumps to any room you've visited.[/dim]")
@@ -340,7 +342,7 @@ class Game:
         self.out.panel(
             page.body, f"📖 {page.title}  ·  page {index}/{len(room.pages)}", style="cyan"
         )
-        self.state.pages[room.id] = index
+        self.state.mark_read(room.id, index)
         if index < len(room.pages):
             self.out.say("[dim]`read` for the next page · `read back` · `pages` for contents[/dim]")
         elif room.quest:
@@ -421,6 +423,7 @@ class Game:
         self.out.report(report, f"Check: {quest.title}")
         if report.passed:
             self._complete(room, report)
+            self.show_next_steps(room)
         return report
 
     def _complete(self, room: Room, report: Report) -> None:
@@ -461,6 +464,49 @@ class Game:
             )
         if quest.epilogue:
             self.out.panel(quest.epilogue, "🏆 Epilogue", style="bold yellow")
+
+    def forward_exits(self, room: Room) -> list[tuple[str, Room]]:
+        """Exits leading further on, main path first, then side quests."""
+        ahead = [
+            (direction, self.dungeon.rooms[target])
+            for direction, target in room.exits.items()
+            if self.dungeon.rooms[target].order > room.order
+        ]
+        return sorted(ahead, key=lambda pair: (pair[1].optional, pair[1].order))
+
+    def show_next_steps(self, room: Room) -> None:
+        """After a passing check: list what's left to do here, then suggest one thing."""
+        options: list[str] = []
+        unread = self.state.unread_pages(room.id, len(room.pages))
+        if unread:
+            total = len(room.pages)
+            options.append(
+                f"`read {unread[0]}`: you've read {total - len(unread)} of {total} pages here"
+            )
+        npc = room.npc
+        if npc and npc.topics:
+            topics = ", ".join(f"`{t}`" for t in npc.topics)
+            options.append(f"`ask {npc.handle} about ...` to learn more: {topics}")
+        item = room.quest.reward.item if room.quest else None
+        if item and item.name in self.state.inventory:
+            options.append(f"`examine {item.handle}`: your {item.name}, a cheat sheet to keep")
+        options.append("`log` to see your project's save points, `ls` to see its files")
+        ahead = self.forward_exits(room)
+        for direction, target in ahead:
+            side = " (side quest)" if target.optional else ""
+            options.append(f"`{direction}` to go on to **{target.name}**{side}")
+        if unread:
+            suggestion = (
+                f"You passed, but there's more to learn here. Try **`read {unread[0]}`** "
+                "before you move on."
+            )
+        elif ahead:
+            direction, target = ahead[0]
+            suggestion = f"You've read everything here. Head **`{direction}`** to {target.name}!"
+        else:
+            suggestion = "You've done everything here. Type `map` to see where you've been."
+        bullets = "\n".join(f"* {o}" for o in options)
+        self.out.panel(f"{bullets}\n\n👉 {suggestion}", "What next?", style="green")
 
     @command("hint", help="Reveal the next hint for this quest.")
     def cmd_hint(self, arg: str) -> None:

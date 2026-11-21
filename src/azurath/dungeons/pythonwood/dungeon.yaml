@@ -8,16 +8,16 @@ audience: |
   and virtual environments with uv, and a CI robot, all in kid-sized steps. Each quest adds a piece to a small critter
   battle game.
 order: 1
-start: trailhead
+start: trailhead_guided
 workspace: critter-quest
 ranks:
   - [0, Seedling]
   - [100, Sprout]
   - [300, Sapling]
-  - [600, Trail Coder]
-  - [1000, Forest Ranger]
-  - [1400, Code Druid]
-  - [2000, Guardian of the Pythonwood]
+  - [700, Trail Coder]
+  - [1200, Forest Ranger]
+  - [1700, Code Druid]
+  - [2450, Guardian of the Pythonwood]
 intro: |
   Welcome to **the Pythonwood**, a forest where code grows on trees. 🌲
 
@@ -28,6 +28,11 @@ intro: |
 
   Every room has a friendly mentor, a short lesson and a quest. Finish the
   quest and the path to the next room opens.
+
+  Each lesson comes in **two rooms**. First a **guided path**: the code is
+  already written but switched off, and you switch on (uncomment) the right
+  line in each step. Then the **lesson room**, where you write the code
+  yourself, and test it!
 
   The commands you'll use most:
 

@@ -1,6 +1,6 @@
 id: critter_arena
 name: The Critter Arena
-order: 8
+order: 17
 zone: Putting it all together
 description: |
   At the top of the tower, under the open sky, is a round arena of soft
@@ -8,7 +8,7 @@ description: |
   with a champion's ribbon stretches in the middle of the ring and grins at
   you.
 exits:
-  south: robot_tower
+  south: critter_arena_guided
 npc:
   name: Champion Cinder
   aliases: [cinder, fox, champion]

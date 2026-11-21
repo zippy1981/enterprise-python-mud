@@ -125,6 +125,11 @@ def variable_grove(ws: Workspace, r: Report) -> None:
     )
     _no_problems(
         r,
+        tidy.values_in_fstring_braces(tree),
+        "your f-string has variable NAMES in its { }, not values",
+    )
+    _no_problems(
+        r,
         tidy.name_problems(tidy.top_level_names(tree)),
         "every variable has a good, snake_case name",
     )

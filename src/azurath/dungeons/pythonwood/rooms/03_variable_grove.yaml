@@ -1,6 +1,6 @@
 id: variable_grove
 name: Variable Grove
-order: 1
+order: 3
 zone: Variables
 description: |
   Hundreds of glass jars hang from the branches, each with a neat paper label:
@@ -8,8 +8,8 @@ description: |
   scurries between them, swapping what's inside and carefully re-tying the
   labels.
 exits:
-  south: trailhead
-  east: function_falls
+  south: variable_grove_guided
+  east: function_falls_guided
 npc:
   name: Bramble the Squirrel
   aliases: [bramble, squirrel]
@@ -99,8 +99,8 @@ pages:
       `is_sleepy`, `has_key`, `can_fly`.
   - title: f-strings put variables in sentences
     body: |
-      Put an **f** before the quotes, and anything in `{curly braces}` is
-      swapped for the variable's value:
+      Put an **f** before the quotes. Then, inside `{curly braces}`, write a
+      variable's **name**. Python looks inside that jar and swaps in its value:
 
       ```python
       critter_name = "Sparky"
@@ -109,8 +109,20 @@ pages:
       # Sparky has 30 health.
       ```
 
+      ⚠️ **Names go in the braces, not values.** Write the *label on the jar*,
+      not what's inside it:
+
+      | You write | What happens |
+      |---|---|
+      | `f"{critter_name} has {health} health."` | ✅ `Sparky has 30 health.` and it changes if the jars change |
+      | `f"{Sparky} has {30} health."` | ❌ `NameError`: there's no jar labelled `Sparky` |
+      | `f"{"Sparky"} has {30} health."` | 😐 works, but it's stuck saying Sparky and 30 forever, so why use braces? |
+
+      The whole point is that the sentence **follows the variables**. If Sparky
+      gets bonked and `health` becomes 25, the same f-string says 25.
+
       It's like Scratch's **join** block, only much neater. You can even do
-      maths inside the braces: `f"Half health: {health // 2}"`.
+      maths with variables inside the braces: `f"Half health: {health // 2}"`.
 
       **Pick names a friend could understand.** If your friend read
       `print(f"{n} has {h}")`, would they know what it means? Compare it with
@@ -130,7 +142,8 @@ quest:
     | `is_sleepy` | `True` or `False` | `False` |
 
     Then use an **f-string** to `print` a sentence that includes your
-    critter's name **and** its health.
+    critter's name **and** its health. Inside the `{ }` put the variable
+    **names** (`{critter_name}`, `{health}`), not the values (`{"Sparky"}`, `{30}`).
 
     Every variable name must be **snake_case** and at least 3 letters long.
     No `x` or `n`!
@@ -139,6 +152,7 @@ quest:
   hints:
     - "Each variable is one line: `name = value`. Text goes in quotes. Numbers and `True`/`False` don't."
     - "`True` and `False` need capital letters. `true` is a NameError."
+    - "Inside the braces go variable NAMES, never the values: `{health}`, not `{30}`. Then the sentence updates itself when the variable changes."
     - "Your sentence could be: `print(f\"{critter_name} the {species} has {health} health!\")`"
   solution:
     files: [critter.py]
@@ -155,7 +169,7 @@ quest:
         speed = 2.5                # float: decimal number
         is_sleepy = False          # bool: True or False
         health = health - 5        # change a variable (or: health -= 5)
-        print(f"{critter_name} has {health} health")   # f-string
+        print(f"{critter_name} has {health} health")   # f-string: NAMES in the { }
         print(type(health))        # what kind of value is it?
         ```
 

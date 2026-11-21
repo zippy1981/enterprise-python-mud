@@ -65,7 +65,7 @@ def test_main_path_reaches_the_end_without_side_quests(dungeon: Dungeon) -> None
 
 @pytest.mark.parametrize("dungeon", DUNGEONS, ids=lambda d: d.id)
 def test_item_names_are_unique(dungeon: Dungeon) -> None:
-    names = [r.quest.reward.item.name for r in dungeon.ordered()]
+    names = [r.quest.reward.item.name for r in dungeon.ordered() if r.quest.reward.item]
     assert len(names) == len(set(names))
 
 
@@ -81,9 +81,12 @@ def test_room_files_exist(dungeon: Dungeon, room) -> None:
 
 @pytest.mark.parametrize(("dungeon", "room"), ROOMS, ids=ROOM_IDS)
 def test_room_teaches_something(dungeon: Dungeon, room) -> None:
-    assert len(room.pages) >= 3, "every room needs a real lesson"
     assert room.npc and room.npc.topics, "every room needs a mentor with topics"
     assert room.quest.hints, "every quest needs hints"
+    if room.guided:  # short warm-ups: the lesson's main room teaches in depth
+        assert len(room.pages) >= 2, "a guided room needs at least a how-to and a step page"
+        return
+    assert len(room.pages) >= 3, "every room needs a real lesson"
     assert room.quest.reward.item, "every quest rewards a cheat-sheet item"
 
 
@@ -118,3 +121,17 @@ def test_atlas_resolves_local_exits() -> None:
     assert dungeon is enterprise and room.id == "hall_of_basics"
     with pytest.raises(KeyError, match="unknown dungeon"):
         Atlas(dungeons={}).get("nope")
+
+
+def test_every_pythonwood_lesson_has_a_guided_room_first() -> None:
+    """Each lesson: a guided room (uncomment the answer), then its main room (write it)."""
+    pythonwood = ATLAS.get("pythonwood")
+    rooms = pythonwood.ordered()
+    assert rooms[0].guided and pythonwood.start == rooms[0].id
+    for guided, main in zip(rooms[::2], rooms[1::2], strict=True):
+        assert guided.guided and not main.guided
+        assert guided.id == f"{main.id}_guided"
+        assert main.id in guided.exits.values() and guided.id in main.exits.values()
+        assert all(target.startswith("practice/") for target in guided.quest.scaffold), (
+            "guided files live in practice/ so they never complete the main room"
+        )

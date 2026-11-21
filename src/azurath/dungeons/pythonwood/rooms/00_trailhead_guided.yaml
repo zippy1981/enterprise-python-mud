@@ -1,0 +1,90 @@
+id: trailhead_guided
+name: The Signpost
+order: 0
+guided: true
+zone: "Your first program (guided)"
+description: |
+  A tall wooden signpost stands where the forest begins. Its arms point in
+  every direction, and on each one, a line of code has been carefully
+  painted, then crossed out with a little `#`. An owl in a ranger's hat
+  peers down at you from the top.
+exits:
+  north: trailhead
+npc:
+  name: Ranger Juniper
+  aliases: [juniper, ranger, owl]
+  greeting: |
+    "Hoo! Welcome, welcome! Before you write your own programs, let's warm up.
+    This is a **guided path**. The code is already written for you, but it's
+    switched off. You just choose the right line and switch it on.
+
+    First, how the game works: type `read` to read the lesson, `quest` for your
+    task, `scaffold` for the practice file and `check` when you're done. Off you go!"
+  topics:
+    commands: |
+      "`look` shows where you are, `read` turns the page, `quest` shows the task,
+      `scaffold` gives you files, `edit` opens one, `python` runs one, and `check`
+      tests your work. `help` lists everything!"
+    errors: |
+      "If Python shows an error, read the **last line** first. `NameError` means
+      it doesn't know a word. Maybe a capital letter is wrong?"
+pages:
+  - title: How a guided path works
+    body: |
+      In a **guided path** you don't write code from scratch. The practice file is
+      already full of code, but most of it is **switched off** with a `#` at the
+      start of the line. (Remember, Python skips anything after a `#`.)
+
+      Each **STEP** has a few choices. Only **one** is right. Your job:
+
+      1. `scaffold` to get the practice file, then `edit` it
+      2. read each STEP and decide which line is right
+      3. **uncomment** that line: delete the `#` **and the space after it**
+      4. `python` the file to see what it does, then `check`
+
+      > 💡 **The quick way to uncomment:** click on the line and press
+      > **Ctrl+/** (**Cmd+/** on a Mac). Press it again to comment the line back out.
+      > Select several lines first to do them all at once.
+
+      If you uncomment a wrong choice, Python will often tell you with an error.
+      That's fine! Comment it out again and try another. When you've finished, the
+      next room asks you to write the same kind of code yourself.
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/signpost.py`**.
+
+      **STEP 1** asks which line prints exactly `Hello from the Signpost!`.
+      Look closely at each choice:
+
+      * Are there **quotes** around the words?
+      * Are the **capital letters** right?
+      * Is the punctuation the same?
+
+      **STEP 2** has two choices that look almost the same. One has a capital
+      letter that Python won't like. `print` is always lowercase!
+
+      Then run it: `python practice/signpost.py`. You should see both lines.
+quest:
+  title: "Practise at The Signpost"
+  brief: |
+    Uncomment the right line in each STEP of **`practice/signpost.py`**, so it prints:
+
+    ```
+    Hello from the Signpost!
+    I am ready to code!
+    ```
+
+    `scaffold` → `edit practice/signpost.py` → uncomment (Ctrl+/) →
+    `python practice/signpost.py` → `check`
+  check: trailhead_guided
+  scaffold:
+    practice/signpost.py: signpost.py
+  hints:
+    - "Words that Python should print need quotes around them."
+    - "In STEP 1 it's the middle choice. In STEP 2, `print` must be lowercase."
+  solution:
+    files:
+      practice/signpost.py: signpost.py
+  commit_message: "Practise on the guided path: The Signpost"
+  reward:
+    xp: 50

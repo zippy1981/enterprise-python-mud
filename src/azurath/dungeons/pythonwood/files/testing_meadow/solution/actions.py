@@ -14,5 +14,9 @@ def is_tired(energy):
     return energy < 20
 
 
+def is_full(health):
+    return health >= 100
+
+
 def rest(energy, hours):
     return min(energy + hours * 10, 100)

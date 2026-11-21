@@ -1,6 +1,6 @@
 id: function_falls_guided
 name: The Stepping Stones
-order: 8
+order: 10
 guided: true
 zone: "Functions (guided)"
 description: |
@@ -8,7 +8,7 @@ description: |
   half-finished recipe card glued to it. An otter in a chef's hat hops
   from stone to stone, waiting to see which recipes you'll complete.
 exits:
-  west: variable_grove
+  west: crossroads
   east: function_falls
 npc:
   name: Otto the Otter
@@ -18,6 +18,10 @@ npc:
     finish each one. And remember my golden rule: recipes **return** the dish.
     They don't shout about it!"
   topics:
+    indentation: |
+      "Fern lent me her ruler! 📏 The lines inside a function are pushed in by
+      **exactly 4 spaces**, just like the lines inside an `if`. And an `if`
+      inside a function? Its lines are pushed in 4 more: 8 spaces."
     pass: |
       "`pass` means 'do nothing'. It's a placeholder, because Python doesn't allow
       an empty function. Once you uncomment a real line above it, you can leave
@@ -48,9 +52,10 @@ pages:
       next room asks you to write the same kind of code yourself.
   - title: Step by step
     body: |
-      Your practice file is **`practice/stones.py`**. Notice the uncommented lines
-      here are **indented** (pushed in) because they're inside a function. When
-      you uncomment, keep the indent. Ctrl+/ does this for you.
+      Your practice file is **`practice/stones.py`**. Notice the lines inside each
+      function are **indented** (pushed in by 4 spaces), just like the lines inside
+      an `if` at the Crossroads. That's how Python knows where a function starts
+      and stops. When you uncomment, keep the indent. Ctrl+/ does this for you.
 
       * **STEP 1:** times 2 is `* 2`, and it must be `return`, not `print`.
       * **STEP 2:** without the `f`, the braces are just printed as `{name}`.
@@ -58,14 +63,18 @@ pages:
       * **STEP 3:** "more than 10" means 11, 12, 13... but not 10 itself.
       * **STEP 4:** remember the **Bracket Bridge**: `level + 1 * 10` does the
         times first! To add 1 *before* multiplying, use brackets.
-      * **STEP 5:** to *call* a function you need brackets with the input,
+      * **STEP 5:** Fern's ruler again! The `return` line is inside the function,
+        so it's pushed in by **exactly 4 spaces**. Count the spaces after the `#`
+        on each choice.
+      * **STEP 6:** to *call* a function you need brackets with the input,
         `double(21)`, and the variable goes on the left of `=`.
 quest:
   title: "Practise at The Stepping Stones"
   brief: |
-    Finish the three functions and the function call in **`practice/stones.py`**
+    Finish the four functions and the function call in **`practice/stones.py`**
     by uncommenting the right line in each STEP. `python practice/stones.py`
-    should print `42`.
+    should print `42`. Every line inside a function is pushed in by **exactly 4
+    spaces**.
   check: function_falls_guided
   scaffold:
     practice/stones.py: stones.py
@@ -73,7 +82,8 @@ quest:
     - "Every function needs a `return` line, not a `print` line."
     - "`>` means more than, `>=` means more than or equal to."
     - "STEP 4 needs brackets: `return (level + 1) * 10`."
-    - "STEP 5 is `answer = double(21)`."
+    - "STEP 5: the right choice leaves exactly 4 spaces in front of `return` once you delete the `# `."
+    - "STEP 6 is `answer = double(21)`."
   solution:
     files:
       practice/stones.py: stones.py

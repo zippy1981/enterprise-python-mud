@@ -1,0 +1,112 @@
+id: shortcut_trail_guided
+name: The Hidden Gap
+order: 12
+guided: true
+zone: "Shortcuts (guided)"
+description: |
+  Behind the waterfall, a gap in the hedge leads to a tiny path that skips
+  the long way round. A hare in running shoes sits on a stump, tapping a
+  stopwatch and grinning. "Why walk the long way," she says, "when there's a
+  shortcut?"
+exits:
+  south: function_falls
+  east: shortcut_trail
+npc:
+  name: Hazel the Hare
+  aliases: [hazel, hare]
+  greeting: |
+    "Quick quick! Now that you know `if` *and* functions, I can show you my
+    favourite shortcut. Look at this:
+    ```python
+    def is_tired(energy):
+        if energy < 20:
+            return True
+        else:
+            return False
+    ```
+    Four lines to say something you can say in **one**. A comparison like
+    `energy < 20` is *already* `True` or `False`, so just hand it back:
+    ```python
+    def is_tired(energy):
+        return energy < 20
+    ```"
+  topics:
+    not: |
+      "`not` flips a True or False: `not True` is `False`, and `not False` is
+      `True`. So `is_dry = not is_raining` is True exactly when it isn't raining."
+    "== True": |
+      "`if is_raining == True:` asks 'is (is it raining?) true?'. That's asking
+      the same question twice! `if is_raining:` says the same thing, faster. And
+      `if is_raining == False:` is just `if not is_raining:`."
+pages:
+  - title: The True/False shortcut
+    body: |
+      Every comparison gives you `True` or `False`:
+
+      ```python
+      print(5 > 3)       # True
+      print(2 == 7)      # False
+      big = 50 > 10      # big is now True. You can keep an answer in a variable!
+      ```
+
+      So when a function's whole job is to answer a yes/no question, it can
+      **return the comparison**:
+
+      | The long way | The shortcut |
+      |---|---|
+      | `if energy < 20:` `return True` `else:` `return False` | `return energy < 20` |
+      | `if is_sleepy == True:` | `if is_sleepy:` |
+      | `if is_sleepy == False:` | `if not is_sleepy:` |
+      | `ready = is_awake == True` | `ready = is_awake` |
+
+      Both ways give the same answers. The shortcut is shorter, has fewer places
+      for mistakes to hide, and is how Python programmers write it.
+  - title: Step by step
+    body: |
+      Your practice file is **`practice/gap.py`**.
+
+      * **STEP 1:** `"number > 10"` in quotes is just text, and `return True`
+        is True even for 3. Return the comparison itself.
+      * **STEP 2:** one `=` stores, two `==` asks. And the one-line `if` returns
+        nothing at all when there *are* acorns.
+      * **STEP 3:** `is_raining` is already True or False. No `== True` needed!
+      * **STEP 4:** `not` flips it.
+
+      `python practice/gap.py` should print:
+
+      ```
+      True False True False
+      Take an umbrella!
+      ```
+
+      **How to do a guided path:** `scaffold` gives you the practice file. Each STEP
+      has a few choices with a `#` in front, and only one is right. Uncomment the
+      right one by deleting the `#` **and the space after it**. The quick way is to
+      click the line and press **Ctrl+/** (**Cmd+/** on a Mac). Then `python` the
+      file and `check`.
+quest:
+  title: "Practise at The Hidden Gap"
+  brief: |
+    Uncomment the shortcut in each STEP of **`practice/gap.py`**, so that it
+    prints:
+
+    ```
+    True False True False
+    Take an umbrella!
+    ```
+
+    Some wrong choices give the right answer the long way. The check wants the
+    **shortcut**!
+  check: shortcut_trail_guided
+  scaffold:
+    practice/gap.py: gap.py
+  hints:
+    - "STEP 1 is `return number > 10` and STEP 2 is `return acorns == 0`."
+    - "STEP 3: `needs_umbrella = is_raining == True` works, but it's the long way. Pick `needs_umbrella = is_raining`."
+    - "STEP 4 is `is_dry = not is_raining`."
+  solution:
+    files:
+      practice/gap.py: gap.py
+  commit_message: "Practise on the guided path: The Hidden Gap"
+  reward:
+    xp: 50

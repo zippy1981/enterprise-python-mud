@@ -59,7 +59,7 @@ Short, friendly lessons with animal mentors and lots of Scratch comparisons. It 
 **variables, functions and organizing code well**, and teaches testing and CI at a
 grade-school level: write the test first and watch it go 🔴 red, make it 🟢 green, then 🧹
 tidy. When you `check`, *Grizzle the gnome* breaks your functions on purpose, and your
-tests have to catch him. For the first five rooms there's nothing to install: the game's
+tests have to catch him. Until the Backpack Burrow there's nothing to install: the game's
 `python` and `pytest` commands just work. Then the Backpack Burrow introduces **packages,
 virtual environments and uv**: the project gets its own `.venv` "backpack", and from then
 on the game's commands (and the CI robot) use it.
@@ -71,7 +71,11 @@ themselves and it's checked with tests. Variables are the foundation, so Variabl
 **five** guided paths before it: making variables and their types, maths and reassignment,
 strings, order of operations, and `+=`/`-=` (Python has no `++`). Later lessons build on
 them: `+=` in loops, `-=` in battles, brackets in function maths, `.upper()` on list items.
-That makes 22 rooms in all. After every passed
+After the variables come **decisions** (`if`/`elif`/`else`, where the spaces at the start
+of a line first matter), then **functions**, where every check measures indentation:
+exactly 4 spaces per block, never 2, 3 or a tab. Once players know both, the Shortcut Trail
+teaches returning a comparison directly (`return energy < 20`, `if is_sleepy:`), and later
+checks keep holding them to it. That makes 26 rooms in all. After every passed
 check, a "What next?" panel lists what's left to do in the room, suggests `read` if any
 pages are unread, and otherwise points the way forward.
 
@@ -79,13 +83,15 @@ pages are unread, and otherwise points the way forward.
 |---|------|-----------|----------------------------|
 | 0 | The Trailhead | running a program, `print`, comments, reading errors | `hello.py` |
 | 1 | Variable Grove | variables as labelled jars, types, **good names**, f-strings | `critter.py` |
-| 2 | Function Falls | `def`, parameters, **return vs print**, `if`, one job per function | `actions.py` |
-| 3 | The Testing Meadow | tests with `assert` and pytest, **red → green → tidy**, edge cases | `tests/test_actions.py` + `rest()` written test-first |
-| 4 | The Tidy Treehouse | packages and imports, **named constants instead of magic numbers**, docstrings, refactoring safely | the `critters/` package |
-| 5 | The Backpack Burrow | **packages** (code you can borrow from PyPI), **virtual environments** as a project's own backpack, **uv** (`init`, `add`, `add --dev`, `run`, `sync`), the packing list and the receipt | `pyproject.toml`, `uv.lock`, `.venv`, `fun.py` |
-| 6 | The Looping Lagoon | lists, dictionaries, `for` loops, the empty-list edge case | `critters/team.py` |
-| 7 | The Robot Tower | git commits as save points, **CI as a robot that runs every test** (with uv) | `.github/workflows/tests.yml` |
-| 8 | The Critter Arena | planning, `while` loops, `main()`, all the tidy-code rules together | `critters/battle.py`, `main.py` |
+| 2 | The Crossroads | `if` / `elif` / `else`, comparisons, `=` vs `==`, **indentation**: 4 spaces per block | `mood.py` |
+| 3 | Function Falls | `def`, parameters, **return vs print**, `if` inside functions, **indentation enforced**, one job per function | `actions.py` |
+| 4 | The Shortcut Trail | **returning a True/False answer directly**, `if x:` not `if x == True:`, `not`, refactoring | `is_full()`, a tidier `mood.py` |
+| 5 | The Testing Meadow | tests with `assert` and pytest, **red → green → tidy**, edge cases | `tests/test_actions.py` + `rest()` written test-first |
+| 6 | The Tidy Treehouse | packages and imports, **named constants instead of magic numbers**, docstrings, refactoring safely | the `critters/` package |
+| 7 | The Backpack Burrow | **packages** (code you can borrow from PyPI), **virtual environments** as a project's own backpack, **uv** (`init`, `add`, `add --dev`, `run`, `sync`), the packing list and the receipt | `pyproject.toml`, `uv.lock`, `.venv`, `fun.py` |
+| 8 | The Looping Lagoon | lists, dictionaries, `for` loops, the empty-list edge case | `critters/team.py` |
+| 9 | The Robot Tower | git commits as save points, **CI as a robot that runs every test** (with uv) | `.github/workflows/tests.yml` |
+| 10 | The Critter Arena | planning, `while` loops, `main()`, all the tidy-code rules together | `critters/battle.py`, `main.py` |
 
 **For parents and teachers:** a grown-up may need to help install uv and git (see Quick
 start). After that, everything happens inside the game. The CI room's optional step of

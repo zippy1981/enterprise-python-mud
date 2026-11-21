@@ -1,0 +1,113 @@
+id: shortcut_trail
+name: The Shortcut Trail
+order: 13
+zone: Shortcuts
+description: |
+  A springy trail of moss cuts straight up the hill, skipping all the zigzags
+  of the main path. Hazel the hare zooms past you, then zooms back. "Your
+  critter's code works," she says, "but it takes the long way round. Let's
+  fix that!"
+exits:
+  west: shortcut_trail_guided
+  north: testing_meadow_guided
+npc:
+  name: Hazel the Hare
+  aliases: [hazel, hare]
+  greeting: |
+    "Programmers often go back to code that already works and make it
+    **simpler**, without changing what it does. That's called **refactoring**.
+    Your `is_tired` and your `mood.py` both work. Now make them short and
+    snappy!"
+  topics:
+    refactoring: |
+      "Refactoring means changing *how* code is written without changing *what*
+      it does. Run your code before and after: the answers must be exactly the
+      same. Soon, at the Testing Meadow, you'll learn how tests check that for
+      you."
+    when not to: |
+      "The shortcut is for yes/no answers. If your `if` does other things too,
+      like changing a variable *and* returning, keep the `if`. `feed` still
+      needs its `min`!"
+pages:
+  - title: Taking the shortcut
+    body: |
+      | The long way | The shortcut |
+      |---|---|
+      | `if energy < 20:` `return True` `else:` `return False` | `return energy < 20` |
+      | `if is_sleepy == True:` | `if is_sleepy:` |
+      | `if is_sleepy == False:` | `if not is_sleepy:` |
+
+      A comparison is **already** `True` or `False`, and a True/False variable
+      **already** answers the `if`'s question. Don't ask it twice!
+
+      And the indentation rule still holds: the `return` is pushed in **4
+      spaces**, because it's inside the `def`. Fewer lines, same ruler. 📏
+  - title: Flipping with not
+    body: |
+      `not` turns `True` into `False` and `False` into `True`:
+
+      ```python
+      is_sleepy = False
+      print(not is_sleepy)        # True
+
+      if not is_sleepy:           # the shortcut for: if is_sleepy == False:
+          print("Let's play!")
+
+      def is_awake(is_sleepy):
+          return not is_sleepy    # one line, no if needed
+      ```
+  - title: Refactoring safely
+    body: |
+      **Refactoring** means changing *how* your code is written without
+      changing *what* it does. Here's how to do it without breaking anything:
+
+      1. Run the code first and write down what it says.
+      2. Change **one** thing.
+      3. Run it again. Same answers? Great. Different? Undo and look again.
+
+      `python -c "from actions import is_tired; print(is_tired(19), is_tired(20))"`
+      should print `True False` before **and** after your shortcut.
+
+      At the Testing Meadow, you'll learn to make the computer do this
+      checking for you, every single time.
+quest:
+  title: Take the Shortcut
+  brief: |
+    Refactor your critter's code, so it gives **exactly the same answers** but
+    takes the shortcut:
+
+    1. In **`actions.py`**, make `is_tired(energy)` a single `return` line.
+    2. In **`actions.py`**, add `is_full(health)`. It returns `True` when health
+       is **100 or more**, otherwise `False`. Write it the shortcut way from the
+       start!
+    3. In **`mood.py`**, change `if is_sleepy == True:` to the shortcut.
+
+    No `if` that just returns `True` or `False`, and no `== True` or `== False`
+    anywhere. Run `python mood.py` before and after: it should print the same
+    thing.
+  check: shortcut_trail
+  hints:
+    - "`is_tired` becomes `return energy < 20`, pushed in 4 spaces."
+    - "`is_full` is `def is_full(health):` with `return health >= 100` underneath."
+    - "In mood.py, `if is_sleepy == True:` becomes `if is_sleepy:`."
+  solution:
+    files: [actions.py, mood.py]
+  commit_message: "Take the shortcut: return True/False answers directly"
+  reward:
+    xp: 150
+    item:
+      name: Hazel's Stopwatch
+      aliases: [stopwatch, watch]
+      text: |
+        ```python
+        def is_tired(energy):
+            return energy < 20       # a comparison is already True or False
+
+        if is_sleepy:                # not: if is_sleepy == True:
+            print("Zzz...")
+        if not is_sleepy:            # not: if is_sleepy == False:
+            print("Let's play!")
+        ```
+
+        * **Refactoring** changes *how* code is written, not *what* it does
+        * `not` flips True and False

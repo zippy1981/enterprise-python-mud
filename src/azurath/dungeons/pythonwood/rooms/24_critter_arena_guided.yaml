@@ -1,6 +1,6 @@
 id: critter_arena_guided
 name: The Training Ring
-order: 20
+order: 24
 guided: true
 zone: "Putting it together (guided)"
 description: |

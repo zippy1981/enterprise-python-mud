@@ -1,6 +1,6 @@
 id: function_falls
 name: Function Falls
-order: 9
+order: 11
 zone: Functions
 description: |
   A waterfall tumbles into a pool, turning a big wooden wheel. Every time a
@@ -9,7 +9,7 @@ description: |
   recipe cards into a waterproof box.
 exits:
   west: function_falls_guided
-  north: testing_meadow_guided
+  north: shortcut_trail_guided
 npc:
   name: Otto the Otter
   aliases: [otto, otter]
@@ -44,18 +44,23 @@ npc:
       number and `max(a, b)` the bigger one. So `min(health, 100)` is a neat way
       to say 'never more than 100'."
     if: |
-      "Functions can make decisions with `if`, just like Scratch's **if then**
-      block:
+      "You learned `if` at the Crossroads. It works inside a function too, so
+      a recipe can decide what to hand back:
       ```python
-      if energy < 20:
-          return True
-      return False
+      def is_tired(energy):
+          if energy < 20:
+              return True
+          else:
+              return False
       ```
-      Or simply `return energy < 20`, because a comparison is already `True` or `False`!"
+      Count the spaces: `if` is pushed in 4 (it's inside the `def`), and the
+      `return`s are pushed in 8 (they're inside the `if`, inside the `def`)."
     indentation: |
       "The lines *inside* a function are pushed in by **4 spaces**. That's how
       Python knows where the recipe starts and stops, like the C-shaped Scratch
-      blocks that wrap around other blocks."
+      blocks that wrap around other blocks. Every block inside adds 4 more:
+      4, 8, 12... I check every single line with Fern's ruler, so no 2s, no 3s,
+      and no tabs!"
 pages:
   - title: Writing a recipe
     body: |
@@ -98,28 +103,43 @@ pages:
 
       Most of your functions should **return** values. Save `print` for the
       very end, when you actually want to show something to the player.
+  - title: Indentation is the law
+    body: |
+      A function's steps are the lines pushed in under its `def` line. The
+      first line back at the edge isn't part of the function any more:
+
+      ```python
+      def greet(name):
+          message = f"Hi, {name}!"     # 4 spaces: inside greet
+          return message               # 4 spaces: inside greet
+
+      print(greet("Sparky"))           # 0 spaces: NOT inside, runs straight away
+      ```
+
+      Blocks inside blocks add **4 more spaces each time**:
+
+      ```python
+      def feed(health, snack):
+          new_health = health + snack  # 4: inside the def
+          if new_health > 100:         # 4: inside the def
+              new_health = 100         # 8: inside the if, inside the def
+          return new_health            # 4: back in the def, after the if
+      ```
+
+      Push that `return` in to 8 spaces and it's inside the `if`: now `feed`
+      only returns when the critter is overfed, and hands back `None` the rest
+      of the time. **One block of spaces changes what your program does.**
+
+      So the check measures every block with Fern's ruler: **exactly 4 more
+      spaces** than the line with the colon. Not 2, not 3, not a tab. If Python
+      says `IndentationError`, count the spaces on that line.
   - title: Recipes that decide
     body: |
       Everything from the Variable Grove paths works inside functions: maths
       (`+ - * // %`), the **Bracket Bridge** order (`(level + 1) * 10` adds
-      first), string tricks like `name.upper()`, and `+=` / `-=`.
-
-      Use `if` to make choices, and comparisons to ask questions:
-
-      | Python | Means |
-      |---|---|
-      | `a < b` / `a > b` | less than / greater than |
-      | `a <= b` / `a >= b` | less than or equal / greater than or equal |
-      | `a == b` | is equal to (two equals signs!) |
-      | `a != b` | is not equal to |
-
-      ```python
-      def feed(health, snack):
-          new_health = health + snack
-          if new_health > 100:
-              new_health = 100         # health never goes past 100
-          return new_health
-      ```
+      first), string tricks like `name.upper()`, and `+=` / `-=`. So does
+      everything from the Crossroads: `if`, `elif`, `else`, and comparisons
+      like `<`, `>=` and `==`.
 
       **One job per function.** `feed` feeds. It doesn't also print, or play a
       sound, or check whether the critter is tired. Small functions with
@@ -136,14 +156,17 @@ quest:
     | `describe(name, health)` | a sentence: `"<name> has <health> health."` | `describe("Sparky", 7)` → `"Sparky has 7 health."` |
     | `is_tired(energy)` | `True` if energy is **below 20**, otherwise `False` | `is_tired(10)` → `True`, `is_tired(20)` → `False` |
 
+    Every block must be pushed in by **exactly 4 spaces** (so a line inside an
+    `if` inside a function is pushed in 8).
+
     Try them out: `python -c "from actions import feed; print(feed(95, 10))"`
   check: function_falls
   scaffold: [actions.py]
   hints:
-    - "Start each one with `def`, the name, the parameters in brackets, and a colon. The steps go underneath, indented 4 spaces."
+    - "Start each one with `def`, the name, the parameters in brackets, and a colon. The steps go underneath, pushed in exactly 4 spaces."
     - "`feed`: work out `health + snack`, and if that's more than 100, use 100 instead. `min(health + snack, 100)` does it in one go!"
     - "`describe` returns an f-string: `return f\"{name} has {health} health.\"`. Don't forget the full stop at the end."
-    - "`is_tired` can be one line: `return energy < 20`"
+    - "`is_tired` uses an `if`: `if energy < 20:` then `return True` (pushed in 8 spaces), then `else:` and `return False`."
   solution:
     files: [actions.py]
   commit_message: "Teach my critter to eat, describe itself and get tired"
@@ -163,4 +186,4 @@ quest:
 
         * **return** gives a value to your code · **print** shows it to a human
         * One job per function, with a name that says what it does
-        * `if x < 20:` · `==` equal · `!=` not equal · `<=` `>=`
+        * Inside a `def`: 4 spaces · inside an `if` inside a `def`: 8 spaces

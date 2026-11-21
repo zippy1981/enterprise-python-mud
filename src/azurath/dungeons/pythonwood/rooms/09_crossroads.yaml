@@ -1,0 +1,137 @@
+id: crossroads
+name: The Crossroads
+order: 9
+zone: Decisions
+description: |
+  Four trails meet at a mossy signpost. One arrow points to a hammock, one to
+  a berry bush, one to a meadow, and one to a sunny hilltop where critters
+  are doing cartwheels. Fern the fox stands under the sign, helping each
+  traveller pick the right trail for how they feel.
+exits:
+  west: crossroads_guided
+  east: function_falls_guided
+npc:
+  name: Fern the Fox
+  aliases: [fern, fox]
+  greeting: |
+    "Every critter who comes here feels a bit different, so each one needs a
+    different trail. Your critter needs to say how it's feeling, and that
+    means **if**, **elif** and **else**.
+
+    And remember my ruler: **exactly 4 spaces** inside every block. I'll be
+    measuring! 📏"
+  topics:
+    elif: |
+      "`elif` is short for *else if*. Python checks the `if`, then each `elif`
+      in order, and runs the **first** one that's True. Then it skips the rest,
+      even if they're True too. That's why the order matters!"
+    else: |
+      "`else` has no question. It catches everything the `if` and `elif`s
+      didn't. It always comes last."
+    order: |
+      "Check the most important thing first. A sleepy critter says `Zzz...` even
+      if its health is 10, so `is_sleepy` goes at the top. And `health < 20` must
+      come before `health < 70`, or a critter with 10 health would say it's OK!"
+    booleans: |
+      "`is_sleepy` is already `True` or `False`. `if is_sleepy == True:` works.
+      There's an even shorter way, and you'll find it on the Shortcut Trail."
+pages:
+  - title: if, elif, else
+    body: |
+      ```python
+      energy = 45
+      if energy < 20:
+          mood = "sleepy"
+      elif energy < 60:          # only checked if the if was False
+          mood = "busy"
+      else:                      # everything else
+          mood = "bouncy"
+      print(mood)                # busy
+      ```
+
+      * Python checks from the **top** and runs only the **first** block whose
+        question is True.
+      * `else` has no question and no condition. It just ends with `:`.
+      * Every `if`, `elif` and `else` line ends with a **colon**, and the lines
+        inside are pushed in by **4 spaces**.
+  - title: Inside or after?
+    body: |
+      ```python
+      if is_sleepy == True:
+          print("Zzz...")
+      else:
+          print("Let's play!")
+      print("Mood check done!")    # back at the edge: runs EVERY time
+      ```
+
+      The last line isn't pushed in, so it isn't part of the `else`. It runs
+      whichever block ran. Push it in by 4 spaces and it would only run when the
+      critter is awake.
+
+      **Indentation is not decoration in Python. It changes what your program
+      does.** That's why the Pythonwood checks it: every block is pushed in by
+      **exactly 4 spaces**, never 2, never 3, never a tab.
+  - title: Asking questions
+    body: |
+      The question after `if` is a **comparison**. It's always `True` or
+      `False`:
+
+      | Python | Means | Example that's True |
+      |---|---|---|
+      | `<` / `>` | less than / more than | `3 < 5` |
+      | `<=` / `>=` | less than or equal / more than or equal | `5 >= 5` |
+      | `==` | is equal to (**two** equals signs!) | `"Sparky" == "Sparky"` |
+      | `!=` | is not equal to | `3 != 4` |
+
+      Careful at the edges! `health < 20` is **False** when health is exactly
+      20. "Below 20" means 19, 18, 17... but not 20 itself.
+
+      **One `=` stores, two `==` asks.** `if health = 20:` is a SyntaxError,
+      because you can't store something in the middle of a question.
+quest:
+  title: How Does Your Critter Feel?
+  brief: |
+    Finish **`mood.py`**. Using `if`, `elif` and `else`, print **one** of these:
+
+    | When | Print |
+    |---|---|
+    | `is_sleepy` is True (check this first!) | `Zzz...` |
+    | `health` is below 20 | `Ouch! I need a snack.` |
+    | `health` is below 70 | `I'm doing OK.` |
+    | anything else | `I feel GREAT!` |
+
+    Then, **after** the whole `if` (not pushed in), always print
+    `Mood check done!`
+
+    Every block must be pushed in by **exactly 4 spaces**. The check tries lots
+    of different `health` and `is_sleepy` values, so change them yourself and
+    run `python mood.py` to try each trail.
+  check: crossroads
+  scaffold: [mood.py]
+  hints:
+    - "Start with `if is_sleepy == True:` and put `print(\"Zzz...\")` under it, pushed in 4 spaces."
+    - "Then `elif health < 20:`, then `elif health < 70:`, then `else:`. Each ends with a colon."
+    - "The order matters: Python stops at the first True one, so check below 20 before below 70."
+    - "`print(\"Mood check done!\")` goes right at the edge, with no spaces in front, after the last block."
+  solution:
+    files: [mood.py]
+  commit_message: "My critter says how it feels"
+  reward:
+    xp: 150
+    item:
+      name: Fern's Ruler
+      aliases: [ruler]
+      text: |
+        ```python
+        if is_sleepy == True:        # question, then a colon
+            print("Zzz...")          # 4 spaces: inside
+        elif health < 20:            # only if the ones above were False
+            print("Ouch!")
+        else:                        # everything else
+            print("I feel GREAT!")
+        print("Mood check done!")    # 0 spaces: after, runs every time
+        ```
+
+        * **Indentation** is the spaces at the start of a line: **exactly 4** per block
+        * One `=` stores · two `==` asks · `!=` not equal · `<` `>` `<=` `>=`
+        * Python runs only the **first** True block, so put the most important first

@@ -183,6 +183,35 @@ def variable_grove_guided_increment(ws: Workspace, r: Report) -> None:
     )
 
 
+@check("crossroads_guided")
+def crossroads_guided(ws: Workspace, r: Report) -> None:
+    rel = "practice/fork.py"
+    if guided_file(ws, r, "crossroads_guided", rel, "fork.py") is None:
+        return
+    expected = ["Lots of acorns!", "Off we go!", "A dozen acorns!", "The squirrel is busy."]
+    if not output_is(ws, r, rel, expected):
+        got = ws.run_python(rel, timeout=20).stdout
+        if "Off we go!" not in got:
+            r.require(
+                False,
+                "STEP 2: `Off we go!` is after the if",
+                'It\'s rainy, so a line pushed in under `if weather == "sunny":` never runs. '
+                "Pick the choice that isn't pushed in.",
+            )
+        return
+    quiz(
+        ws,
+        r,
+        "practice.fork",
+        {"is_dozen": (True, "STEP 3"), "mood": ("busy", "STEP 4"), "acorns": (12, "STEP 3")},
+    )
+    r.require(
+        not tidy.indentation_problems(ws.read(rel) or "", rel),
+        "every block is pushed in by exactly 4 spaces",
+        "\n".join(tidy.indentation_problems(ws.read(rel) or "", rel)),
+    )
+
+
 @check("function_falls_guided")
 def function_falls_guided(ws: Workspace, r: Report) -> None:
     rel = "practice/stones.py"
@@ -198,14 +227,36 @@ def function_falls_guided(ws: Workspace, r: Report) -> None:
                 from practice import stones
                 d, g, big, small = stones.double(4), stones.greet("Ada"), stones.is_big(11), stones.is_big(10)
                 b = stones.bonus(2)
+                loud = stones.shout("hi") if hasattr(stones, "shout") else None
             expect(d == 8, f"STEP 1: double(4) should return 8, but it returned {d!r}")
             expect(g == "Hi, Ada!", f"STEP 2: greet('Ada') should return 'Hi, Ada!', but it returned {g!r}")
             expect(big is True and small is False, "STEP 3: is_big should be True for 11 and False for 10")
             expect(b == 30, f"STEP 4: bonus(2) should be (2 + 1) * 10 = 30, but it returned {b!r}. Brackets first!")
+            expect(loud == "HI", f"STEP 5: shout('hi') should return 'HI', but it returned {loud!r}")
             expect(out.getvalue().strip() == "42", "the functions should RETURN their answers, not print them")
         """),
         "every function returns the right answer",
     )
+    problems = tidy.indentation_problems(ws.read(rel) or "", rel)
+    r.require(not problems, "every function is pushed in by exactly 4 spaces", "\n".join(problems))
+
+
+@check("shortcut_trail_guided")
+def shortcut_trail_guided(ws: Workspace, r: Report) -> None:
+    rel = "practice/gap.py"
+    tree = guided_file(ws, r, "shortcut_trail_guided", rel, "gap.py")
+    if tree is None:
+        return
+    if not output_is(ws, r, rel, ["True False True False", "Take an umbrella!"]):
+        return
+    quiz(
+        ws,
+        r,
+        "practice.gap",
+        {"needs_umbrella": (True, "STEP 3"), "is_dry": (False, "STEP 4")},
+    )
+    problems = tidy.bool_shortcut_problems(tree, rel)
+    r.require(not problems, "you took the shortcut every time", "\n".join(problems))
 
 
 @check("testing_meadow_guided")

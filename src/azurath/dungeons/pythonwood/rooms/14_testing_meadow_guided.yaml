@@ -1,6 +1,6 @@
 id: testing_meadow_guided
 name: The Practice Pen
-order: 10
+order: 14
 guided: true
 zone: "Testing (guided)"
 description: |
@@ -8,7 +8,7 @@ description: |
   holding blank signs. The tortoise is teaching them to glow RED and GREEN.
   Grizzle the gnome watches from behind a fence post, taking notes.
 exits:
-  south: function_falls
+  south: shortcut_trail
   north: testing_meadow
 npc:
   name: Testudo the Tortoise

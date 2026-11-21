@@ -301,8 +301,12 @@ class Workspace:
     def is_git_repo(self) -> bool:
         return (self.root / ".git").exists()
 
-    def initialize(self, readme: str | None = None) -> list[str]:
-        """Create the workspace folder and git repo. Returns human-readable notes."""
+    def initialize(self, readme: str | None = None, *, commit: bool = True) -> list[str]:
+        """Create the workspace folder and git repo. Returns human-readable notes.
+
+        With ``commit=False`` the caller makes the first commit itself (the game does,
+        so it can explain and fix commit errors).
+        """
         notes: list[str] = []
         self.root.mkdir(parents=True, exist_ok=True)
         if not self.exists(".gitignore"):
@@ -316,16 +320,18 @@ class Workspace:
             if not res.ok:  # very old git without -b
                 res = self.git("init")
             notes.append("git init" if res.ok else f"git init failed: {res.tail()}")
-            if res.ok:
-                commit = self.commit("Enter the realm of Azurath")
-                if commit and not commit.ok:
-                    notes.append(commit.tail())
+            if res.ok and commit:
+                result = self.commit("Enter the realm of Azurath")
+                if result and not result.ok:
+                    notes.append(result.tail())
         return notes
 
     def commit(self, message: str) -> RunResult | None:
         """``git add -A && git commit``. Returns None when there's nothing to commit."""
-        if not self.git_available() or not self.is_git_repo():
-            return RunResult(1, "", "git is not available or this folder is not a git repo")
+        if not self.git_available():
+            return RunResult(127, "", "git is not installed")
+        if not self.is_git_repo():
+            return RunResult(128, "", f"fatal: not a git repository: {self.root}")
         add = self.git("add", "-A")
         if not add.ok:
             return add

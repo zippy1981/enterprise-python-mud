@@ -79,6 +79,43 @@ print("\\n{marker}" + _json.dumps(_failures))
 """
 
 
+def remove_tree(path: Path) -> None:
+    """``shutil.rmtree`` that also works on Windows, where git marks object files read-only.
+
+    Windows refuses to delete a read-only file ("Access is denied"), so clear the flag
+    and retry. Missing paths are fine.
+    """
+    import stat
+
+    def make_writable_and_retry(func, target, _exc) -> None:  # noqa: ANN001
+        os.chmod(target, stat.S_IWRITE)
+        func(target)
+
+    if not path.exists():
+        return
+    if sys.version_info >= (3, 12):
+        shutil.rmtree(path, onexc=make_writable_and_retry)
+    else:  # pragma: no cover - 3.11 only has the older onerror hook
+        shutil.rmtree(path, onerror=make_writable_and_retry)
+
+
+def write_python_shim(directory: Path, python: str | Path) -> Path:
+    """Put a ``python`` command in ``directory`` that runs ``python``.
+
+    A tiny launcher script instead of a symbolic link: creating symlinks on Windows
+    needs admin rights or Developer Mode, so this repo never uses them.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    if os.name == "nt":
+        shim = directory / "python.cmd"
+        shim.write_text(f'@"{python}" %*\r\n', encoding="utf-8")
+    else:
+        shim = directory / "python"
+        shim.write_text(f'#!/bin/sh\nexec "{python}" "$@"\n', encoding="utf-8")
+        shim.chmod(0o755)
+    return shim
+
+
 @dataclass
 class RunResult:
     returncode: int
@@ -301,8 +338,12 @@ class Workspace:
     def is_git_repo(self) -> bool:
         return (self.root / ".git").exists()
 
-    def initialize(self, readme: str | None = None) -> list[str]:
-        """Create the workspace folder and git repo. Returns human-readable notes."""
+    def initialize(self, readme: str | None = None, *, commit: bool = True) -> list[str]:
+        """Create the workspace folder and git repo. Returns human-readable notes.
+
+        With ``commit=False`` the caller makes the first commit itself (the game does,
+        so it can explain and fix commit errors).
+        """
         notes: list[str] = []
         self.root.mkdir(parents=True, exist_ok=True)
         if not self.exists(".gitignore"):
@@ -316,16 +357,18 @@ class Workspace:
             if not res.ok:  # very old git without -b
                 res = self.git("init")
             notes.append("git init" if res.ok else f"git init failed: {res.tail()}")
-            if res.ok:
-                commit = self.commit("Enter the realm of Azurath")
-                if commit and not commit.ok:
-                    notes.append(commit.tail())
+            if res.ok and commit:
+                result = self.commit("Enter the realm of Azurath")
+                if result and not result.ok:
+                    notes.append(result.tail())
         return notes
 
     def commit(self, message: str) -> RunResult | None:
         """``git add -A && git commit``. Returns None when there's nothing to commit."""
-        if not self.git_available() or not self.is_git_repo():
-            return RunResult(1, "", "git is not available or this folder is not a git repo")
+        if not self.git_available():
+            return RunResult(127, "", "git is not installed")
+        if not self.is_git_repo():
+            return RunResult(128, "", f"fatal: not a git repository: {self.root}")
         add = self.git("add", "-A")
         if not add.ok:
             return add

@@ -15,7 +15,7 @@ from rich.markup import escape
 from rich.table import Table
 from rich.tree import Tree
 
-from azurath import __version__
+from azurath import __version__, gitcheck
 from azurath.checks import Report, run_check
 from azurath.content import DIRECTIONS, Dungeon, Item, Room, load_dungeon
 from azurath.editor import VIM_CHEATSHEET, choose_editor, in_vscode_terminal
@@ -25,6 +25,10 @@ from azurath.state import PlayerState
 from azurath.workspace import Workspace
 
 QUIT = object()
+
+# Exit codes a program reports when Ctrl+C stopped it: 130 (shells, and our own
+# KeyboardInterrupt handler), -2 (killed by SIGINT on POSIX), 0xC000013A (Windows).
+STOPPED_CODES = {130, -2, 3221225786}
 
 BANNER = r"""
 [bold cyan]    _                       _   _
@@ -128,6 +132,7 @@ class Game:
     def start(self) -> bool:
         """Greet the player and make sure the workspace exists. False means abort."""
         self.out.say(BANNER.format(version=__version__))
+        git = self.check_git()
         if not self.ws.root.exists() or not (self.ws.root / ".azurath").exists():
             if self.dungeon.intro:
                 self.out.md(self.dungeon.intro)
@@ -136,14 +141,16 @@ class Game:
             if not self.confirm("Create it now?", default=True):
                 self.out.warn("No workspace, no quests. Farewell!")
                 return False
-            name = self.ask("What should we call you? ") or "Adventurer"
+            suggested = (git.name or "").split(" ")[0]
+            prompt = f"What should we call you?{f' [{suggested}]' if suggested else ''} "
+            name = self.ask(prompt) or suggested or "Adventurer"
             self.state.name = name[:40]
-            self.install_workspace_files()  # before initialize(), so the first commit has them
-            for note in self.ws.initialize(readme=self.dungeon.readme):
+            self.install_workspace_files()  # before the first commit, so it includes them
+            for note in self.ws.initialize(readme=self.dungeon.readme, commit=False):
                 self.out.info(f"  · {note}")
-            if not self.ws.git_available():
-                self.out.warn("git isn't installed. You can play, but nothing will be committed.")
             self.save()
+            if self.ws.is_git_repo():
+                self.commit_work(f"Begin {self.dungeon.workspace} in {self.dungeon.name}")
             if in_vscode_terminal():
                 self.out.info(
                     "You're in a VS Code terminal: `edit <file>` opens files in the editor."
@@ -164,14 +171,35 @@ class Game:
         if not self.start():
             return
         self._setup_readline()
+        presses = 0  # Ctrl+C presses in a row at the prompt
         while True:
             try:
                 line = self._input(f"\n[bold magenta]{self.room.name}[/bold magenta] [dim]›[/dim] ")
-            except (EOFError, KeyboardInterrupt):
+            except EOFError:  # Ctrl+D (Ctrl+Z on Windows): the player meant to leave
                 self.console.print()
                 self.cmd_quit("")
                 break
-            if self.handle(line) is QUIT:
+            except KeyboardInterrupt:
+                self.console.print()
+                presses += 1
+                if presses >= 2:
+                    self.cmd_quit("")
+                    break
+                self.out.warn(
+                    "Press Ctrl+C again to quit, or type a command to keep playing. "
+                    "(Your progress is saved either way.)"
+                )
+                continue
+            presses = 0
+            try:
+                result = self.handle(line)
+            except KeyboardInterrupt:  # Ctrl+C while a command was running: stop just that
+                self.console.print()
+                self.out.warn(
+                    "Stopped. You're still in the game. (Ctrl+C twice at the prompt quits.)"
+                )
+                continue
+            if result is QUIT:
                 break
 
     def handle(self, line: str) -> object:
@@ -219,6 +247,161 @@ class Game:
         readline.set_completer(complete)
         readline.set_completer_delims(" ")
         readline.parse_and_bind("tab: complete")
+
+    # --- git ------------------------------------------------------------------------
+
+    def check_git(self) -> gitcheck.GitHealth:
+        """Startup check: git installed, working, and user.name/user.email set globally."""
+        health = gitcheck.check_git()
+        if not health.installed:
+            self.out.warn(
+                "git isn't installed, so the game can't save your work as commits. "
+                "You can still play."
+            )
+            self.out.md(gitcheck.install_help() + ", then restart the game.")
+        elif health.problem:
+            self.out.error("git is installed but isn't working:")
+            self.console.print(health.problem, markup=False, highlight=False)
+            self.out.md(
+                "This is usually a broken global config file. "
+                "Open it with `!git config --global --edit` and fix the line it mentions."
+            )
+        elif not health.has_identity:
+            if self.setup_git_identity(health) is not None:
+                health = gitcheck.check_git()
+        else:
+            self.out.say(
+                f"[dim]git ✔  commits will be signed {escape(health.name or '')} "
+                f"<{escape(health.email or '')}>[/dim]"
+            )
+        return health
+
+    def setup_git_identity(self, health: gitcheck.GitHealth | None = None) -> str | None:
+        """Ask for a name and email and save them in git's global config.
+
+        Returns the name that was saved, or None if the player declined or it failed.
+        """
+        health = health or gitcheck.check_git()
+        missing = [
+            key
+            for key, value in (("user.name", health.name), ("user.email", health.email))
+            if not value
+        ]
+        self.out.md(
+            "**git needs to know who you are.** Every commit (a save point of your project) "
+            "is signed with a name and an email, and git refuses to commit without them. "
+            f"Missing: {', '.join(f'`{k}`' for k in missing) or 'nothing'}.\n\n"
+            "They're saved in your *global* git settings, so every project on this computer "
+            "uses them. **They become part of every commit**, so anyone you share the "
+            "project with can see them. A made-up email like `sparky@example.com` works "
+            "fine, and on GitHub you can use your private *noreply* address. "
+            "(If you're under 18, ask a parent, guardian or teacher which to use.)"
+        )
+        if not self.confirm("Set them now?", default=True):
+            self._identity_commands_hint()
+            return None
+        default_name = health.name or (self.state.name if self.state.name != "Adventurer" else "")
+        name = self._ask_valid(
+            f"Your name for commits{f' [{default_name}]' if default_name else ''}: ",
+            gitcheck.valid_name,
+            "That doesn't look like a name. Try again (letters and spaces are fine).",
+            default=default_name,
+        )
+        if name is None:
+            self._identity_commands_hint()
+            return None
+        email = self._ask_valid(
+            f"Email for commits{f' [{health.email}]' if health.email else ''}: ",
+            gitcheck.valid_email,
+            "That doesn't look like an email address (like name@example.com). Try again.",
+            default=health.email or "",
+        )
+        if email is None:
+            self._identity_commands_hint()
+            return None
+        result = gitcheck.set_global_identity(name, email)
+        if not result.ok:
+            self.out.error("Couldn't save your git identity:")
+            self.console.print(result.tail(), markup=False, highlight=False)
+            self._identity_commands_hint()
+            return None
+        self.out.ok(f"git will sign your commits as {name} <{email}>")
+        return name
+
+    def _ask_valid(self, prompt: str, valid, error: str, default: str = "") -> str | None:
+        for _ in range(3):
+            answer = self.ask(prompt) or default
+            if not answer:
+                return None
+            if valid(answer):
+                return answer.strip()
+            self.out.warn(error)
+        return None
+
+    def _identity_commands_hint(self) -> None:
+        self.out.md(
+            "No problem. The game can't commit your work until git knows who you are. "
+            "You can set it any time:\n\n"
+            '```\n!git config --global user.name "Your Name"\n'
+            "!git config --global user.email you@example.com\n```"
+        )
+
+    def commit_work(self, message: str) -> bool:
+        """``git add -A && git commit``, explaining (and where safe, fixing) any failure."""
+        for attempt in range(2):
+            result = self.ws.commit(message)
+            if result is None:
+                self.out.info("git: nothing new to commit.")
+                return True
+            if result.ok:
+                self.out.ok(f'git commit -m "{message}"')
+                return True
+            if attempt == 0 and self._fix_commit_failure(result):
+                continue  # fixed: try once more
+            return False
+        return False
+
+    def _fix_commit_failure(self, result) -> bool:
+        """Explain a failed commit. Returns True if it was fixed and is worth retrying."""
+        kind = gitcheck.classify_commit_failure(result)
+        self.out.warn(f"Couldn't commit your work: {kind.value}.")
+        if kind is gitcheck.CommitFailure.OTHER or kind is gitcheck.CommitFailure.IDENTITY:
+            self.console.print(result.tail(8), markup=False, highlight=False, style="dim")
+        if kind is gitcheck.CommitFailure.IDENTITY:
+            return self.setup_git_identity() is not None
+        if kind is gitcheck.CommitFailure.NO_GIT:
+            self.out.md(
+                gitcheck.install_help() + ". Your files are safe; they just aren't committed."
+            )
+            return False
+        if kind is gitcheck.CommitFailure.NOT_A_REPO:
+            if not self.confirm("Make your project folder a git repository now?", default=True):
+                return False
+            init = self.ws.git("init", "-b", "main")
+            if not init.ok:
+                init = self.ws.git("init")
+            if not init.ok:
+                self.out.error(init.tail())
+            return init.ok
+        if kind is gitcheck.CommitFailure.DUBIOUS_OWNERSHIP:
+            self.out.md(
+                "git protects you from repositories owned by another user account. If this "
+                f"is your own project, you can tell git to trust it:\n\n"
+                f"```\n!git config --global --add safe.directory {self.ws.root}\n```"
+            )
+            if not self.confirm("Trust this folder now?", default=False):
+                return False
+            return gitcheck.trust_directory(self.ws.root).ok
+        if kind is gitcheck.CommitFailure.LOCKED:
+            self.out.md(
+                "A git command is still running, or one crashed and left `.git/index.lock` "
+                "behind. Close any other git tools (VS Code's source control too), then try "
+                "`commit` again. If nothing else is running, delete the lock file:\n\n"
+                "```\n!rm .git/index.lock\n```"
+            )
+            return False
+        self.out.md("Try `!git status` to see what git thinks is going on, then `commit`.")
+        return False
 
     # --- looking around -------------------------------------------------------------
 
@@ -446,20 +629,7 @@ class Game:
             self.state.inventory.append(reward.item.name)
             self.out.ok(f"You receive: {reward.item.name}  (examine {reward.item.handle})")
         if self.settings.auto_commit:
-            message = quest.commit_message or f"Complete quest: {quest.title}"
-            result = self.ws.commit(message)
-            if result is None:
-                self.out.info("git: nothing new to commit.")
-            elif result.ok:
-                self.out.ok(f'git commit -m "{message}"')
-            else:
-                self.out.warn("git commit failed:\n" + result.tail())
-                if "user.email" in result.output or "identity" in result.output:
-                    self.out.md(
-                        "Tell git who you are, then `commit`:\n\n"
-                        '```\n!git config --global user.name "Your Name"\n'
-                        "!git config --global user.email you@example.com\n```"
-                    )
+            self.commit_work(quest.commit_message or f"Complete quest: {quest.title}")
         opened = [
             self.dungeon.rooms[t].name
             for t in room.exits.values()
@@ -777,6 +947,8 @@ class Game:
         code = self.ws.interactive(argv)
         if code == 127:
             self.out.error("command not found")
+        elif code in STOPPED_CODES:
+            self.out.warn("Stopped with Ctrl+C. You're still in the game.")
         elif code:
             self.out.warn(f"exit code {code}")
 
@@ -820,7 +992,9 @@ class Game:
             return
         self.out.say(f"[dim]$ python {escape(arg)}   ({self._which_python()})[/dim]")
         code = self.ws.interactive([self.ws.python(), *args])
-        if code:
+        if code in STOPPED_CODES:
+            self.out.warn("You stopped your program with Ctrl+C. You're still in the game.")
+        elif code:
             self.out.warn(f"your program stopped with exit code {code} (read the error above)")
 
     @command(
@@ -862,14 +1036,7 @@ class Game:
 
     @command("commit", usage="commit [message]", help="git add -A && git commit in your workspace.")
     def cmd_commit(self, arg: str) -> None:
-        message = arg or f"Work in progress in {self.room.name}"
-        result = self.ws.commit(message)
-        if result is None:
-            self.out.info("Nothing to commit. Working tree clean.")
-        elif result.ok:
-            self.out.ok(f"committed: {message}")
-        else:
-            self.out.error(result.tail())
+        self.commit_work(arg or f"Work in progress in {self.room.name}")
 
     @command("log", "history", help="Show your repo's git history (one commit per quest).")
     def cmd_log(self, arg: str) -> None:

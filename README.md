@@ -139,6 +139,19 @@ Optional extras, for later rooms:
   app locally (the quests don't require them)
 * [Go](https://go.dev/dl/) and a C compiler (gcc / Xcode CLT / MinGW-w64) for the Gopher side quests
 
+
+### The split-screen UI (preview)
+
+```bash
+uv sync --extra tui
+uv run azurath tui
+```
+
+The same game in panes: the story and command box on the left, and a sidebar with the
+quest's live checklist, exit and command buttons, a clickable map and your items. F5
+checks, F2 gives a hint, F3 reads, and Ctrl+Q quits. Every command still works by
+typing it. To play it in a browser, run `uvx --from textual-dev textual serve "azurath tui"`.
+
 ## Playing in VS Code
 
 1. Open this folder in VS Code and install the recommended extensions when prompted.
